@@ -1,0 +1,37 @@
+
+services:
+  loader:
+    image: loader_image   # name of loader image
+    container_name: my_loader   # name of loader container
+    platform: linux/amd64
+    build:
+      context: ./loader   # folder to search Dockerfile for this image
+    depends_on:
+      - mongodb
+    working_dir: /data
+    volumes:
+      - /path/to/loader/files:/data   # path where the loader will look for files
+    networks:
+      - my_network
+
+  workflow:
+    image: workflow_image
+    container_name: my_workflow
+    platform: linux/amd64
+    build:
+      context: ./workflow   # folder to search Dockerfile for this image
+    working_dir: /data
+    volumes:
+      - /path/to/workflow/files:/data
+
+  mongodb:
+    container_name: my_mongo_container
+    image: mongo:6
+    volumes:
+      - /path/to/db:/data/db  # path where the database will be stored (outside the container, in the host machine)
+    networks:
+      - my_network
+
+networks:
+  my_network: 
+    name: my_network    # network name

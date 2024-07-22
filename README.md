@@ -1,0 +1,241 @@
+
+# MDDB Docker web services
+
+TODO description
+
+## Services description
+
+### Website
+
+TODO
+
+### Data loader
+
+The data loader is a node **JS script** made for load, list and remove data from a mongodb database.
+
+For this project, the following repo has been used:
+
+https://mmb.irbbarcelona.org/gitlab/aluciani/MoDEL-CNS_DB_loader
+
+### Database
+
+The database used is **mongodb** inside a docker container:
+
+https://github.com/docker-library/mongo
+
+For this project, the choosen version of mongo is 6.
+
+## Prepare configuration files
+
+### docker-compose.yml
+
+Copy docker-compose-git.yml into **docker-compose.yml** and modify the volumes' routes. 
+
+Take a look as well at the **website ports**. They may change depending on the host configuration. Changing the port implies to change it as well in the [**website/Dockerfile**](website/Dockerfile). (TODO rest/client!!!)
+
+```yaml
+
+services:
+  loader:
+    image: loader_image   # name of loader image
+    container_name: my_loader   # name of loader container
+    platform: linux/amd64
+    build:
+      context: ./loader   # folder to search Dockerfile for this image
+    depends_on:
+      - mongodb
+    working_dir: /data
+    volumes:
+      - /path/to/loader/files:/data   # path where the loader will look for files
+    networks:
+      - my_network
+
+  workflow:
+    image: workflow_image
+    container_name: my_workflow
+    platform: linux/amd64
+    build:
+      context: ./workflow   # folder to search Dockerfile for this image
+    working_dir: /data
+    volumes:
+      - /path/to/workflow/files:/data
+
+  mongodb:
+    container_name: my_mongo_container
+    image: mongo:6
+    volumes:
+      - /path/to/db:/data/db  # path where the database will be stored (outside the container, in the host machine)
+    networks:
+      - my_network
+
+networks:
+  my_network: 
+    name: my_network    # network name
+```
+
+### .env file
+
+⚠️ No sensible default value is provided for any of these fields, they **need to be defined** ⚠️
+
+An `.env` file must be created both in the **loader** and **website** folders  (TODO rest/client!!!). The file `.env.git` can be taken as an example. The file must contain the following environment variables (the DB user needs to have writing rights):
+
+#### loader
+
+| key              | value   | description                                     |
+| ---------------- | ------- | ----------------------------------------------- |
+| DB_AUTH_USER         | string  | db user                                         |
+| DB_AUTH_PASSWORD      | string  | db password                                     |
+| DB_SERVER          | `<url>` | url of the db server                            |
+| DB_PORT          | number  | port of the db server                           |
+| DB_NAME      | string  | name of the dbcollection                        |
+| DB_AUTHSOURCE    | string  | authentication db                               |
+
+Take into account that, by default, the **mongodb docker** is configured **without authentication**. So, if following the instructions of this README, leave **DB_LOGIN** and **DB_STRING** empty. Example:
+
+```
+DB_SERVER=my_mongo_container
+DB_PORT=27017
+DB_NAME=<DB NAME>
+DB_AUTH_USER=
+DB_AUTH_PASSWORD=
+DB_AUTHSOURCE=<DB NAME>
+```
+
+The **DB_SERVER** must be the same name as the **mongodb container_name** in the **docker-compose.yml**.
+
+#### website 
+
+TODO
+
+## Build services
+
+For building the services via **docker compose**, please execute the following instruction from the root of this project:
+
+```sh
+docker-compose up -d
+```
+
+This instruction will run docker-compose in background and it will create the three services described in the first section.
+
+## Execute services
+
+### Use loader
+
+While the mongodb and website containers will remain up, the loader must be called every time is needed.
+
+Get loader version:
+
+```sh
+docker-compose run loader --version
+```
+
+**List** database documents:
+
+TODO
+
+**Load** documents to database:
+
+TODO
+
+**Remove** database document:
+
+TODO
+
+### Check website
+
+Open a browser and type:
+
+```
+http://localhost:8080
+```
+
+Or modify the port by the one defined as **ports** in the **docker-compose.yml** file.
+
+## Stop / start services
+
+For **stopping** all the services (website and mongodb):
+
+```sh
+docker-compose stop
+```
+
+For **stopping** all the services (website and mongodb) and **remove** all up images:
+
+```sh
+docker-compose down
+```
+
+For **starting** all the services (website and mongodb):
+
+```sh
+docker-compose start
+```
+
+## Tips
+
+### Avoid cache for docker-compose
+
+Ie when developing and doing changes in git repo.
+
+1. Stop all containers and remove all images: 
+
+    ```sh
+    docker-compose down --rmi all
+    ```
+
+2. Rebuild images avoiding cache:
+
+    ```sh
+    docker-compose build --no-cache
+    ```
+
+3. Up services:
+    ```sh
+    docker-compose up -d
+    ```
+
+### Execute mongo docker in terminal mode
+
+```sh
+docker exec -it my_mongo_container bash
+```
+
+And then: 
+
+```sh
+mongosh 
+```
+
+For entering the database in terminal mode. By default, the mongodb docker is configured **without authentication**.
+
+### Check containers
+
+TODO
+
+### Inspect docker network 
+
+```sh
+docker network inspect my_network
+```
+
+should show something like:
+
+TODO
+
+### Docker logs
+
+Show logs for a container:
+
+TODO
+
+## Credits
+
+Daniel Beltran, Genís Bayarri, Adam Hospital.
+
+## Copyright & licensing
+
+This website has been developed by the [MMB group](https://mmb.irbbarcelona.org) at the [IRB Barcelona](https://irbbarcelona.org).
+
+© 2024 **Institute for Research in Biomedicine**
+
+Licensed under the **Apache License 2.0**.
