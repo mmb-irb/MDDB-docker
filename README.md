@@ -123,23 +123,25 @@ This instruction will run docker-compose in background and it will create the th
 
 While the mongodb and website containers will remain up, the loader must be called every time is needed.
 
-Get loader version:
-
-```sh
-docker-compose run loader --version
-```
-
 **List** database documents:
 
-TODO
+```sh
+docker-compose run loader list
+```
 
 **Load** documents to database:
 
-TODO
+```sh
+docker-compose run loader load <trajectory_dir>
+```
+
+Take into account that **trajectory_dir** must be inside **/path/to/loader/files** defined in **docker-compose.yml**.
 
 **Remove** database document:
 
-TODO
+```sh
+docker-compose run loader delete <project_id>
+```
 
 ### Check website
 
