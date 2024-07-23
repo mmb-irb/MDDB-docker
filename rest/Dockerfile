@@ -3,12 +3,17 @@ FROM alpine:latest
 
 # Install necessary packages
 RUN apk --no-cache add nodejs npm git
-
-# Verify installation
-RUN node --version && npm --version && git --version
+RUN apk add build-base
+RUN apk add cmake
 
 # Define working dir
 WORKDIR /app
+
+# Clone and install the chemfiles fork customized to support '.bin' format reading and streaming.
+RUN git clone https://github.com/d-beltran/chemfiles && cd chemfiles && mkdir build && cd build && cmake .. && make && make install
+
+# Verify installation
+RUN node --version && npm --version && git --version
 
 # Define a directory for the volume
 VOLUME /data
@@ -34,11 +39,8 @@ RUN rm -r node_modules
 # Install pm2
 RUN npm install pm2 -g
 
-# Copy the pm2 configuration file
-COPY ecosystem.config.cjs .
-
 # Expose the port the app runs on
 EXPOSE 3000
 
 # Serve the app
-CMD ["pm2-runtime", "start", "ecosystem.config.cjs", "--name", "rest"]
+CMD ["pm2-runtime", "start", "index.js", "-i", "4", "-n", "MDposit_API", "--node-args=", "\"--experimental-worker\""]
