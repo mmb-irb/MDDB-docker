@@ -24,6 +24,19 @@ services:
     volumes:
       - /path/to/workflow/files:/data
 
+  rest:
+    image: rest_image
+    container_name: my_rest
+    platform: linux/amd64
+    build:
+      context: ./rest   # folder to search Dockerfile for this image
+    depends_on:
+      - mongodb
+    ports:
+      - "8081:3000"   # port mapping, be aware that the second port is the same exposed in the rest/Dockerfile
+    networks:
+      - my_network
+
   mongodb:
     container_name: my_mongo_container
     image: mongo:6
