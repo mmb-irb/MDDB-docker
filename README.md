@@ -193,7 +193,17 @@ Open a browser and type:
 http://localhost:8081
 ```
 
-Or modify the port by the one defined as **ports** in the **docker-compose.yml** file.
+Or modify the port 8081 by the one defined as **ports** in the **rest service** of the **docker-compose.yml** file.
+
+### Check client
+
+Open a browser and type:
+
+```
+http://localhost:8080
+```
+
+Or modify the port 8080 by the one defined as **ports** in the **client service** of the **docker-compose.yml** file.
 
 ## Stop / start services
 
@@ -258,13 +268,65 @@ TODO
 
 ### Inspect docker network 
 
+Execute the following instruction for inspecting the **docker network**:
+
 ```sh
 docker network inspect my_network
 ```
 
-should show something like:
+It should show something like:
 
-TODO
+```json
+[
+    {
+        "Name": "my_network",
+        "Id": "<ID>",
+        "Created": "<DATE>",
+        "Scope": "local",
+        "Driver": "bridge",
+        "EnableIPv6": false,
+        "IPAM": {
+            "Driver": "default",
+            "Options": null,
+            "Config": [
+                {
+                    "Subnet": "<IP>",
+                    "Gateway": "<IP>"
+                }
+            ]
+        },
+        "Internal": false,
+        "Attachable": false,
+        "Ingress": false,
+        "ConfigFrom": {
+            "Network": ""
+        },
+        "ConfigOnly": false,
+        "Containers": {
+            "<ID>": {
+                "Name": "my_rest",
+                "EndpointID": "<ID>",
+                "MacAddress": "<MAC>",
+                "IPv4Address": "<IP>",
+                "IPv6Address": ""
+            },
+            "<ID>": {
+                "Name": "my_mongo_container",
+                "EndpointID": "<ID>",
+                "MacAddress": "<MAC>",
+                "IPv4Address": "<IP>",
+                "IPv6Address": ""
+            }
+        },
+        "Options": {},
+        "Labels": {
+            "com.docker.compose.network": "my_network",
+            "com.docker.compose.project": "mddb-docker",
+            "com.docker.compose.version": "2.29.0"
+        }
+    }
+]
+```
 
 ### Docker logs
 
