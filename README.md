@@ -185,12 +185,12 @@ Take into account that **trajectory_dir** must be inside **/path/to/loader/files
 docker-compose run loader delete <project_id>
 ```
 
-### Check website
+### Check rest
 
 Open a browser and type:
 
 ```
-http://localhost:8080
+http://localhost:8081
 ```
 
 Or modify the port by the one defined as **ports** in the **docker-compose.yml** file.
@@ -270,7 +270,9 @@ TODO
 
 Show logs for a container:
 
-TODO
+```sh
+docker logs my_rest
+```
 
 ## Credits
 

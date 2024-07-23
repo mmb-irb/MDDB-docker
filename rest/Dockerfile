@@ -9,6 +9,9 @@ RUN apk add cmake
 # Define working dir
 WORKDIR /app
 
+# Increase the Git buffer size
+RUN git init && git config --global http.postBuffer 524288000
+
 # Clone and install the chemfiles fork customized to support '.bin' format reading and streaming.
 RUN git clone https://github.com/d-beltran/chemfiles && cd chemfiles && mkdir build && cd build && cmake .. && make && make install
 
@@ -32,9 +35,6 @@ RUN npm install
 
 # Build website
 RUN npm run build
-
-# remove node_modules folder
-RUN rm -r node_modules
 
 # Install pm2
 RUN npm install pm2 -g
