@@ -1,0 +1,5 @@
+/*!
+* screenfull
+* v5.0.0 - 2019-09-09
+* (c) Sindre Sorhus; MIT License
+*/

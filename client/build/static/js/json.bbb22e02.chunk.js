@@ -1,0 +1,2 @@
+"use strict";(self.webpackChunkmdposit=self.webpackChunkmdposit||[]).push([[8825],{31056:(r,e,t)=>{t.r(e),t.d(e,{default:()=>o});t(65043);var n=t(58338),i=t(17545),s=t(70579);const o=r=>{let{url:e}=r;const{loading:t,payload:o,error:u}=(0,n.A)(e);if(!e)return"No URL provided";if(t)return(0,s.jsx)(i.A,{});if(u)return u.toString();if(!o)return"Something bad happened";const d=JSON.stringify(o,null,4);return(0,s.jsx)("pre",{children:d})}}}]);
+//# sourceMappingURL=json.bbb22e02.chunk.js.map
