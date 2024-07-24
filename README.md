@@ -1,13 +1,25 @@
 
 # MDDB Docker web services
 
-TODO description
+In this repo there are all the files needed for executing the different **MDDB services** for executing a website: **front-end**, **back-end**, **wotkflow**, **database** and **data loader**. All these services have been integrated into docker containers and connected between them via docker **network**.
 
 ## Services description
 
-### Website
+### REST API
 
-TODO
+The REST API is a **NodeJS + Express** application.
+
+For this project, the following repo has been used:
+
+https://mmb.irbbarcelona.org/gitlab/aluciani/MoDEL-CNS_REST_API
+
+### Website client
+
+The website client is a **React App**.
+
+For this project, the following repo has been used:
+
+https://mmb.irbbarcelona.org/gitlab/d.beltran.anadon/mdposit_client
 
 ### Data loader
 
@@ -16,6 +28,14 @@ The data loader is a node **JS script** made for load, list and remove data from
 For this project, the following repo has been used:
 
 https://mmb.irbbarcelona.org/gitlab/aluciani/MoDEL-CNS_DB_loader
+
+### Workflow
+
+The aim for this tools is to **process raw MD data** and obtain standard **structure** and **trajectory** files.
+
+For this project, the following repo has been used:
+
+https://mmb.irbbarcelona.org/gitlab/d.beltran.anadon/MoDEL-workflow
 
 ### Database
 
@@ -34,8 +54,6 @@ Copy docker-compose-git.yml into **docker-compose.yml** and modify the volumes' 
 Take a look as well at the **website ports**. They may change depending on the host configuration. Changing the port implies to change it as well in the [**website/Dockerfile**](website/Dockerfile). (TODO rest/client!!!)
 
 ```yaml
-
-
 services:
   loader:
     image: loader_image   # name of loader image
@@ -73,6 +91,15 @@ services:
       - "8081:3000"   # port mapping, be aware that the second port is the same exposed in the rest/Dockerfile
     networks:
       - my_network
+
+  client:
+    image: client_image
+    container_name: my_client
+    platform: linux/amd64
+    build:
+      context: ./client  # folder to search Dockerfile for this image
+    ports:
+      - "8080:80"  # port mapping, be aware that the second port is the same exposed in the client/Dockerfile
 
   mongodb:
     container_name: my_mongo_container
@@ -148,6 +175,62 @@ The **LISTEN_PORT** must be the same exposed in the [REST Dockerfile](rest/Docke
 #### client
 
 As of July 2024, an **empty .env file** must be provided in the **client folder**.
+
+### host-config.js
+
+Configuration file for the client.
+
+```js
+// Import default query fields
+import defaultQueryFields from "src/utils/constants/query-fields";
+
+// Set the default description
+const DEFAULT_DESCRIPTION = <>
+    <strong>MDposit</strong> is an open platform designed to provide web
+    access to atomistic molecular dynamics (MD) simulations. The aim of
+    this initiative is to ease and promote data sharing along the
+    wide-world scientific community in order to contribute in research.
+</>;
+
+// Set default values for every host config fields
+// These values are used to fill missing values
+const DEFAUL_HOST_CONFIGURATION = {
+    api: 'http://localhost:8081/rest/', // be aware that the port is the same of the docker-compose.yml file
+    production: false,
+    name: 'MDposit',
+    favicon: 'mdposit_favicon',
+    description: DEFAULT_DESCRIPTION,
+    logo: 'logo-mdposit',
+    primaryColor: '#808080', // Grey
+    secondaryColor: '#fafafa', // Light grey
+    searchExample: 'e.g. Orozco lab',
+    optionsField: undefined, // No browser selector and no data summary pie chart by default
+    optionsLabel: 'Options',
+    optionsNiceNames: {},
+    queryFields: defaultQueryFields,
+};
+
+// Set every host configuration
+const HOST_CONFIGURATIONS = {
+    // Testing
+    'localhost': {
+        api: 'http://localhost:8081/rest/', // be aware that the port is the same of the docker-compose.yml file
+        primaryColor: '#707070', // Grey
+    }
+};
+
+// Set the current host configuration
+const HOST_CONFIG = HOST_CONFIGURATIONS['localhost'];
+
+// Fill the host configuration gaps with default values
+Object.entries(DEFAUL_HOST_CONFIGURATION).forEach(([ field, defaultValue ]) => {
+    if (!HOST_CONFIG[field]) HOST_CONFIG[field] = defaultValue;
+});
+
+export default HOST_CONFIG;
+```
+
+Or modify the port 8081 by the one defined as **ports** in the **rest service** of the **docker-compose.yml** file.
 
 ## Build services
 
@@ -264,7 +347,17 @@ For entering the database in terminal mode. By default, the mongodb docker is co
 
 ### Check containers
 
-TODO
+Check that at least the mongo, rest and client containers are up & running:
+
+```sh
+$ docker ps -a
+CONTAINER ID   IMAGE            COMMAND                  CREATED              STATUS                          PORTS                                       NAMES
+XXXXXXXXXXXX   rest_image       "pm2-runtime start i…"   About a minute ago   Up About a minute               0.0.0.0:8081->3000/tcp, :::8081->3000/tcp   my_rest
+XXXXXXXXXXXX   loader_image     "/app/entrypoint.sh"     About a minute ago   Exited (1) About a minute ago                                               my_loader
+XXXXXXXXXXXX   mongo:6          "docker-entrypoint.s…"   About a minute ago   Up About a minute               27017/tcp                                   my_mongo_container
+XXXXXXXXXXXX   client_image     "/docker-entrypoint.…"   About a minute ago   Up About a minute               0.0.0.0:8080->80/tcp, :::8080->80/tcp       my_client
+XXXXXXXXXXXX   workflow_image   "conda run --no-capt…"   About a minute ago   Exited (0) About a minute ago                                               my_workflow
+```
 
 ### Inspect docker network 
 

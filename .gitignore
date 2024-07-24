@@ -2,3 +2,5 @@
 /db
 .env
 docker-compose.yml
+*.old
+mdposit_client

@@ -1,4 +1,3 @@
-
 services:
   loader:
     image: loader_image   # name of loader image
@@ -23,6 +22,15 @@ services:
     working_dir: /data
     volumes:
       - /path/to/workflow/files:/data
+
+  client:
+    image: client_image
+    container_name: my_client
+    platform: linux/amd64
+    build:
+      context: ./client  # folder to search Dockerfile for this image
+    ports:
+      - "8080:80"  # port mapping, be aware that the second port is the same exposed in the client/Dockerfile
 
   rest:
     image: rest_image

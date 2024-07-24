@@ -10,10 +10,11 @@ RUN apk add cmake
 WORKDIR /app
 
 # Increase the Git buffer size
-RUN git init && git config --global http.postBuffer 524288000
+# RUN git init && git config --global http.postBuffer 1048576000
 
 # Clone and install the chemfiles fork customized to support '.bin' format reading and streaming.
-RUN git clone https://github.com/d-beltran/chemfiles && cd chemfiles && mkdir build && cd build && cmake .. && make && make install
+# RUN git clone https://github.com/d-beltran/chemfiles && cd chemfiles && mkdir build && cd build && cmake .. && make && make install
+RUN git clone https://github.com/d-beltran/chemfiles --depth 1 && cd chemfiles && git fetch --unshallow  && mkdir build && cd build && cmake .. && make && make install
 
 # Verify installation
 RUN node --version && npm --version && git --version
