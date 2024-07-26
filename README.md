@@ -9,7 +9,7 @@ In this repository there are all the files needed for executing the different **
 
 Schema of **MDposit - MDDB Docker** web services. Each box in the schema is a **service** encapsulated into a **docker container**. The **services** cover the entire process from the **raw data** to the **website analyses**. See the following figure:
 
-<div style="display:flex;align-items:center;justify-content:space-around;">
+<div align="center" style="display:flex;align-items:center;justify-content:space-around;">
 <img src="readme/schema.png" alt="mdposit" />
 </div>
 
