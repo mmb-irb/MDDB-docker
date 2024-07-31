@@ -36,7 +36,7 @@ DB_AUTHSOURCE=mddb_db
 LISTEN_PORT=3000
 ```
 
-The **DB_SERVER** must be the same name as the **mongodb container_name** in the [**docker-compose.yml**](../docker-compose.yml) file.
+The **DB_SERVER** must be the same name as the **mongodb container_name** in the [**docker-compose.yml**](../docker-compose-git.yml) file.
 
 The **DB_NAME** must be the same used in the [**mongo-init.js**](../mongo-init.js) file.
 
