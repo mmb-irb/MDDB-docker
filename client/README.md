@@ -69,7 +69,7 @@ export default HOST_CONFIG;
 
 Parameters that can be changed in this file:
 
-* api - API URL to query. It must be an absolute URL. Take into account that, depending on the [**Virtual Hosts configuration**](../setup.md#setting-up-virtual-hosts), this URL should look like `http(s)://your_server_ip/api/rest/`.
+* api - API URL to query. It must be an absolute URL. Take into account that, depending on the [**Virtual Hosts configuration**](../readme/setup.md#setting-up-virtual-hosts), this URL should look like `http(s)://your_server_ip/api/rest/`.
 * production - Set if this is production (true) or development (false)
 * global - Set if the API is the global (true) or federated (false)
 * name - Name to be displayed in the sheet header
