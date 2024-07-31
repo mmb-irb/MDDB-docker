@@ -23,6 +23,34 @@ Ie when developing and doing changes in git repo.
     docker-compose up -d
     ```
 
+## Clean docker
+
+When working with Docker, **even after removing images and containers**, Docker can leave behind various unused resources that take up **disk space**. To clean up your system effectively, you can use the following commands:
+
+1. **Remove** unused containers, images and networks:
+
+    Docker has a built-in command to clean up resources that are not in use:
+
+        docker system prune
+
+    This command will prompt you to confirm that you want to remove all unused data. If you want to avoid the prompt, you can add the -f (force) flag:
+
+        docker system prune -f
+
+2. **Cleaning up** the Docker builder **cache**:
+
+    Docker build cache can also take up significant space. You can remove unused build cache:
+
+        docker builder prune
+
+    If you want to remove all build cache, including the cache used by the active build process:
+
+        docker builder prune -a -f
+
+3. **Check disk usage** by Docker objects
+
+        docker system df
+
 ## Execute mongo docker in terminal mode
 
 ```sh
