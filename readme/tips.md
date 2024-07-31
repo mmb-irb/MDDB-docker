@@ -47,7 +47,17 @@ When working with Docker, **even after removing images and containers**, Docker 
 
         docker builder prune -a -f
 
-3. **Check disk usage** by Docker objects
+3. Remove unused **volumes**:
+
+    By default, docker system prune does not remove unused volumes. If you want to remove them as well, you can use:
+
+        docker system prune --volumes
+
+    If you want to avoid the prompt, you can add the -f (force) flag:
+
+        docker system prune --volumes -f
+
+4. **Check disk usage** by Docker objects
 
         docker system df
 
