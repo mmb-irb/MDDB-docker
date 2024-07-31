@@ -52,7 +52,7 @@ http://localhost:8081
 
 Or modify the port 8081 by the one defined as **ports** in the **rest service** of the [**docker-compose.yml**](../docker-compose-git.yml) file. 
 
-If the server has [**apache already configured**](setup#installation-and-configuration-of-apache), go to:
+If the server has [**apache already configured**](setup.md#installation-and-configuration-of-apache), go to:
 
     http(s)://your_server_ip/api/rest/
 
@@ -66,7 +66,7 @@ http://localhost:8080
 
 Or modify the port 8080 by the one defined as **ports** in the **client service** of the [**docker-compose.yml**](../docker-compose-git.yml) file. 
 
-If the server has [**apache already configured**](setup#installation-and-configuration-of-apache), go to:
+If the server has [**apache already configured**](setup.md#installation-and-configuration-of-apache), go to:
 
     http(s)://your_server_ip
 
