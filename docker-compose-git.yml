@@ -48,8 +48,14 @@ services:
   mongodb:
     container_name: my_mongo_container
     image: mongo:6
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ROOT_USER
+      MONGO_INITDB_ROOT_PASSWORD: ROOT_PASSWORD
+    ports:
+      - "27017:27017"
     volumes:
       - /path/to/db:/data/db  # path where the database will be stored (outside the container, in the host machine)
+      - ./mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro # path to the initialization script
     networks:
       - my_network
 

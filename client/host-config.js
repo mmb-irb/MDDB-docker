@@ -12,7 +12,7 @@ const DEFAULT_DESCRIPTION = <>
 // Set default values for every host config fields
 // These values are used to fill missing values
 const DEFAUL_HOST_CONFIGURATION = {
-    api: 'http://localhost:8081/rest/', // be aware that the port is the same of the docker-compose.yml file
+    api: 'http://localhost:8081/rest/', // be aware that the URL must be the same as the one in the server (no relative paths allowed)
     production: false,
     name: 'MDposit',
     favicon: 'mdposit_favicon',
@@ -31,7 +31,7 @@ const DEFAUL_HOST_CONFIGURATION = {
 const HOST_CONFIGURATIONS = {
     // Testing
     'localhost': {
-        api: 'http://localhost:8081/rest/', // be aware that the port is the same of the docker-compose.yml file
+        api: 'http://localhost:8081/rest/', // be aware that the URL must be the same as the one in the server (no relative paths allowed)))
         primaryColor: '#707070', // Grey
     }
 };
