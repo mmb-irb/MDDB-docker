@@ -116,9 +116,9 @@ DB_AUTHSOURCE=mddb_db
 
 The **DB_SERVER** must be the same name as the **mongodb container_name** in the [**docker-compose.yml**](../docker-compose-git.yml) file.
 
-The **DB_NAME** must be the same used in the [**mongo-init.js**](../mongo-init.js) file.
+The **DB_NAME** and **DB_AUTHSOURCE** must be the same used in the [**mongo-init.js**](../mongo-init.js) file.
 
-The credentials **DB_AUTH_USER** and **DB_AUTH_PASSWORD** must be the same defined in the [**mongo-init.js**](../mongo-init.js) file with the **readWrite role**.
+The credentials **DB_AUTH_USER** and **DB_AUTH_PASSWORD** must be the same defined in the [**mongo-init.js**](../mongo-init.js) file with the **readWrite** role.
 
 ## REST API
 
@@ -152,7 +152,7 @@ LISTEN_PORT=3000
 
 The **DB_SERVER** must be the same name as the **mongodb container_name** in the [**docker-compose.yml**](../docker-compose-git.yml) file.
 
-The **DB_NAME** must be the same used in the [**mongo-init.js**](../mongo-init.js) file.
+The **DB_NAME** and **DB_AUTHSOURCE** must be the same used in the [**mongo-init.js**](../mongo-init.js) file.
 
 The credentials **DB_AUTH_USER** and **DB_AUTH_PASSWORD** must be the same defined in the [**mongo-init.js**](../mongo-init.js) file with the **read** role.
 
@@ -213,7 +213,7 @@ services:
       - mongodb
     working_dir: /data
     volumes:
-      - /path/to/loader/files:/data   # path where the loader will look for files
+      - /path/to/loader/files:/data   # path in the host machine where the loader will look for files
     networks:
       - my_network
 
@@ -225,7 +225,7 @@ services:
       context: ./workflow   # folder to search Dockerfile for this image
     working_dir: /data
     volumes:
-      - /path/to/workflow/files:/data
+      - /path/to/workflow/files:/data   # path in the host machine where the workflow will save the data
 
   client:
     image: client_image

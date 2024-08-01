@@ -18,6 +18,26 @@ This instruction will run **docker-compose** in **background** and it will creat
 
 Once the installation is finished, it's time to **execute** and **check** the different services.
 
+### Use workflow
+
+While the **mongodb**, **client** and **rest** containers will remain up, the **workflow** must be called every time is needed.
+
+Workflow **help**:
+
+```sh
+docker-compose run workflow mwf -h
+```
+
+Please read carefully the [**workflow help**](../workflow) as it has an extensive documentation. 
+
+Example of running the workflow downloading an already **loaded trajectory** and saving the results into a **folder** that must be **inside the volume** defined in the [**docker-compose.yml**](../docker-compose-git.yml) file.
+
+```sh
+docker-compose run workflow mwf run -proj <ACCESSION ID> -smp -e clusters energies pockets -dir <FOLDER>
+```
+
+Note that this run excludes clusters, energies and pockets analyses. Adding the -smp flag it only download 10 frames of the trajectory. As this instruction is a test, this will save a lot of computational time.
+
 ### Use loader
 
 While the **mongodb**, **client** and **rest** containers will remain up, the **loader** must be called every time is needed.
