@@ -36,7 +36,7 @@ Example of running the workflow downloading an already **loaded trajectory** and
 docker-compose run workflow mwf run -proj <ACCESSION ID> -smp -e clusters energies pockets -dir <FOLDER>
 ```
 
-Note that this run excludes clusters, energies and pockets analyses. Adding the -smp flag it only download 10 frames of the trajectory. As this instruction is a test, this will save a lot of computational time.
+Note that this run excludes clusters, energies and pockets analyses. Adding the -smp flag it downloads only 10 frames of the trajectory. As this instruction is a test, this will save a lot of computational time.
 
 ### Use loader
 
