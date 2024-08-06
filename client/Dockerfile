@@ -1,17 +1,21 @@
 # Use nginx Alpine Linux as base image
 FROM nginx:alpine
 
-# Copy the built React app to nginx
-# COPY build /usr/share/nginx/html
+# Define an argument that can be passed from docker-compose
+ARG NODE_ID
+
+# Set the environment variable
+ENV NODE_ID=$NODE_ID
 
 # Define working dir
 WORKDIR /app
 
-# Clone mdposit-client-build repo
-RUN git clone https://mmb.irbbarcelona.org/gitlab/gbayarri/mdposit-client-build
+# Download and unzip mdposit-client-build repo
+RUN wget https://mmb.irbbarcelona.org/gitlab/gbayarri/mdposit-client-build/-/raw/main/$NODE_ID/build.zip
+RUN unzip build.zip
 
 # Copy the built React app to nginx
-COPY /app/mdposit-client-build/build /usr/share/nginx/html
+COPY build /usr/share/nginx/html
 
 # Expose port 80
 EXPOSE 80

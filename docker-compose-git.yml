@@ -29,6 +29,8 @@ services:
     platform: linux/amd64
     build:
       context: ./client  # folder to search Dockerfile for this image
+      args:
+        NODE_ID: NODE  # Pass here the build argument with the node id
     ports:
       - "8080:80"  # port mapping, be aware that the second port is the same exposed in the client/Dockerfile
 

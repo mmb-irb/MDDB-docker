@@ -29,7 +29,7 @@ The **website client** is a **React App**.
 
 For this project, the following repo has been used:
 
-https://mmb.irbbarcelona.org/gitlab/d.beltran.anadon/mdposit_client
+https://mmb.irbbarcelona.org/gitlab/gbayarri/mdposit-client-build
 
 ### Data loader
 
