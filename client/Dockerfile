@@ -15,7 +15,7 @@ RUN wget https://mmb.irbbarcelona.org/gitlab/gbayarri/mdposit-client-build/-/raw
 RUN unzip build.zip
 
 # Copy the built React app to nginx
-COPY build /usr/share/nginx/html
+RUN cp -r /app/build/* /usr/share/nginx/html
 
 # Expose port 80
 EXPOSE 80
