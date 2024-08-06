@@ -8,7 +8,7 @@ https://mmb.irbbarcelona.org/gitlab/gbayarri/mdposit-client-build
 
 ## Dockerfile
 
-This Dockerfile is used taking as a starting point the **build** of the client. It downloads the **build.zip** file corresponding to the **desired node**, it unzips into the **build folder** and, finally, it copies this folder into a **nginx** container and exposes the port 80.
+This Dockerfile is used taking as a starting point the **build** of the client. It downloads the **build.zip** file corresponding to the **desired node**, it unzips into the **build folder** and, finally, it copies the content of this folder into a **nginx** container and exposes the port 80.
 
 ```Dockerfile
 # Use nginx Alpine Linux as base image
@@ -28,7 +28,7 @@ RUN wget https://mmb.irbbarcelona.org/gitlab/gbayarri/mdposit-client-build/-/raw
 RUN unzip build.zip
 
 # Copy the built React app to nginx
-COPY build /usr/share/nginx/html
+RUN cp -r /app/build/* /usr/share/nginx/html
 
 # Expose port 80
 EXPOSE 80
