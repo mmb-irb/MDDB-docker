@@ -2,10 +2,19 @@
 
 There are several **configuration files** that must be created and modified. As almost each of the different **docker blocks** of the project have **one or more** configuration files, this section is divided by these **blocks**:
 
+* [Client](#client)
 * [Loader](#loader)
 * [REST API](#rest-api)
 * [MongoDB](#mongodb)
 * [Docker Compose](#docker-compose)
+
+## Client
+
+The client has its **own repository** with the builds for each node:
+
+https://mmb.irbbarcelona.org/gitlab/gbayarri/mdposit-client-build
+
+All the instructions for creating a **new build** are in this repository.
 
 ## Loader
 
