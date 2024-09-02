@@ -40,4 +40,5 @@ RUN npm install pm2 -g
 EXPOSE 3000
 
 # Serve the app
-CMD ["pm2-runtime", "start", "index.js", "-i", "4", "-n", "MDposit_API", "--node-args=", "\"--experimental-worker\""]
+#CMD ["pm2-runtime", "start", "index.js", "-i", "4", "-n", "MDposit_API", "--node-args=", "\"--experimental-worker\""]
+CMD ["pm2-runtime", "start", "index.js", "-n", "MDposit_API", "--node-args=", "\"--experimental-worker\""]

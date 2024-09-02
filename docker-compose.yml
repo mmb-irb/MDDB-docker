@@ -1,0 +1,132 @@
+services:
+  loader:
+    image: loader_image   # name of loader image
+    platform: linux/amd64
+    build:
+      context: ./loader   # folder to search Dockerfile for this image
+    depends_on:
+      - mongodb
+    volumes:
+      - loader_volume:/data   # path where the loader will look for files
+    networks:
+      - my_network
+    deploy:
+      resources:
+        limits:
+          cpus: ${LOADER_CPU_LIMIT}   # Specify the limit number of CPUs
+          memory: ${LOADER_MEMORY_LIMIT}   # Specify the limit memory
+        reservations:
+          cpus: ${LOADER_CPU_RESERVATION}   # Specify the reserved number of CPUs
+          memory: ${LOADER_MEMORY_RESERVATION}   # Specify the reserved memory
+      restart_policy:
+        condition: none  # Do not restart automatically
+
+  workflow:
+    image: workflow_image
+    platform: linux/amd64
+    build:
+      context: ./workflow   # folder to search Dockerfile for this image
+    volumes:
+      - workflow_volume:/data  # path where the workflow will look for files
+    deploy:
+      resources:
+        limits:
+          cpus: ${WORKFLOW_CPU_LIMIT}   # Specify the limit number of CPUs
+          memory: ${WORKFLOW_MEMORY_LIMIT}   # Specify the limit memory
+        reservations:
+          cpus: ${WORKFLOW_CPU_RESERVATION}   # Specify the reserved number of CPUs
+          memory: ${WORKFLOW_MEMORY_RESERVATION}   # Specify the reserved memory
+      restart_policy:
+        condition: none  # Do not restart automatically
+
+  client:
+    image: client_image
+    platform: linux/amd64
+    build:
+      context: ./client  # folder to search Dockerfile for this image
+      args:
+        NODE_ID: ${NODE}  # Pass here the build argument with the node id
+    ports:
+      - "8080:80"  # port mapping, be aware that the second port is the same exposed in the client/Dockerfile
+    deploy:
+      replicas: 2   # Specify the number of replicas for Docker Swarm
+      resources:
+        limits:
+          cpus: ${CLIENT_CPU_LIMIT}   # Specify the limit number of CPUs
+          memory: ${CLIENT_MEMORY_LIMIT}   # Specify the limit memory
+        reservations:
+          cpus: ${CLIENT_CPU_RESERVATION}   # Specify the reserved number of CPUs
+          memory: ${CLIENT_MEMORY_RESERVATION}   # Specify the reserved memory
+      restart_policy:
+        condition: any   # Restart always
+      update_config:
+        order: start-first  # Priority over other services
+
+  rest:
+    image: rest_image
+    platform: linux/amd64
+    build:
+      context: ./rest   # folder to search Dockerfile for this image
+    depends_on:
+      - mongodb
+    ports:
+      - "8081:3000"   # port mapping, be aware that the second port is the same exposed in the rest/Dockerfile
+    networks:
+      - my_network
+    deploy:
+      replicas: 4   # Specify the number of replicas for Docker Swarm
+      resources:
+        limits:
+          cpus: ${REST_CPU_LIMIT}   # Specify the limit number of CPUs
+          memory: ${REST_MEMORY_LIMIT}   # Specify the limit memory
+        reservations:
+          cpus: ${REST_CPU_RESERVATION}   # Specify the reserved number of CPUs
+          memory: ${REST_MEMORY_RESERVATION}   # Specify the reserved memory
+      restart_policy:
+        condition: any   # Restart always
+      update_config:
+        order: start-first  # Priority over other services
+
+  mongodb:
+    image: mongo:6
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD}
+    ports:
+      - "27017:27017"
+    volumes:
+      - ${DB_VOLUME_PATH}:/data/db  # path where the database will be stored (outside the container, in the host machine)
+      - ./mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro # path to the initialization script
+    networks:
+      - my_network
+    deploy:
+      replicas: 1   # Specify the number of replicas for Docker Swarm
+      resources:
+        limits:
+          cpus: ${DB_CPU_LIMIT}    # Specify the limit number of CPUs
+          memory: ${DB_MEMORY_LIMIT}   # Specify the limit memory
+        reservations:
+          cpus: ${DB_CPU_RESERVATION}   # Specify the reserved number of CPUs
+          memory: ${DB_MEMORY_RESERVATION}   # Specify the reserved memory
+      restart_policy:
+        condition: on-failure   # Restart only on failure
+
+volumes:
+  loader_volume:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${LOADER_VOLUME_PATH}   # bind the volume to LOADER_VOLUME_PATH on the host
+  workflow_volume:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${WORKFLOW_VOLUME_PATH}   # bind the volume to WORKFLOW_VOLUME_PATH on the host
+
+networks:
+  my_network: 
+    name: my_network    # network name
+    driver: overlay
+    attachable: true

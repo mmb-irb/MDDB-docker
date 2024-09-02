@@ -1,7 +1,6 @@
 .DS_Store
 /db
 .env
-docker-compose.yml
 *.old
 client/mdposit_client
 client/build
