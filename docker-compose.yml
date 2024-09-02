@@ -1,7 +1,6 @@
 services:
   loader:
     image: loader_image   # name of loader image
-    platform: linux/amd64
     build:
       context: ./loader   # folder to search Dockerfile for this image
     depends_on:
@@ -23,7 +22,6 @@ services:
 
   workflow:
     image: workflow_image
-    platform: linux/amd64
     build:
       context: ./workflow   # folder to search Dockerfile for this image
     volumes:
@@ -41,7 +39,6 @@ services:
 
   client:
     image: client_image
-    platform: linux/amd64
     build:
       context: ./client  # folder to search Dockerfile for this image
       args:
@@ -64,7 +61,6 @@ services:
 
   rest:
     image: rest_image
-    platform: linux/amd64
     build:
       context: ./rest   # folder to search Dockerfile for this image
     depends_on:
