@@ -71,11 +71,13 @@ First off, all the **environment files** must be created and updated as well as 
 
 [**Click here for seeing the detailed instructions for setting up the Configuration Files**](readme/config.md)
 
-### Execute Docker Compose
+### Execute Docker Swarm
 
-Once the Virtual Machine has all the **dependencies installed** and all the **config** files are **set up**, it's the moment of executing the **Docker Compose** service. **Docker Compose** is a tool for defining and running **multi-container** applications. 
+Once the Virtual Machine has all the **dependencies installed** and all the **config** files are **set up**, it's the moment of executing the **Docker Swarm** service. **Docker Swarm** is a **container orchestration** tool for **clustering** and **scheduling** Docker containers. 
 
-[**Click here for seeing the detailed instructions for executing Docker Compose**](readme/docker-compose.md)
+[**Click here for seeing the detailed instructions for executing Docker Swarm**](readme/docker-swarm.md)
+
+ or [Click here](readme/docker-compose.md) for the detailed instructions for executing Docker Compose.
 
 ### Tips
 

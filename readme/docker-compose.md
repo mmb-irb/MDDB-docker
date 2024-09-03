@@ -14,6 +14,8 @@ docker-compose up -d
 
 This instruction will run **docker-compose** in **background** and it will create the **services** described in the first section.
 
+> NOTE: **From July 2024 onwards**, the instruction for docker compose in **mac** is without hyphen, so from now on, `docker-compose up -d` is `docker compose up -d` when executing in **macOS**.
+
 ## Execute services
 
 Once the installation is finished, it's time to **execute** and **check** the different services.

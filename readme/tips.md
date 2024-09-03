@@ -4,6 +4,8 @@ In this section there are some interesting **tips** that can be useful for **deb
 
 ## Avoid cache for docker-compose
 
+> NOTE: **From July 2024 onwards**, the instruction for docker compose in **mac** is without hyphen, so from now on, `docker-compose up -d` is `docker compose up -d` when executing in **macOS**.
+
 Ie when developing and doing changes in git repo.
 
 1. Stop all containers and remove all images: 
@@ -61,10 +63,24 @@ When working with Docker, **even after removing images and containers**, Docker 
 
         docker system df
 
+## Scale a service:
+
+Add two more replicas to my_stack_website:
+
+```sh
+docker service scale my_stack_website=4
+```
+
+## Check service tasks
+
+```sh
+docker service ps my_stack_mongodb
+```
+
 ## Execute mongo docker in terminal mode
 
 ```sh
-docker exec -it my_mongo_container bash
+docker exec -it <mongo_container_ID> bash
 ```
 
 And then: 
@@ -77,7 +93,7 @@ For entering the database in **terminal mode**. Take into account that, for **ch
 
 Switch to **mddb_db** database (or the name defined in the [**mongo-init.js**](../mongo-init.js) file):
 
-    use mmddb_db
+    use mddb_db
 
 **Authenticate** with one of the **users** defined in the [**mongo-init.js**](../mongo-init.js) file:
 
@@ -87,7 +103,7 @@ Execute some mongo shell instruction:
 
     show collections
 
-Additionally, users are able to access the database as a **root/admin** user, as defined in the [**docker-compose.yml**](../docker-compose-git.yml) file:
+Additionally, users are able to access the database as a **root/admin** user, as defined in the [**docker-compose.yml**](../docker-compose.yml) file:
 
     mongosh --username <ROOT_USER> --password <ROOT_PASSWORD>
 
