@@ -4,10 +4,10 @@
 
  The Set up is divided into two parts: 
 
-* [Installation of docker and docker compose](#installation-of-docker-and-docker-compose)
-* [Installation and configuration of apache](#installation-and-configuration-of-apache)
+* [Installation of Docker and Docker Compose](#installation-of-docker-and-docker-compose)
+* [Installation and configuration of Apache](#installation-and-configuration-of-apache)
 
-## Installation of docker and docker compose
+## Installation of Docker and Docker Compose
 
 ### Docker installation
 
@@ -95,7 +95,7 @@ You need to download the **specific version** of Docker Compose. You can find th
 
     docker-compose --version
 
-## Installation and configuration of apache
+## Installation and configuration of Apache
 
 ### Apache installation
 

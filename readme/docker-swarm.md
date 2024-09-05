@@ -4,9 +4,9 @@
 
 ## Build services
 
-For building the services via **docker swarm**, please execute the following instruction from the same folder where the [**docker-compose.yml**](../docker-compose.yml) file is:
+For building the services via **Docker Swarm**, please execute the following instruction from the same folder where the [**docker-compose.yml**](../docker-compose.yml) file is:
 
-First off, go to the root of the project. Then, init **docker swarm**:
+First off, go to the root of the project. Then, init **Docker Swarm**:
 
 ```sh
 docker swarm init
@@ -18,15 +18,15 @@ docker swarm init
 docker swarm init --advertise-addr <IP_ADDRESS>
 ```
 
-In order to execute the **long-term** tasks in **Docker Swarm** and the **one-off tasks**, such as the **loader** in this proof of concept, in **Docker Compose**, the **network** is declared as **external** in the **docker-compose.yml** file, so it must be created before the `docker-compose build` and the `docker stak deploy`:
+In order to execute the **long-term** tasks in **Docker Swarm** and the **one-off tasks**, such as the **loader** or the **workflow**, in **Docker Compose**, the **network** is declared as **external** in the **docker-compose.yml** file, so it must be created before the `docker-compose build` and the `docker stak deploy`:
 
 ```sh
 docker network create --driver overlay --attachable my_network
 ```
 
-> NOTE: **From July 2024 onwards**, the instruction for docker compose in **mac** is without hyphen, so from now on, `docker-compose build` is `docker compose build` when executing in **macOS**.
+> NOTE: **From July 2024 onwards**, the instruction for Docker Compose in **mac** is without hyphen, so from now on, `docker-compose build` is `docker compose build` when executing in **macOS**.
 
-For building the services via **docker compose**, please execute the following instruction:
+For building the services via **Docker Compose**, please execute the following instruction:
 
 ```sh
 docker-compose build
@@ -57,7 +57,7 @@ Once the installation is finished, it's time to **execute** and **check** the di
 
 ### Use workflow
 
-While the **mongodb**, **client** and **rest** containers will remain up, the **workflow** must be called every time is needed.
+While the **mongodb**, **client** and **rest** containers will remain up, the **workflow** must be called every time is needed. As it is a **one-off task**, **Docker Compose** is used for running it.
 
 Workflow **help**:
 
@@ -77,7 +77,7 @@ Note that this run excludes clusters, energies and pockets analyses. Adding the 
 
 ### Use loader
 
-While the **mongodb**, **client** and **rest** containers will remain up, the **loader** must be called every time is needed.
+While the **mongodb**, **client** and **rest** containers will remain up, the **loader** must be called every time is needed. As it is a **one-off task**, **Docker Compose** is used for running it.
 
 **List** database documents:
 

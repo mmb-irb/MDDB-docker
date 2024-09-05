@@ -6,7 +6,7 @@ Compose **simplifies** the control of your entire application stack, making it e
 
 ## Build services
 
-For building the services via **docker compose**, please execute the following instruction from the same folder where the [**docker-compose.yml**](../docker-compose-git.yml) file is:
+For building the services via **Docker Compose**, please execute the following instruction from the same folder where the [**docker-compose.yml**](../docker-compose-git.yml) file is:
 
 ```sh
 docker-compose up -d
@@ -14,7 +14,7 @@ docker-compose up -d
 
 This instruction will run **docker-compose** in **background** and it will create the **services** described in the first section.
 
-> NOTE: **From July 2024 onwards**, the instruction for docker compose in **mac** is without hyphen, so from now on, `docker-compose up -d` is `docker compose up -d` when executing in **macOS**.
+> NOTE: **From July 2024 onwards**, the instruction for Docker Compose in **mac** is without hyphen, so from now on, `docker-compose up -d` is `docker compose up -d` when executing in **macOS**.
 
 ## Execute services
 

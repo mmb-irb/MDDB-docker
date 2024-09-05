@@ -4,7 +4,7 @@ In this section there are some interesting **tips** that can be useful for **deb
 
 ## Avoid cache for docker-compose
 
-> NOTE: **From July 2024 onwards**, the instruction for docker compose in **mac** is without hyphen, so from now on, `docker-compose up -d` is `docker compose up -d` when executing in **macOS**.
+> NOTE: **From July 2024 onwards**, the instruction for Docker Compose in **mac** is without hyphen, so from now on, `docker-compose up -d` is `docker compose up -d` when executing in **macOS**.
 
 Ie when developing and doing changes in git repo.
 
