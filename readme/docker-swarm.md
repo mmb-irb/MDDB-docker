@@ -18,13 +18,19 @@ docker swarm init
 docker swarm init --advertise-addr <IP_ADDRESS>
 ```
 
+In order to execute the **long-term** tasks in **Docker Swarm** and the **one-off tasks**, such as the **loader** in this proof of concept, in **Docker Compose**, the **network** is declared as **external** in the **docker-compose.yml** file, so it must be created before the `docker-compose build` and the `docker stak deploy`:
+
+```sh
+docker network create --driver overlay --attachable my_network
+```
+
+> NOTE: **From July 2024 onwards**, the instruction for docker compose in **mac** is without hyphen, so from now on, `docker-compose up -d` is `docker compose up -d` when executing in **macOS**.
+
 For building the services via **docker compose**, please execute the following instruction:
 
 ```sh
 docker-compose build
 ```
-
-> NOTE: **From July 2024 onwards**, the instruction for docker compose in **mac** is without hyphen, so from now on, `docker-compose up -d` is `docker compose up -d` when executing in **macOS**.
 
 Export environment variables defined in [**global .env file**](config.md#global) and deploy docker stack:
 
@@ -56,7 +62,7 @@ While the **mongodb**, **client** and **rest** containers will remain up, the **
 Workflow **help**:
 
 ```sh
-docker-compose run workflow mwf -h
+docker-compose run --rm workflow mwf -h
 ```
 
 Please read carefully the [**workflow help**](../workflow) as it has an extensive documentation. 
@@ -64,7 +70,7 @@ Please read carefully the [**workflow help**](../workflow) as it has an extensiv
 Example of running the workflow downloading an already **loaded trajectory** and saving the results into a **folder** that must be already created inside **WORKFLOW_VOLUME_PATH** defined in [**global .env**](config.md#global).
 
 ```sh
-docker run --rm -it --mount source=my_stack_workflow_volume,target=/data --network my_network workflow_image mwf run -proj <ACCESSION ID> -smp -e clusters energies pockets -dir /data/<folder>
+docker-compose run --rm workflow mwf run -proj <ACCESSION ID> -smp -e clusters energies pockets -dir /data/<folder>
 ```
 
 Note that this run excludes clusters, energies and pockets analyses. Adding the -smp flag it downloads only 10 frames of the trajectory. As this instruction is a test, this will save a lot of computational time.
@@ -76,13 +82,13 @@ While the **mongodb**, **client** and **rest** containers will remain up, the **
 **List** database documents:
 
 ```sh
-docker container run --rm -it --network my_network loader_image list
+docker-compose run --rm loader list
 ```
 
 **Load** documents to database:
 
 ```sh
-docker run --rm -it --mount source=my_stack_loader_volume,target=/data --network my_network loader_image load /data/<trajectory_dir>
+docker-compose run --rm loader load /data/<trajectory_dir>
 ```
 
 Take into account that **trajectory_dir** must be inside **LOADER_VOLUME_PATH** defined in [**global .env**](config.md#global).
@@ -90,7 +96,7 @@ Take into account that **trajectory_dir** must be inside **LOADER_VOLUME_PATH** 
 **Remove** database document:
 
 ```sh
-docker container run --rm -it --network my_network loader_image delete <project_id>
+docker-compose run --rm loader delete <project_id>
 ```
 
 ### Check rest
@@ -121,7 +127,7 @@ If the server has [**apache already configured**](setup.md#installation-and-conf
 
     http(s)://your_server_ip
 
-## Stop / start services
+## Stop services
 
 Remove stack:
 
@@ -144,13 +150,13 @@ Check that at least the mongo, rest and client containers are up & running:
 ```sh
 $ docker ps -a
 CONTAINER ID   IMAGE                 COMMAND                  CREATED        STATUS        PORTS       NAMES
-XXXXXXXXXXXX   rest_image:latest     "pm2-runtime start i…"   20 hours ago   Up 20 hours   3000/tcp    my_stack_rest.3.<ID>
-XXXXXXXXXXXX   rest_image:latest     "pm2-runtime start i…"   20 hours ago   Up 20 hours   3000/tcp    my_stack_rest.1.<ID>
-XXXXXXXXXXXX   mongo:6               "docker-entrypoint.s…"   20 hours ago   Up 20 hours   27017/tcp   my_stack_mongodb.1.<ID>
-XXXXXXXXXXXX   rest_image:latest     "pm2-runtime start i…"   20 hours ago   Up 20 hours   3000/tcp    my_stack_rest.4.<ID>
-XXXXXXXXXXXX   rest_image:latest     "pm2-runtime start i…"   20 hours ago   Up 20 hours   3000/tcp    my_stack_rest.2.<ID>
-XXXXXXXXXXXX   client_image:latest   "/docker-entrypoint.…"   20 hours ago   Up 20 hours   80/tcp      my_stack_client.1.<ID>
-XXXXXXXXXXXX   client_image:latest   "/docker-entrypoint.…"   20 hours ago   Up 20 hours   80/tcp      my_stack_client.2.<ID>
+<ID>           rest_image:latest     "pm2-runtime start i…"   20 hours ago   Up 20 hours   3000/tcp    my_stack_rest.3.<ID>
+<ID>           rest_image:latest     "pm2-runtime start i…"   20 hours ago   Up 20 hours   3000/tcp    my_stack_rest.1.<ID>
+<ID>           mongo:6               "docker-entrypoint.s…"   20 hours ago   Up 20 hours   27017/tcp   my_stack_mongodb.1.<ID>
+<ID>           rest_image:latest     "pm2-runtime start i…"   20 hours ago   Up 20 hours   3000/tcp    my_stack_rest.4.<ID>
+<ID>           rest_image:latest     "pm2-runtime start i…"   20 hours ago   Up 20 hours   3000/tcp    my_stack_rest.2.<ID>
+<ID>           client_image:latest   "/docker-entrypoint.…"   20 hours ago   Up 20 hours   80/tcp      my_stack_client.1.<ID>
+<ID>           client_image:latest   "/docker-entrypoint.…"   20 hours ago   Up 20 hours   80/tcp      my_stack_client.2.<ID>
 ```
 
 ### Inspect docker network 
@@ -247,4 +253,12 @@ It should show something like:
         ]
     }
 ]
+```
+
+### Docker stats
+
+Check resources consumption for all running containers:
+
+```sh
+docker stats
 ```

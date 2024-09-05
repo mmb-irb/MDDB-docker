@@ -19,6 +19,7 @@ An `.env` file must be created in the **root** of the project. The file [**.env.
 
 | key              | value   | description                                     |
 | ---------------- | ------- | ----------------------------------------------- |
+| DOCKER_DEFAULT_PLATFORM         | string  | default platform (architecture and operating system), ie linux/amd64                               |
 | NODE         | string  | node identifier to deploy                                     |
 | LOADER_VOLUME_PATH         | string  | path where the loader will look for files                                        |
 | LOADER_CPU_LIMIT      | string  | loader limit number of CPUs                                    |
@@ -189,13 +190,12 @@ services:
     image: loader_image   # name of loader image
     build:
       context: ./loader   # folder to search Dockerfile for this image
-    depends_on:
-      - mongodb
     volumes:
       - loader_volume:/data   # path where the loader will look for files
     networks:
       - my_network
     deploy:
+      replicas: 0  # Ensure this service is not deployed by default as it is a one-time task
       resources:
         limits:
           cpus: ${LOADER_CPU_LIMIT}   # Specify the limit number of CPUs
@@ -203,8 +203,6 @@ services:
         reservations:
           cpus: ${LOADER_CPU_RESERVATION}   # Specify the reserved number of CPUs
           memory: ${LOADER_MEMORY_RESERVATION}   # Specify the reserved memory
-      restart_policy:
-        condition: none  # Do not restart automatically
 
   workflow:
     image: workflow_image
@@ -213,6 +211,7 @@ services:
     volumes:
       - workflow_volume:/data  # path where the workflow will look for files
     deploy:
+      replicas: 0  # Ensure this service is not deployed by default as it is a one-time task
       resources:
         limits:
           cpus: ${WORKFLOW_CPU_LIMIT}   # Specify the limit number of CPUs
@@ -220,8 +219,6 @@ services:
         reservations:
           cpus: ${WORKFLOW_CPU_RESERVATION}   # Specify the reserved number of CPUs
           memory: ${WORKFLOW_MEMORY_RESERVATION}   # Specify the reserved memory
-      restart_policy:
-        condition: none  # Do not restart automatically
 
   client:
     image: client_image
@@ -309,9 +306,7 @@ volumes:
 
 networks:
   my_network: 
-    name: my_network    # network name
-    driver: overlay
-    attachable: true
+    external: true   # Use an external network
 ```
 
 ### docker-compose.yml file for Docker Compose
