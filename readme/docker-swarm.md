@@ -24,7 +24,7 @@ In order to execute the **long-term** tasks in **Docker Swarm** and the **one-of
 docker network create --driver overlay --attachable my_network
 ```
 
-> NOTE: **From July 2024 onwards**, the instruction for docker compose in **mac** is without hyphen, so from now on, `docker-compose up -d` is `docker compose up -d` when executing in **macOS**.
+> NOTE: **From July 2024 onwards**, the instruction for docker compose in **mac** is without hyphen, so from now on, `docker-compose build` is `docker compose build` when executing in **macOS**.
 
 For building the services via **docker compose**, please execute the following instruction:
 
