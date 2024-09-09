@@ -261,4 +261,12 @@ Check resources consumption for all running containers:
 
 ```sh
 docker stats
+CONTAINER ID   NAME                                           CPU %     MEM USAGE / LIMIT   MEM %     NET I/O           BLOCK I/O     PIDS
+<ID>           my_stack_mongodb.1.<ID>                        0.44%     105.2MiB / 8GiB     1.28%     43.1MB / 247MB    0B / 499MB    50
+<ID>           my_stack_rest.1.<ID>                           0.26%     73.03MiB / 10GiB    0.71%     59.3MB / 29.9MB   0B / 24.6kB   22
+<ID>           my_stack_rest.3.<ID>                           0.22%     70.09MiB / 10GiB    0.68%     50.2MB / 22.5MB   0B / 24.6kB   22
+<ID>           my_stack_rest.2.<ID>                           0.33%     70.78MiB / 10GiB    0.69%     60.4MB / 29.5MB   0B / 24.6kB   22
+<ID>           my_stack_rest.4.<ID>                           0.30%     71.33MiB / 10GiB    0.70%     77.1MB / 49.5MB   0B / 24.6kB   22
+<ID>           my_stack_client.1.<ID>                         0.00%     13.01MiB / 8GiB     0.16%     613kB / 34.9MB    0B / 12.3kB   17
+<ID>           my_stack_client.2.<ID>                         0.00%     12.8MiB / 8GiB      0.16%     620kB / 36.2MB    0B / 12.3kB   17
 ```
