@@ -6,9 +6,9 @@ services:
     volumes:
       - loader_volume:/data   # path where the loader will look for files
     networks:
-      - my_network
+      - data_network
     deploy:
-      replicas: 0  # Ensure this service is not deployed by default as it is a one-time task
+      replicas: ${LOADER_REPLICAS}  # Ensure this service is not deployed by default as it is a one-time task
       resources:
         limits:
           cpus: ${LOADER_CPU_LIMIT}   # Specify the limit number of CPUs
@@ -24,7 +24,7 @@ services:
     volumes:
       - workflow_volume:/data  # path where the workflow will look for files
     deploy:
-      replicas: 0  # Ensure this service is not deployed by default as it is a one-time task
+      replicas: ${WORKFLOW_REPLICAS}  # Ensure this service is not deployed by default as it is a one-time task
       resources:
         limits:
           cpus: ${WORKFLOW_CPU_LIMIT}   # Specify the limit number of CPUs
@@ -42,7 +42,7 @@ services:
     ports:
       - "8080:80"  # port mapping, be aware that the second port is the same exposed in the client/Dockerfile
     deploy:
-      replicas: 2   # Specify the number of replicas for Docker Swarm
+      replicas: ${CLIENT_REPLICAS}   # Specify the number of replicas for Docker Swarm
       resources:
         limits:
           cpus: ${CLIENT_CPU_LIMIT}   # Specify the limit number of CPUs
@@ -64,9 +64,9 @@ services:
     ports:
       - "8081:3000"   # port mapping, be aware that the second port is the same exposed in the rest/Dockerfile
     networks:
-      - my_network
+      - data_network
     deploy:
-      replicas: 4   # Specify the number of replicas for Docker Swarm
+      replicas: ${REST_REPLICAS}   # Specify the number of replicas for Docker Swarm
       resources:
         limits:
           cpus: ${REST_CPU_LIMIT}   # Specify the limit number of CPUs
@@ -90,9 +90,9 @@ services:
       - ${DB_VOLUME_PATH}:/data/db  # path where the database will be stored (outside the container, in the host machine)
       - ./mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro # path to the initialization script
     networks:
-      - my_network
+      - data_network
     deploy:
-      replicas: 1   # Specify the number of replicas for Docker Swarm
+      replicas: ${DB_REPLICAS}   # Specify the number of replicas for Docker Swarm
       resources:
         limits:
           cpus: ${DB_CPU_LIMIT}    # Specify the limit number of CPUs
@@ -102,6 +102,66 @@ services:
           memory: ${DB_MEMORY_RESERVATION}   # Specify the reserved memory
       restart_policy:
         condition: on-failure   # Restart only on failure
+
+  minio:
+    image: minio/minio
+    environment:
+      - MINIO_ROOT_USER=${MINIO_ROOT_USER}
+      - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD}
+    volumes:
+      - minio_volume:/data   # path where minio will store the data in object storage format (outside the container, in the host machine)
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    networks:
+      - vre_network
+    deploy:
+      replicas: ${MINIO_REPLICAS}   # Specify the number of replicas for Docker Swarm
+      resources:
+        limits:
+          cpus: ${MINIO_CPU_LIMIT}    # Specify the limit number of CPUs
+          memory: ${MINIO_MEMORY_LIMIT}   # Specify the limit memory
+        reservations:
+          cpus: ${MINIO_CPU_RESERVATION}   # Specify the reserved number of CPUs
+          memory: ${MINIO_MEMORY_RESERVATION}   # Specify the reserved memory
+      restart_policy:
+        condition: on-failure   # Restart only on failure
+    command: server /data --console-address ":9001"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  vre:
+    image: vre_image 
+    build:
+      context: ./vre
+      args:
+        MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+        MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    volumes:
+      - vre_volume:/data
+    ports:
+      - "8082:3001"
+    networks:
+      - vre_network
+    depends_on:
+      - minio
+          #condition: service_healthy
+    deploy:
+      replicas: ${VRE_REPLICAS}   # Specify the number of replicas for Docker Swarm
+      resources:
+        limits:
+          cpus: ${VRE_CPU_LIMIT}   # Specify the limit number of CPUs
+          memory: ${VRE_MEMORY_LIMIT}   # Specify the limit memory
+        reservations:
+          cpus: ${VRE_CPU_RESERVATION}   # Specify the reserved number of CPUs
+          memory: ${VRE_MEMORY_RESERVATION}   # Specify the reserved memory
+      restart_policy:
+        condition: any   # Restart always
+      update_config:
+        order: start-first  # Priority over other services
 
 volumes:
   loader_volume:
@@ -116,7 +176,21 @@ volumes:
       type: none
       o: bind
       device: ${WORKFLOW_VOLUME_PATH}   # bind the volume to WORKFLOW_VOLUME_PATH on the host
+  minio_volume:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${MINIO_VOLUME_PATH}   # bind the volume to MINIO_VOLUME_PATH on the host
+  vre_volume:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${VRE_VOLUME_PATH}   # bind the volume to VRE_VOLUME_PATH on the host
 
 networks:
-  my_network: 
+  data_network: 
+    external: true   # Use an external network
+  vre_network: 
     external: true   # Use an external network

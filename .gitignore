@@ -1,5 +1,6 @@
 .DS_Store
 /db
+/minio
 .env
 *.old
 client/mdposit_client
