@@ -112,7 +112,7 @@ services:
       - minio_volume:/data   # path where minio will store the data in object storage format (outside the container, in the host machine)
     ports:
       - "9000:9000"
-      - "9001:9001"
+      - "9001:9001"   # port for the minio console (only for development)
     networks:
       - vre_network
     deploy:
@@ -126,8 +126,8 @@ services:
           memory: ${MINIO_MEMORY_RESERVATION}   # Specify the reserved memory
       restart_policy:
         condition: on-failure   # Restart only on failure
-    command: server /data --console-address ":9001"
-    healthcheck:
+    command: server /data --console-address ":9001"   # Command to run the minio console (only for development)
+    healthcheck:  # Health check for the minio service
       test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
       interval: 30s
       timeout: 10s
@@ -148,7 +148,6 @@ services:
       - vre_network
     depends_on:
       - minio
-          #condition: service_healthy
     deploy:
       replicas: ${VRE_REPLICAS}   # Specify the number of replicas for Docker Swarm
       resources:

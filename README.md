@@ -15,6 +15,14 @@ Schema of **MDposit - MDDB Docker** web services. Each box in the schema is a **
 
 ## Services description
 
+### VRE
+
+The **VRE** is a **Nuxt** application.
+
+For this project, the following repo has been used:
+
+https://mmb.irbbarcelona.org/gitlab/gbayarri/mddb-vre
+
 ### REST API
 
 The **REST API** is a **NodeJS + Express** application.
@@ -54,6 +62,12 @@ The database used is **mongodb** inside a docker container:
 https://github.com/docker-library/mongo
 
 For this project, the chosen version of **mongo** is **6**.
+
+### Object Storage
+
+In order to provide the users a way to **transfer big files** that can't be uploaded via web, a docker **MinIO** server is integrated into the infrastructure.
+
+https://hub.docker.com/r/minio/minio
 
 ## Installation
 

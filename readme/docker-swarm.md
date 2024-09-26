@@ -18,10 +18,11 @@ docker swarm init
 docker swarm init --advertise-addr <IP_ADDRESS>
 ```
 
-In order to execute the **long-term** tasks in **Docker Swarm** and the **one-off tasks**, such as the **loader** or the **workflow**, in **Docker Compose**, the **network** is declared as **external** in the **docker-compose.yml** file, so it must be created before the `docker-compose build` and the `docker stak deploy`:
+In order to execute the **long-term** tasks in **Docker Swarm** and the **one-off tasks**, such as the **loader** or the **workflow**, in **Docker Compose**, the **networks** are declared as **external** in the **docker-compose.yml** file, so they must be created before the `docker-compose build` and the `docker stak deploy`:
 
 ```sh
-docker network create --driver overlay --attachable my_network
+docker network create --driver overlay --attachable data_network
+docker network create --driver overlay --attachable vre_network
 ```
 
 > NOTE: **From July 2024 onwards**, the instruction for Docker Compose in **mac** is without hyphen, so from now on, `docker-compose build` is `docker compose build` when executing in **macOS**.
@@ -164,7 +165,7 @@ CONTAINER ID   IMAGE                 COMMAND                  CREATED        STA
 The **client**, **rest** and **mongodb** containers are in the same network. Execute the following instruction for inspecting the **docker network**:
 
 ```sh
-docker network inspect my_network
+docker network inspect data_network
 ```
 
 It should show something like:
@@ -172,7 +173,7 @@ It should show something like:
 ```json
 [
     {
-        "Name": "my_network",
+        "Name": "data_network",
         "Id": "<ID>",
         "Created": "<DATE>",
         "Scope": "swarm",
@@ -231,8 +232,8 @@ It should show something like:
                 "IPv4Address": "<IP>",
                 "IPv6Address": ""
             },
-            "lb-my_network": {
-                "Name": "my_network-endpoint",
+            "lb-data_network": {
+                "Name": "data_network-endpoint",
                 "EndpointID": "<ID>",
                 "MacAddress": "<MAC>",
                 "IPv4Address": "<IP>",

@@ -6,6 +6,7 @@ There are several **configuration files** that must be created and modified. As 
 * [Client](#client)
 * [Loader](#loader)
 * [REST API](#rest-api)
+* [VRE](#vre)
 * [MongoDB](#mongodb)
 * [Docker Compose](#docker-compose)
 
@@ -22,37 +23,57 @@ An `.env` file must be created in the **root** of the project. The file [**.env.
 | DOCKER_DEFAULT_PLATFORM         | string  | default platform (architecture and operating system), ie linux/amd64                               |
 | NODE         | string  | node identifier to deploy                                     |
 | LOADER_VOLUME_PATH         | string  | path where the loader will look for files                                        |
+| LOADER_REPLICAS      | string  | number of replicas to deploy                                    |
 | LOADER_CPU_LIMIT      | string  | loader limit number of CPUs                                    |
 | LOADER_MEMORY_LIMIT          | string | loader limit memory                           |
 | LOADER_CPU_RESERVATION          | string  | loader reserved number of CPUs                           |
 | LOADER_MEMORY_RESERVATION      | string  | loader reserved memory                         |
-| WORKFLOW_VOLUME_PATH         | string  | path where the workflow will look for files                                        |
+| WORKFLOW_VOLUME_PATH         | string  | path where the workflow will save the files                                        |
+| WORKFLOW_REPLICAS      | string  | number of replicas to deploy                                    |
 | WORKFLOW_CPU_LIMIT      | string  | workflow limit number of CPUs                                    |
 | WORKFLOW_MEMORY_LIMIT          | string | workflow limit memory                           |
 | WORKFLOW_CPU_RESERVATION          | string  | workflow reserved number of CPUs                           |
 | WORKFLOW_MEMORY_RESERVATION      | string  | workflow reserved memory                         |
+| CLIENT_REPLICAS      | string  | number of replicas to deploy                                    |
 | CLIENT_CPU_LIMIT    | string  | client limit number of CPUs                               |
 | CLIENT_MEMORY_LIMIT    | string  | client limit memory                             |
 | CLIENT_CPU_RESERVATION    | string  | client reserved number of CPUs                               |
 | CLIENT_MEMORY_RESERVATION    | string  | client reserved memory                               |
+| REST_REPLICAS      | string  | number of replicas to deploy                                    |
 | REST_CPU_LIMIT    | string  | REST limit number of CPUs                               |
 | REST_MEMORY_LIMIT    | string  | REST limit memory                             |
 | REST_CPU_RESERVATION    | string  | REST reserved number of CPUs                               |
 | REST_MEMORY_RESERVATION    | string  | REST reserved memory                               |
-| DB_VOLUME_PATH         | string  | path where the DB will look for files                                        |
+| DB_VOLUME_PATH         | string  | path where the DB will deploy the mongoDB file system                                        |
+| DB_REPLICAS      | string  | number of replicas to deploy                                    |
 | DB_CPU_LIMIT      | string  | DB limit number of CPUs                                    |
 | DB_MEMORY_LIMIT          | string | DB limit memory                           |
 | DB_CPU_RESERVATION          | string  | DB reserved number of CPUs                           |
 | DB_MEMORY_RESERVATION      | string  | DB reserved memory                         |
+| MINIO_VOLUME_PATH         | string  | path where MinIO will save / retrieve the files                                        |
+| MINIO_REPLICAS      | string  | number of replicas to deploy                                    |
+| MINIO_CPU_LIMIT      | string  | MinIO limit number of CPUs                                    |
+| MINIO_MEMORY_LIMIT          | string | MinIO limit memory                           |
+| MINIO_CPU_RESERVATION          | string  | MinIO reserved number of CPUs                           |
+| MINIO_MEMORY_RESERVATION      | string  | MinIO reserved memory                         |
+| VRE_VOLUME_PATH         | string  | path where the VRE will save the files                                        |
+| VRE_REPLICAS      | string  | number of replicas to deploy                                    |
+| VRE_CPU_LIMIT      | string  | VRE limit number of CPUs                                    |
+| VRE_MEMORY_LIMIT          | string | VRE limit memory                           |
+| VRE_CPU_RESERVATION          | string  | VRE reserved number of CPUs                           |
+| VRE_MEMORY_RESERVATION      | string  | VRE reserved memory                         |
 | MONGO_INITDB_ROOT_USERNAME      | string  | root user for the DB                         |
 | MONGO_INITDB_ROOT_PASSWORD      | string  | root password for the DB                       |
+| MINIO_ROOT_USER      | string  | MinIO user                         |
+| MINIO_ROOT_PASSWORD      | string  | MinIO password                      |
 
-**Important:** the formats of **cpus** and **memory** must be in string format between single quotes. Example:
+**Important:** the formats of **cpus** and **memory** must be in string format between single quotes, while **replicas** must be in integer format. Example:
 
 ```
-LOADER_VOLUME_PATH=/path/to/loader  # path to volume
-LOADER_CPU_LIMIT='4.00'  # cpus in float format
-LOADER_MEMORY_LIMIT='2G'  # memory indicating unit (G, M)
+VRE_VOLUME_PATH=/path/to/vre/data  # path to volume
+VRE_REPLICAS=2  # number of replicas to deploy
+VRE_CPU_LIMIT='4.00'  # cpus in float format
+VRE_MEMORY_LIMIT='2G'  # memory indicating unit (G, M)
 ```
 
 ## Client
@@ -139,6 +160,34 @@ The credentials **DB_AUTH_USER** and **DB_AUTH_PASSWORD** must be the same defin
 
 The **LISTEN_PORT** must be the same exposed in the [**REST Dockerfile**](../rest/Dockerfile).
 
+## VRE
+
+⚠️ No sensible default value is provided for any of these fields, they **need to be defined** ⚠️
+
+An `.env` file must be created in the **vre** folder. The file [**.env.git**](../vre/.env.git) can be taken as an example. The file must contain the following environment variables:
+
+| key              | value   | description                                     |
+| ---------------- | ------- | ----------------------------------------------- |
+| BASE_URL_DEVELOPMENT         | string  | baseURL for development                                        |
+| BASE_URL_STAGING      | string  | baseURL for staging                                    |
+| BASE_URL_PRODUCTION          | string | baseURL for production                            |
+| DATA_PATH          | number  | path where the data will be saved (relative to the docker)                           |
+| MAX_FILE_SIZE      | string  | maximum size for all the trajectory files in bytes                      |
+| MINIO_URL    | `<url>`  | url for minio (ie localhost)                             |
+| NODE_NAME    | number  | node identifier to deploy                               |
+
+Example:
+
+```
+BASE_URL_DEVELOPMENT=/vre/
+BASE_URL_STAGING=/vre/
+BASE_URL_PRODUCTION=/vre/
+DATA_PATH=/data
+MAX_FILE_SIZE=1000000000
+MINIO_URL=localhost
+NODE_NAME=jsc
+```
+
 ## MongoDB
 
 ### mongo-init.js file
@@ -193,9 +242,9 @@ services:
     volumes:
       - loader_volume:/data   # path where the loader will look for files
     networks:
-      - my_network
+      - data_network
     deploy:
-      replicas: 0  # Ensure this service is not deployed by default as it is a one-time task
+      replicas: ${LOADER_REPLICAS}  # Ensure this service is not deployed by default as it is a one-time task
       resources:
         limits:
           cpus: ${LOADER_CPU_LIMIT}   # Specify the limit number of CPUs
@@ -211,7 +260,7 @@ services:
     volumes:
       - workflow_volume:/data  # path where the workflow will look for files
     deploy:
-      replicas: 0  # Ensure this service is not deployed by default as it is a one-time task
+      replicas: ${WORKFLOW_REPLICAS}  # Ensure this service is not deployed by default as it is a one-time task
       resources:
         limits:
           cpus: ${WORKFLOW_CPU_LIMIT}   # Specify the limit number of CPUs
@@ -229,7 +278,7 @@ services:
     ports:
       - "8080:80"  # port mapping, be aware that the second port is the same exposed in the client/Dockerfile
     deploy:
-      replicas: 2   # Specify the number of replicas for Docker Swarm
+      replicas: ${CLIENT_REPLICAS}   # Specify the number of replicas for Docker Swarm
       resources:
         limits:
           cpus: ${CLIENT_CPU_LIMIT}   # Specify the limit number of CPUs
@@ -251,9 +300,9 @@ services:
     ports:
       - "8081:3000"   # port mapping, be aware that the second port is the same exposed in the rest/Dockerfile
     networks:
-      - my_network
+      - data_network
     deploy:
-      replicas: 4   # Specify the number of replicas for Docker Swarm
+      replicas: ${REST_REPLICAS}   # Specify the number of replicas for Docker Swarm
       resources:
         limits:
           cpus: ${REST_CPU_LIMIT}   # Specify the limit number of CPUs
@@ -277,9 +326,9 @@ services:
       - ${DB_VOLUME_PATH}:/data/db  # path where the database will be stored (outside the container, in the host machine)
       - ./mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro # path to the initialization script
     networks:
-      - my_network
+      - data_network
     deploy:
-      replicas: 1   # Specify the number of replicas for Docker Swarm
+      replicas: ${DB_REPLICAS}   # Specify the number of replicas for Docker Swarm
       resources:
         limits:
           cpus: ${DB_CPU_LIMIT}    # Specify the limit number of CPUs
@@ -289,6 +338,65 @@ services:
           memory: ${DB_MEMORY_RESERVATION}   # Specify the reserved memory
       restart_policy:
         condition: on-failure   # Restart only on failure
+
+ minio:
+    image: minio/minio
+    environment:
+      - MINIO_ROOT_USER=${MINIO_ROOT_USER}
+      - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD}
+    volumes:
+      - minio_volume:/data   # path where minio will store the data in object storage format (outside the container, in the host machine)
+    ports:
+      - "9000:9000"
+      - "9001:9001"   # port for the minio console (only for development)
+    networks:
+      - vre_network
+    deploy:
+      replicas: ${MINIO_REPLICAS}   # Specify the number of replicas for Docker Swarm
+      resources:
+        limits:
+          cpus: ${MINIO_CPU_LIMIT}    # Specify the limit number of CPUs
+          memory: ${MINIO_MEMORY_LIMIT}   # Specify the limit memory
+        reservations:
+          cpus: ${MINIO_CPU_RESERVATION}   # Specify the reserved number of CPUs
+          memory: ${MINIO_MEMORY_RESERVATION}   # Specify the reserved memory
+      restart_policy:
+        condition: on-failure   # Restart only on failure
+    command: server /data --console-address ":9001"   # Command to run the minio console (only for development)
+    healthcheck:  # Health check for the minio service
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  vre:
+    image: vre_image 
+    build:
+      context: ./vre
+      args:
+        MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+        MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    volumes:
+      - vre_volume:/data
+    ports:
+      - "8082:3001"
+    networks:
+      - vre_network
+    depends_on:
+      - minio
+    deploy:
+      replicas: ${VRE_REPLICAS}   # Specify the number of replicas for Docker Swarm
+      resources:
+        limits:
+          cpus: ${VRE_CPU_LIMIT}   # Specify the limit number of CPUs
+          memory: ${VRE_MEMORY_LIMIT}   # Specify the limit memory
+        reservations:
+          cpus: ${VRE_CPU_RESERVATION}   # Specify the reserved number of CPUs
+          memory: ${VRE_MEMORY_RESERVATION}   # Specify the reserved memory
+      restart_policy:
+        condition: any   # Restart always
+      update_config:
+        order: start-first  # Priority over other services
 
 volumes:
   loader_volume:
@@ -303,9 +411,23 @@ volumes:
       type: none
       o: bind
       device: ${WORKFLOW_VOLUME_PATH}   # bind the volume to WORKFLOW_VOLUME_PATH on the host
+  minio_volume:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${MINIO_VOLUME_PATH}   # bind the volume to MINIO_VOLUME_PATH on the host
+  vre_volume:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${VRE_VOLUME_PATH}   # bind the volume to VRE_VOLUME_PATH on the host
 
 networks:
-  my_network: 
+  data_network: 
+    external: true   # Use an external network
+  vre_network: 
     external: true   # Use an external network
 ```
 
