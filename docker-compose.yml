@@ -108,6 +108,7 @@ services:
     environment:
       - MINIO_ROOT_USER=${MINIO_ROOT_USER}
       - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD}
+      - MINIO_SERVER_URL=${MINIO_SERVER_URL}  # Set the base URL for the Minio server
       - MINIO_BROWSER_REDIRECT_URL=${MINIO_BROWSER_REDIRECT_URL}  # Set the base URL for the Minio console
     volumes:
       - minio_volume:/data   # path where minio will store the data in object storage format (outside the container, in the host machine)

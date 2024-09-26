@@ -66,6 +66,7 @@ An `.env` file must be created in the **root** of the project. The file [**.env.
 | MONGO_INITDB_ROOT_PASSWORD      | string  | root password for the DB                       |
 | MINIO_ROOT_USER      | string  | MinIO user                         |
 | MINIO_ROOT_PASSWORD      | string  | MinIO password                      |
+| MINIO_BROWSER_REDIRECT_URL      | `<url>`  | MinIO base URL (full URI, ie http(s)://your-domain.com/minio)                      |
 
 **Important:** the formats of **cpus** and **memory** must be in string format between single quotes, while **replicas** must be in integer format. Example:
 
@@ -344,6 +345,8 @@ services:
     environment:
       - MINIO_ROOT_USER=${MINIO_ROOT_USER}
       - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD}
+      - MINIO_SERVER_URL=${MINIO_SERVER_URL}  # Set the base URL for the Minio server
+      - MINIO_BROWSER_REDIRECT_URL=${MINIO_BROWSER_REDIRECT_URL}  # Set the base URL for the Minio console
     volumes:
       - minio_volume:/data   # path where minio will store the data in object storage format (outside the container, in the host machine)
     ports:
