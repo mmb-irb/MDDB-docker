@@ -127,7 +127,7 @@ services:
           memory: ${MINIO_MEMORY_RESERVATION}   # Specify the reserved memory
       restart_policy:
         condition: on-failure   # Restart only on failure
-    command: server /data --console-address ":${MINIO_UI_PORT}"   # Command to run the minio console (only for development)
+    command: server --address ":${MINIO_API_PORT}" /data --console-address ":${MINIO_UI_PORT}"   # Command to run the minio console (only for development)
     healthcheck:  # Health check for the minio service
       test: ["CMD", "curl", "-f", "http://localhost:${MINIO_API_PORT}/minio/health/live"]
       interval: 30s
