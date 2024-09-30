@@ -349,8 +349,8 @@ services:
     volumes:
       - minio_volume:/data   # path where minio will store the data in object storage format (outside the container, in the host machine)
     ports:
-      - "${MINIO_API_PORT}:9000"
-      - "${MINIO_UI_PORT}:9001"   # port for the minio console (only for development)
+      - "${MINIO_API_PORT}:${MINIO_API_PORT}"
+      - "${MINIO_UI_PORT}:${MINIO_UI_PORT}"   # port for the minio console (only for development)
     networks:
       - vre_network
     deploy:
@@ -364,9 +364,9 @@ services:
           memory: ${MINIO_MEMORY_RESERVATION}   # Specify the reserved memory
       restart_policy:
         condition: on-failure   # Restart only on failure
-    command: server /data --console-address ":9001"   # Command to run the minio console (only for development)
+    command: server --address ":${MINIO_API_PORT}" /data --console-address ":${MINIO_UI_PORT}"   # Command to run the minio console (only for development)
     healthcheck:  # Health check for the minio service
-      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      test: ["CMD", "curl", "-f", "http://localhost:${MINIO_API_PORT}/minio/health/live"]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -378,6 +378,7 @@ services:
       args:
         MINIO_ROOT_USER: ${MINIO_ROOT_USER}
         MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+        MINIO_API_PORT: ${MINIO_API_PORT}
     volumes:
       - vre_volume:/data
     ports:

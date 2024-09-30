@@ -95,6 +95,40 @@ You need to download the **specific version** of Docker Compose. You can find th
 
     docker-compose --version
 
+### Change Docker Root Dir (optional)
+
+Sometimes the **VM** has not enough space to store all the docker images, so it could be a **good practice** to move the **Docker Root Dir**:
+
+#### Stop docker
+
+Before moving Docker's storage directory, you need to **stop** the Docker service:
+
+    sudo systemctl stop docker
+
+#### Move the Docker Root Dir
+
+Now, move Docker's current storage directory (`/var/lib/docker`) to the external disk:
+
+    sudo mv /var/lib/docker /mnt/external_disk/docker
+
+#### Create a Symlink
+
+Create a **symbolic link** so that Docker continues to look in `/var/lib/docker`, but the actual data is stored on the external disk:
+
+    sudo ln -s /mnt/external_disk/docker /var/lib/docker
+
+### Start docker
+
+Now that Docker is configured to use the external disk, **start** the Docker service again:
+
+    sudo systemctl start docker
+
+#### Check the Docker Info
+
+    docker info | grep "Docker Root Dir"
+
+You should see the new location, e.g., `/mnt/external_disk/docker`.
+
 ## Installation and configuration of Apache
 
 ### Apache installation
