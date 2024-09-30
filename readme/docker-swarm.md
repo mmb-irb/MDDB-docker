@@ -43,7 +43,15 @@ docker stack deploy -c docker-compose.yml my_stack
 Check services:
 
 ```sh
-docker stack services my_stack
+$ docker stack services my_stack
+ID             NAME                MODE         REPLICAS   IMAGE                   PORTS
+<ID>           my_stack_client     replicated   2/2        client_image:latest     *:8080->80/tcp
+<ID>           my_stack_loader     replicated   0/0        loader_image:latest     
+<ID>           my_stack_minio      replicated   1/1        minio/minio:latest      *:9000-9001->9000-9001/tcp
+<ID>           my_stack_mongodb    replicated   1/1        mongo:6                 *:27017->27017/tcp
+<ID>           my_stack_rest       replicated   4/4        rest_image:latest       *:8081->3000/tcp
+<ID>           my_stack_vre        replicated   1/1        vre_image:latest        *:8082->3001/tcp
+<ID>           my_stack_workflow   replicated   0/0        workflow_image:latest
 ```
 
 Check nodes:
@@ -151,13 +159,15 @@ Check that at least the mongo, rest and client containers are up & running:
 ```sh
 $ docker ps -a
 CONTAINER ID   IMAGE                 COMMAND                  CREATED        STATUS        PORTS       NAMES
-<ID>           rest_image:latest     "pm2-runtime start i…"   20 hours ago   Up 20 hours   3000/tcp    my_stack_rest.3.<ID>
-<ID>           rest_image:latest     "pm2-runtime start i…"   20 hours ago   Up 20 hours   3000/tcp    my_stack_rest.1.<ID>
-<ID>           mongo:6               "docker-entrypoint.s…"   20 hours ago   Up 20 hours   27017/tcp   my_stack_mongodb.1.<ID>
-<ID>           rest_image:latest     "pm2-runtime start i…"   20 hours ago   Up 20 hours   3000/tcp    my_stack_rest.4.<ID>
-<ID>           rest_image:latest     "pm2-runtime start i…"   20 hours ago   Up 20 hours   3000/tcp    my_stack_rest.2.<ID>
-<ID>           client_image:latest   "/docker-entrypoint.…"   20 hours ago   Up 20 hours   80/tcp      my_stack_client.1.<ID>
-<ID>           client_image:latest   "/docker-entrypoint.…"   20 hours ago   Up 20 hours   80/tcp      my_stack_client.2.<ID>
+<ID>           rest_image:latest     "pm2-runtime start i…"   17 hours ago   Up 17 hours             3000/tcp    my_stack_rest.2.<ID>
+<ID>           rest_image:latest     "pm2-runtime start i…"   17 hours ago   Up 17 hours             3000/tcp    my_stack_rest.1.<ID>
+<ID>           rest_image:latest     "pm2-runtime start i…"   17 hours ago   Up 17 hours             3000/tcp    my_stack_rest.3.<ID>
+<ID>           rest_image:latest     "pm2-runtime start i…"   17 hours ago   Up 17 hours             3000/tcp    my_stack_rest.4.<ID>
+<ID>           mongo:6               "docker-entrypoint.s…"   17 hours ago   Up 17 hours             27017/tcp   my_stack_mongodb.1.<ID>
+<ID>           client_image:latest   "/docker-entrypoint.…"   17 hours ago   Up 17 hours             80/tcp      my_stack_client.2.<ID>
+<ID>           client_image:latest   "/docker-entrypoint.…"   17 hours ago   Up 17 hours             80/tcp      my_stack_client.1.<ID>
+<ID>           minio/minio:latest    "/usr/bin/docker-ent…"   17 hours ago   Up 17 hours (healthy)   9000/tcp    my_stack_minio.1.<ID>
+<ID>           vre_image:latest      "/app/entrypoint.sh"     17 hours ago   Up 17 hours             3001/tcp    my_stack_vre.1.<ID>
 ```
 
 ### Inspect docker network 
@@ -263,11 +273,13 @@ Check resources consumption for all running containers:
 ```sh
 $ docker stats
 CONTAINER ID   NAME                                           CPU %     MEM USAGE / LIMIT   MEM %     NET I/O           BLOCK I/O     PIDS
-<ID>           my_stack_mongodb.1.<ID>                        0.44%     105.2MiB / 8GiB     1.28%     43.1MB / 247MB    0B / 499MB    50
-<ID>           my_stack_rest.1.<ID>                           0.26%     73.03MiB / 10GiB    0.71%     59.3MB / 29.9MB   0B / 24.6kB   22
-<ID>           my_stack_rest.3.<ID>                           0.22%     70.09MiB / 10GiB    0.68%     50.2MB / 22.5MB   0B / 24.6kB   22
-<ID>           my_stack_rest.2.<ID>                           0.33%     70.78MiB / 10GiB    0.69%     60.4MB / 29.5MB   0B / 24.6kB   22
-<ID>           my_stack_rest.4.<ID>                           0.30%     71.33MiB / 10GiB    0.70%     77.1MB / 49.5MB   0B / 24.6kB   22
-<ID>           my_stack_client.1.<ID>                         0.00%     13.01MiB / 8GiB     0.16%     613kB / 34.9MB    0B / 12.3kB   17
-<ID>           my_stack_client.2.<ID>                         0.00%     12.8MiB / 8GiB      0.16%     620kB / 36.2MB    0B / 12.3kB   17
+<ID>           my_stack_rest.2.<ID>                           0.25%     69.8MiB / 10GiB     0.68%     5.37MB / 2.15MB   0B / 24.6kB   22
+<ID>           my_stack_rest.1.<ID>                           0.19%     69.7MiB / 10GiB     0.68%     5.63MB / 1.81MB   0B / 24.6kB   22
+<ID>           my_stack_rest.3.<ID>                           0.18%     69.14MiB / 10GiB    0.68%     5.5MB / 2.17MB    0B / 24.6kB   22
+<ID>           my_stack_rest.4.<ID>                           0.25%     68.77MiB / 10GiB    0.67%     5.9MB / 2.63MB    0B / 24.6kB   22
+<ID>           my_stack_mongodb.1.<ID>                        0.61%     75.12MiB / 8GiB     0.92%     6.69MB / 22.3MB   0B / 93.5MB   44
+<ID>           my_stack_client.2.<ID>                         0.00%     12.7MiB / 8GiB      0.16%     90.5kB / 886kB    0B / 12.3kB   17
+<ID>           my_stack_client.1.<ID>                         0.00%     12.87MiB / 8GiB     0.16%     86.1kB / 4.12MB   0B / 12.3kB   17
+<ID>           my_stack_minio.1.<ID>                          0.04%     110MiB / 4GiB       2.68%     1.93GB / 1.38GB   0B / 2.14GB   21
+<ID>           my_stack_vre.1.<ID>                            2.65%     384.5MiB / 4GiB     9.39%     1.5MB / 23kB      0B / 3.09MB   187
 ```

@@ -160,7 +160,13 @@ Now it's time to **configure Apache** as a reverse proxy in order to show the [*
 
 #### Enable modules
 
-Apache has many modules bundled with it that are available but not enabled in a fresh installation. We need to enable three of them for using Apache as a reverse proxy:
+Apache has many modules bundled with it that are available but not enabled in a fresh installation. We need to enable some of them:
+
+##### mod_rewrite
+
+Apache module that provides a powerful and flexible way to rewrite URLs:
+
+    sudo a2enmod rewrite
 
 ##### mod_proxy
 
@@ -173,6 +179,12 @@ The main proxy module Apache module for redirecting connections; it allows Apach
 Which adds support for proxying HTTP connections:
 
     sudo a2enmod proxy_http 
+
+##### mod_proxy_wstunnel
+
+Apache module that allows Apache to act as a reverse proxy for WebSocket connections. WebSockets are a communication protocol that provides full-duplex (two-way) communication channels over a single, long-lived TCP connection between a client (usually a web browser) and a server.   
+
+    sudo a2enmod proxy_wstunnel
 
 ##### mod_ssl
 
@@ -200,44 +212,96 @@ Once the file is opened with an editor (vim in this case), please remove all the
 ```apacheconf
 <VirtualHost *:80>
 
-  <Location / >
-            ProxyPass http://localhost:8080/
-            ProxyPassReverse http://localhost:8080/
-  </Location>
+    <Location / >
+        ProxyPass http://localhost:8080/
+        ProxyPassReverse http://localhost:8080/
+    </Location>
 
-  <Location /api/ >
-            ProxyPass http://localhost:8081/
-            ProxyPassReverse http://localhost:8081/
-  </Location>
+    <Location /api/ >
+        ProxyPass http://localhost:8081/
+        ProxyPassReverse http://localhost:8081/
+    </Location>
 
-  ErrorLog ${APACHE_LOG_DIR}/error.log
-  CustomLog ${APACHE_LOG_DIR}/access.log combined
+    <Location /vre/ >
+        ProxyPass http://localhost:8082/vre/
+        ProxyPassReverse http://localhost:8082/vre/
+    </Location>
+
+    # Recommended to disable it in production
+    <Location /minio/ >
+        ProxyPass http://localhost:9001/
+        ProxyPassReverse http://localhost:9001/
+    </Location>
+
+    <Location /minioapi/ >
+        ProxyPass http://127.0.0.1:9000/
+        ProxyPassReverse http://127.0.0.1:9000/
+    </Location>
+
+    # WebSocket proxy settings
+    RewriteEngine on
+    RewriteCond %{HTTP:UPGRADE} WebSocket [NC]
+    RewriteCond %{HTTP:CONNECTION} Upgrade [NC]
+    RewriteRule /minio/(.*) ws://127.0.0.1:9001/$1 [P,L]
+
+    ErrorLog ${APACHE_LOG_DIR}/error.log
+    CustomLog ${APACHE_LOG_DIR}/access.log combined
 
 </VirtualHost>
 
 <VirtualHost *:443>
 
-  <Location / >
-            ProxyPass http://localhost:8080/
-            ProxyPassReverse http://localhost:8080/
-  </Location>
+    <Location / >
+        ProxyPass http://localhost:8080/
+        ProxyPassReverse http://localhost:8080/
+    </Location>
 
-  <Location /api/ >
-            ProxyPass http://localhost:8081/
-            ProxyPassReverse http://localhost:8081/
-  </Location>
+    <Location /api/ >
+        ProxyPass http://localhost:8081/
+        ProxyPassReverse http://localhost:8081/
+    </Location>
 
-  SSLEngine on
-  SSLCertificateFile /etc/ssl/certs/www_mddbr_eu_chain.pem
-  SSLCertificateKeyFile /etc/ssl/private/www_mddbr_eu.key
-  SSLCertificateChainFile /etc/ssl/certs/www_mddbr_eu_chain.pem
+    <Location /vre/ >
+        ProxyPass http://localhost:8082/vre/
+        ProxyPassReverse http://localhost:8082/vre/
+    </Location>
+
+    # Recommended to disable it in production
+    <Location /minio/ >
+        ProxyPass http://localhost:9001/
+        ProxyPassReverse http://localhost:9001/
+    </Location>
+
+    <Location /minioapi/ >
+        ProxyPass http://127.0.0.1:9000/
+        ProxyPassReverse http://127.0.0.1:9000/
+    </Location>
+
+    # WebSocket proxy settings
+    RewriteEngine on
+    RewriteCond %{HTTP:UPGRADE} WebSocket [NC]
+    RewriteCond %{HTTP:CONNECTION} Upgrade [NC]
+    RewriteRule /minio/(.*) ws://127.0.0.1:9001/$1 [P,L]
+
+    SSLEngine on
+    SSLCertificateFile /etc/ssl/certs/www_mddbr_eu_chain.pem
+    SSLCertificateKeyFile /etc/ssl/private/www_mddbr_eu.key
+    SSLCertificateChainFile /etc/ssl/certs/www_mddbr_eu_chain.pem
 
 </VirtualHost>
 ```
 
 The first part, `<VirtualHost *:80>`, configures the **HTTP** Virtual Host, while the second one, `<VirtualHost *:443>`, configures the **HTTPS** Virtual Host.
 
-Note that the port **8080** is the output port for the [**client docker**](../client), while the port 8081 is the output port for the [**REST API docker**](../rest). These two ports can be changed, but in this case, please change them as well in the [**docker-compose.yml**](../docker-compose-git.yml) file.
+Note the following ports:
+
+* **8080** is the output port for the [**client docker**](../client)
+* **8081** is the output port for the [**REST API docker**](../rest)
+* **8082** is the output port for the [**VRE docker**](../vre)
+* **9001** is the output port for the **MinIO WebUI**, not recommended for using in production
+* **9000** is the output port for the **MinIO API**
+
+These ports can be changed, but in this case, please change them as well in the [**.env**](../.env.git) file.
 
 Finally, all that remains is restarting the Apache server:
 

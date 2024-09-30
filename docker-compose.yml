@@ -40,7 +40,7 @@ services:
       args:
         NODE_ID: ${NODE}  # Pass here the build argument with the node id
     ports:
-      - "8080:80"  # port mapping, be aware that the second port is the same exposed in the client/Dockerfile
+      - "${CLIENT_PORT}:80"  # port mapping, be aware that the second port is the same exposed in the client/Dockerfile
     deploy:
       replicas: ${CLIENT_REPLICAS}   # Specify the number of replicas for Docker Swarm
       resources:
@@ -62,7 +62,7 @@ services:
     depends_on:
       - mongodb
     ports:
-      - "8081:3000"   # port mapping, be aware that the second port is the same exposed in the rest/Dockerfile
+      - "${REST_PORT}:3000"   # port mapping, be aware that the second port is the same exposed in the rest/Dockerfile
     networks:
       - data_network
     deploy:
@@ -85,7 +85,7 @@ services:
       MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME}
       MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD}
     ports:
-      - "27017:27017"
+      - "${DB_PORT}:27017"
     volumes:
       - ${DB_VOLUME_PATH}:/data/db  # path where the database will be stored (outside the container, in the host machine)
       - ./mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro # path to the initialization script
@@ -108,13 +108,12 @@ services:
     environment:
       - MINIO_ROOT_USER=${MINIO_ROOT_USER}
       - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD}
-      #- MINIO_SERVER_URL=${MINIO_SERVER_URL}  # Set the base URL for the Minio server
       - MINIO_BROWSER_REDIRECT_URL=${MINIO_BROWSER_REDIRECT_URL}  # Set the base URL for the Minio console
     volumes:
       - minio_volume:/data   # path where minio will store the data in object storage format (outside the container, in the host machine)
     ports:
-      - "9000:9000"
-      - "9001:9001"   # port for the minio console (only for development)
+      - "${MINIO_API_PORT}:9000"
+      - "${MINIO_UI_PORT}:9001"   # port for the minio console (only for development)
     networks:
       - vre_network
     deploy:
@@ -145,7 +144,7 @@ services:
     volumes:
       - vre_volume:/data
     ports:
-      - "8082:3001"
+      - "${VRE_PORT}:3001"
     networks:
       - vre_network
     depends_on:
