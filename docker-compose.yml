@@ -1,4 +1,23 @@
 services:
+  apache:
+    image: apache_image   # name of apache image
+    build:
+      context: ./apache   # folder to search Dockerfile for this image
+    ports:
+      - "${APACHE_HTTP_PORT}:80"
+      - "${APACHE_HTTPS_PORT}:443"
+    networks:
+      - webnet
+    deploy:
+      replicas: ${APACHE_REPLICAS}  # Ensure this service is not deployed by default as it is a one-time task
+      resources:
+        limits:
+          cpus: ${APACHE_CPU_LIMIT}   # Specify the limit number of CPUs
+          memory: ${APACHE_MEMORY_LIMIT}   # Specify the limit memory
+        reservations:
+          cpus: ${APACHE_CPU_RESERVATION}   # Specify the reserved number of CPUs
+          memory: ${APACHE_MEMORY_RESERVATION}   # Specify the reserved memory
+
   loader:
     image: loader_image   # name of loader image
     build:
@@ -41,6 +60,8 @@ services:
         NODE_ID: ${NODE}  # Pass here the build argument with the node id
     ports:
       - "${CLIENT_PORT}:80"  # port mapping, be aware that the second port is the same exposed in the client/Dockerfile
+    networks:
+      - webnet
     deploy:
       replicas: ${CLIENT_REPLICAS}   # Specify the number of replicas for Docker Swarm
       resources:
@@ -65,6 +86,7 @@ services:
       - "${REST_PORT}:3000"   # port mapping, be aware that the second port is the same exposed in the rest/Dockerfile
     networks:
       - data_network
+      - webnet
     deploy:
       replicas: ${REST_REPLICAS}   # Specify the number of replicas for Docker Swarm
       resources:
@@ -86,6 +108,7 @@ services:
       MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD}
     ports:
       - "${DB_PORT}:27017"
+    command: mongod --port ${DB_PORT}
     volumes:
       - ${DB_VOLUME_PATH}:/data/db  # path where the database will be stored (outside the container, in the host machine)
       - ./mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro # path to the initialization script
@@ -111,11 +134,14 @@ services:
       - MINIO_BROWSER_REDIRECT_URL=${MINIO_BROWSER_REDIRECT_URL}  # Set the base URL for the Minio console
     volumes:
       - minio_volume:/data   # path where minio will store the data in object storage format (outside the container, in the host machine)
+      # TODO ADD VOLUME WITH THE PATH TO THE CERTIFICATES ???
+      # - /path/to/certs:/root/.minio/certs
     ports:
       - "${MINIO_API_PORT}:${MINIO_API_PORT}"
       - "${MINIO_UI_PORT}:${MINIO_UI_PORT}"   # port for the minio console (only for development)
     networks:
       - vre_network
+      - webnet
     deploy:
       replicas: ${MINIO_REPLICAS}   # Specify the number of replicas for Docker Swarm
       resources:
@@ -127,7 +153,7 @@ services:
           memory: ${MINIO_MEMORY_RESERVATION}   # Specify the reserved memory
       restart_policy:
         condition: on-failure   # Restart only on failure
-    command: server --address ":${MINIO_API_PORT}" /data --console-address ":${MINIO_UI_PORT}"   # Command to run the minio console (only for development)
+    command: server --address ":${MINIO_API_PORT}" /data --console-address ":${MINIO_UI_PORT}"   # Remove the console-address flag for production
     healthcheck:  # Health check for the minio service
       test: ["CMD", "curl", "-f", "http://localhost:${MINIO_API_PORT}/minio/health/live"]
       interval: 30s
@@ -148,6 +174,7 @@ services:
       - "${VRE_PORT}:3001"
     networks:
       - vre_network
+      - webnet
     depends_on:
       - minio
     deploy:
@@ -194,4 +221,7 @@ networks:
   data_network: 
     external: true   # Use an external network
   vre_network: 
-    external: true   # Use an external network
+    #external: true   # Use an external network
+    driver: overlay   # Use an overlay network
+  webnet:
+    driver: overlay   # Use an overlay network
