@@ -3,5 +3,7 @@
 /minio
 .env
 *.old
+*.pem
+*.key
 client/mdposit_client
 client/build
