@@ -140,7 +140,7 @@ services:
       - "${MINIO_API_PORT}:${MINIO_API_PORT}"
       - "${MINIO_UI_PORT}:${MINIO_UI_PORT}"   # port for the minio console (only for development)
     networks:
-      - vre_network
+      - vre_lite_network
       - webnet
     deploy:
       replicas: ${MINIO_REPLICAS}   # Specify the number of replicas for Docker Swarm
@@ -160,32 +160,32 @@ services:
       timeout: 10s
       retries: 5
 
-  vre:
-    image: vre_image 
+  vre_lite:
+    image: vre_lite_image 
     build:
-      context: ./vre
+      context: ./vre_lite
       args:
         MINIO_ROOT_USER: ${MINIO_ROOT_USER}
         MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
         MINIO_API_PORT: ${MINIO_API_PORT}
     volumes:
-      - vre_volume:/data
+      - vre_lite_volume:/data
     ports:
-      - "${VRE_PORT}:3001"
+      - "${VRE_LITE_PORT}:3001"
     networks:
-      - vre_network
+      - vre_lite_network
       - webnet
     depends_on:
       - minio
     deploy:
-      replicas: ${VRE_REPLICAS}   # Specify the number of replicas for Docker Swarm
+      replicas: ${VRE_LITE_REPLICAS}   # Specify the number of replicas for Docker Swarm
       resources:
         limits:
-          cpus: ${VRE_CPU_LIMIT}   # Specify the limit number of CPUs
-          memory: ${VRE_MEMORY_LIMIT}   # Specify the limit memory
+          cpus: ${VRE_LITE_CPU_LIMIT}   # Specify the limit number of CPUs
+          memory: ${VRE_LITE_MEMORY_LIMIT}   # Specify the limit memory
         reservations:
-          cpus: ${VRE_CPU_RESERVATION}   # Specify the reserved number of CPUs
-          memory: ${VRE_MEMORY_RESERVATION}   # Specify the reserved memory
+          cpus: ${VRE_LITE_CPU_RESERVATION}   # Specify the reserved number of CPUs
+          memory: ${VRE_LITE_MEMORY_RESERVATION}   # Specify the reserved memory
       restart_policy:
         condition: any   # Restart always
       update_config:
@@ -210,17 +210,17 @@ volumes:
       type: none
       o: bind
       device: ${MINIO_VOLUME_PATH}   # bind the volume to MINIO_VOLUME_PATH on the host
-  vre_volume:
+  vre_lite_volume:
     driver: local
     driver_opts:
       type: none
       o: bind
-      device: ${VRE_VOLUME_PATH}   # bind the volume to VRE_VOLUME_PATH on the host
+      device: ${VRE_LITE_VOLUME_PATH}   # bind the volume to VRE_LITE_VOLUME_PATH on the host
 
 networks:
   data_network: 
     external: true   # Use an external network
-  vre_network: 
+  vre_lite_network: 
     #external: true   # Use an external network
     driver: overlay   # Use an overlay network
   webnet:
