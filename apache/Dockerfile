@@ -9,9 +9,6 @@ RUN echo "IncludeOptional /usr/local/apache2/conf/conf.d/custom.conf" >> /usr/lo
 # Create the SSL directory
 RUN mkdir -p /usr/local/apache2/conf/ssl
 
-# Optionally copy SSL certs if needed
-#COPY www_mddbr_eu_chain.pem /etc/ssl/certs/www_mddbr_eu_chain.pem
-#COPY www_mddbr_eu.key /etc/ssl/private/www_mddbr_eu.key
 # Copy SSL certs into the container
 COPY www_mddbr_eu_chain.pem /usr/local/apache2/conf/ssl/www_mddbr_eu_chain.pem
 COPY www_mddbr_eu.key /usr/local/apache2/conf/ssl/www_mddbr_eu.key
