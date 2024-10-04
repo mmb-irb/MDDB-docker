@@ -17,8 +17,8 @@ services:
         reservations:
           cpus: ${APACHE_CPU_RESERVATION}   # Specify the reserved number of CPUs
           memory: ${APACHE_MEMORY_RESERVATION}   # Specify the reserved memory
-        restart_policy:
-          condition: any   # Restart always
+      restart_policy:
+        condition: any   # Restart always
 
   loader:
     image: loader_image   # name of loader image

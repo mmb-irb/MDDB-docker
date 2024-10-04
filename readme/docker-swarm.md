@@ -22,7 +22,6 @@ In order to execute the **long-term** tasks in **Docker Swarm** and the **one-of
 
 ```sh
 docker network create --driver overlay --attachable data_network
-docker network create --driver overlay --attachable vre_network
 ```
 
 > NOTE: **From July 2024 onwards**, the instruction for Docker Compose in **mac** is without hyphen, so from now on, `docker-compose build` is `docker compose build` when executing in **macOS**.
