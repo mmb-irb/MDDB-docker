@@ -5,14 +5,10 @@ FROM nginx:alpine
 ARG NODE_ID
 ARG CLIENT_INNER_PORT
 
-# Set the environment variable
-# ENV NODE_ID=$NODE_ID
-
 # Define working dir
 WORKDIR /app
 
 # Download and unzip mdposit-client-build repo
-# RUN wget https://mmb.irbbarcelona.org/gitlab/gbayarri/mdposit-client-build/-/raw/main/$NODE_ID/build.zip
 RUN wget https://mmb.irbbarcelona.org/gitlab/gbayarri/mdposit-client-build/-/raw/main/${NODE_ID}/build.zip
 RUN unzip build.zip
 
