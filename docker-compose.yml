@@ -134,7 +134,7 @@ services:
       MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD}
     ports:
       - "${DB_OUTER_PORT}:${DB_INNER_PORT}"
-    command: mongod --port ${DB_PORT}
+    command: mongod --port ${DB_OUTER_PORT}
     volumes:
       - ${DB_VOLUME_PATH}:/data/db  # path where the database will be stored (outside the container, in the host machine)
       - ./mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro # path to the initialization script
@@ -179,9 +179,9 @@ services:
           memory: ${MINIO_MEMORY_RESERVATION}   # Specify the reserved memory
       restart_policy:
         condition: on-failure   # Restart only on failure
-    command: server --address ":${MINIO_API_PORT}" /data --console-address ":${MINIO_UI_PORT}"   # Remove the console-address flag for production
+    command: server --address ":${MINIO_API_INNER_PORT}" /data --console-address ":${MINIO_UI_INNER_PORT}"   # Remove the console-address flag for production
     healthcheck:  # Health check for the minio service
-      test: ["CMD", "curl", "-f", "http://localhost:${MINIO_API_PORT}/minio/health/live"]
+      test: ["CMD", "curl", "-f", "http://localhost:${MINIO_API_INNER_PORT}/minio/health/live"]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -193,7 +193,7 @@ services:
       args:
         MINIO_ROOT_USER: ${MINIO_ROOT_USER}
         MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
-        MINIO_API_PORT: ${MINIO_API_PORT}
+        MINIO_API_PORT: ${MINIO_API_INNER_PORT}
         VRE_LITE_INNER_PORT: ${VRE_LITE_INNER_PORT}
         VRE_LITE_BASE_URL_DEVELOPMENT: ${VRE_LITE_BASE_URL_DEVELOPMENT}
         VRE_LITE_BASE_URL_STAGING: ${VRE_LITE_BASE_URL_STAGING}
