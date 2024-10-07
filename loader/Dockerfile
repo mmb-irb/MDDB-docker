@@ -17,7 +17,23 @@ RUN apt-get update && \
 RUN git clone https://mmb.irbbarcelona.org/gitlab/aluciani/MoDEL-CNS_DB_loader.git
 
 # Copy the .env file into the Docker image
-COPY .env /app/MoDEL-CNS_DB_loader
+# COPY .env /app/MoDEL-CNS_DB_loader
+
+# Define environment variables
+ARG DB_SERVER
+ARG DB_PORT
+ARG DB_NAME
+ARG DB_AUTHSOURCE
+ARG DB_AUTH_USER
+ARG DB_AUTH_PASSWORD
+
+# Create .env file with environment variables
+RUN echo "DB_SERVER=${DB_SERVER}" > /app/MoDEL-CNS_DB_loader/.env && \
+    echo "DB_PORT=${DB_PORT}" >> /app/MoDEL-CNS_DB_loader/.env && \
+    echo "DB_NAME=${DB_NAME}" >> /app/MoDEL-CNS_DB_loader/.env && \
+    echo "DB_AUTHSOURCE=${DB_AUTHSOURCE}" >> /app/MoDEL-CNS_DB_loader/.env && \
+    echo "DB_AUTH_USER=${DB_AUTH_USER}" >> /app/MoDEL-CNS_DB_loader/.env && \
+    echo "DB_AUTH_PASSWORD=${DB_AUTH_PASSWORD}" >> /app/MoDEL-CNS_DB_loader/.env
 
 # Copy the environment.yml file into the Docker image
 COPY environment.yml /app

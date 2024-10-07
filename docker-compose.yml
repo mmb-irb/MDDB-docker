@@ -3,9 +3,18 @@ services:
     image: apache_image   # name of apache image
     build:
       context: ./apache   # folder to search Dockerfile for this image
+      args:
+        APACHE_HTTP_INNER_PORT: ${APACHE_HTTP_INNER_PORT}
+        APACHE_HTTPS_INNER_PORT: ${APACHE_HTTPS_INNER_PORT}
+        APACHE_HTTP_OUTER_PORT: ${APACHE_HTTP_OUTER_PORT}
+        APACHE_HTTPS_OUTER_PORT: ${APACHE_HTTPS_OUTER_PORT}
+        CLIENT_INNER_PORT: ${CLIENT_INNER_PORT}
+        REST_INNER_PORT: ${REST_INNER_PORT}
+        VRE_LITE_INNER_PORT: ${VRE_LITE_INNER_PORT}
+        MINIO_UI_INNER_PORT: ${MINIO_UI_INNER_PORT}
     ports:
-      - "${APACHE_HTTP_PORT}:80"
-      - "${APACHE_HTTPS_PORT}:443"
+      - "${APACHE_HTTP_OUTER_PORT}:${APACHE_HTTP_INNER_PORT}"   # http port mapping
+      - "${APACHE_HTTPS_OUTER_PORT}:${APACHE_HTTPS_INNER_PORT}"   # https port mapping
     networks:
       - web_network
     deploy:
@@ -24,6 +33,13 @@ services:
     image: loader_image   # name of loader image
     build:
       context: ./loader   # folder to search Dockerfile for this image
+      args:
+        DB_SERVER: ${DB_SERVER}
+        DB_PORT: ${DB_OUTER_PORT}
+        DB_NAME: ${DB_NAME}
+        DB_AUTH_USER: ${LOADER_DB_LOGIN}
+        DB_AUTH_PASSWORD: ${LOADER_DB_PASSWORD}
+        DB_AUTHSOURCE: ${DB_AUTHSOURCE}
     volumes:
       - loader_volume:/data   # path where the loader will look for files
     networks:
@@ -61,7 +77,7 @@ services:
       args:
         NODE_ID: ${NODE}  # Pass here the build argument with the node id
     ports:
-      - "${CLIENT_PORT}:8080"  # port mapping, be aware that the second port is the same exposed in the client/Dockerfile
+      - "${CLIENT_OUTER_PORT}:${CLIENT_INNER_PORT}"  # port mapping
     networks:
       - web_network
     deploy:
@@ -82,10 +98,18 @@ services:
     image: rest_image
     build:
       context: ./rest   # folder to search Dockerfile for this image
+      args:
+        DB_SERVER: ${DB_SERVER}
+        DB_PORT: ${DB_OUTER_PORT}
+        DB_NAME: ${DB_NAME}
+        DB_AUTH_USER: ${REST_DB_LOGIN}
+        DB_AUTH_PASSWORD: ${REST_DB_PASSWORD}
+        DB_AUTHSOURCE: ${DB_AUTHSOURCE}
+        REST_INNER_PORT: ${REST_INNER_PORT}
     depends_on:
       - mongodb
     ports:
-      - "${REST_PORT}:3000"   # port mapping, be aware that the second port is the same exposed in the rest/Dockerfile
+      - "${REST_OUTER_PORT}:${REST_INNER_PORT}"   # port mapping
     networks:
       - data_network
       - web_network
@@ -109,7 +133,7 @@ services:
       MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME}
       MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD}
     ports:
-      - "${DB_PORT}:27017"
+      - "${DB_OUTER_PORT}:${DB_INNER_PORT}"
     command: mongod --port ${DB_PORT}
     volumes:
       - ${DB_VOLUME_PATH}:/data/db  # path where the database will be stored (outside the container, in the host machine)
@@ -139,8 +163,8 @@ services:
       # TODO ADD VOLUME WITH THE PATH TO THE CERTIFICATES ???
       # - /path/to/certs:/root/.minio/certs
     ports:
-      - "${MINIO_API_PORT}:${MINIO_API_PORT}"
-      - "${MINIO_UI_PORT}:${MINIO_UI_PORT}"   # port for the minio console (only for development)
+      - "${MINIO_API_OUTER_PORT}:${MINIO_API_INNER_PORT}"
+      - "${MINIO_UI_INNER_PORT}:${MINIO_UI_INNER_PORT}"   # port for the minio console (only for development)
     networks:
       - vre_lite_network
       - web_network
@@ -170,10 +194,18 @@ services:
         MINIO_ROOT_USER: ${MINIO_ROOT_USER}
         MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
         MINIO_API_PORT: ${MINIO_API_PORT}
+        VRE_LITE_INNER_PORT: ${VRE_LITE_INNER_PORT}
+        VRE_LITE_BASE_URL_DEVELOPMENT: ${VRE_LITE_BASE_URL_DEVELOPMENT}
+        VRE_LITE_BASE_URL_STAGING: ${VRE_LITE_BASE_URL_STAGING}
+        VRE_LITE_BASE_URL_PRODUCTION: ${VRE_LITE_BASE_URL_PRODUCTION}
+        VRE_LITE_DATA_PATH: ${VRE_LITE_DATA_PATH}
+        VRE_LITE_MAX_FILE_SIZE: ${VRE_LITE_MAX_FILE_SIZE}
+        MINIO_URL: ${MINIO_URL}
+        NODE_NAME: ${NODE}
     volumes:
       - vre_lite_volume:/data
     ports:
-      - "${VRE_LITE_PORT}:3001"
+      - "${VRE_LITE_OUTER_PORT}:${VRE_LITE_INNER_PORT}"
     networks:
       - vre_lite_network
       - web_network

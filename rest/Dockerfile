@@ -22,7 +22,25 @@ VOLUME /data
 RUN git clone https://mmb.irbbarcelona.org/gitlab/aluciani/MoDEL-CNS_REST_API
 
 # Copy the .env file into the Docker image
-COPY .env /app/MoDEL-CNS_REST_API
+# COPY .env /app/MoDEL-CNS_REST_API
+
+# Define environment variables
+ARG DB_SERVER
+ARG DB_PORT
+ARG DB_NAME
+ARG DB_AUTHSOURCE
+ARG DB_AUTH_USER
+ARG DB_AUTH_PASSWORD
+ARG REST_INNER_PORT
+
+# Create .env file with environment variables
+RUN echo "DB_SERVER=${DB_SERVER}" > /app/MoDEL-CNS_REST_API/.env && \
+    echo "DB_PORT=${DB_PORT}" >> /app/MoDEL-CNS_REST_API/.env && \
+    echo "DB_NAME=${DB_NAME}" >> /app/MoDEL-CNS_REST_API/.env && \
+    echo "DB_AUTHSOURCE=${DB_AUTHSOURCE}" >> /app/MoDEL-CNS_REST_API/.env && \
+    echo "DB_AUTH_USER=${DB_AUTH_USER}" >> /app/MoDEL-CNS_REST_API/.env && \
+    echo "DB_AUTH_PASSWORD=${DB_AUTH_PASSWORD}" >> /app/MoDEL-CNS_REST_API/.env && \
+    echo "LISTEN_PORT=${REST_INNER_PORT}" >> /app/MoDEL-CNS_REST_API/.env
 
 # Change working directory to /app/MoDEL-CNS_REST_API
 WORKDIR /app/MoDEL-CNS_REST_API
@@ -36,8 +54,8 @@ RUN npm run build
 # Install pm2
 RUN npm install pm2 -g
 
-# Expose the port the app runs on
-EXPOSE 3000
+# Expose the port where the app runs on
+EXPOSE ${REST_INNER_PORT}
 
 # Serve the app
 CMD ["pm2-runtime", "start", "index.js", "-n", "MDposit_API", "--node-args=", "\"--experimental-worker\""]

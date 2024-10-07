@@ -8,7 +8,24 @@ WORKDIR /app
 RUN git clone https://mmb.irbbarcelona.org/gitlab/gbayarri/mddb-vre.git
 
 # Copy the .env file into the Docker image
-COPY .env /app/mddb-vre
+# COPY .env /app/mddb-vre
+
+# Define environment variables
+ARG VRE_LITE_BASE_URL_DEVELOPMENT
+ARG VRE_LITE_BASE_URL_STAGING
+ARG VRE_LITE_BASE_URL_PRODUCTION
+ARG VRE_LITE_DATA_PATH
+ARG VRE_LITE_MAX_FILE_SIZE
+ARG MINIO_URL
+ARG NODE_NAME
+
+RUN echo "BASE_URL_DEVELOPMENT=${VRE_LITE_BASE_URL_DEVELOPMENT}" > /app/mddb-vre/.env && \
+    echo "BASE_URL_STAGING=${VRE_LITE_BASE_URL_STAGING}" > /app/mddb-vre/.env && \
+    echo "BASE_URL_PRODUCTION=${VRE_LITE_BASE_URL_PRODUCTION}" > /app/mddb-vre/.env && \
+    echo "DATA_PATH=${VRE_LITE_DATA_PATH}" > /app/mddb-vre/.env && \
+    echo "MAX_FILE_SIZE=${VRE_LITE_MAX_FILE_SIZE}" > /app/mddb-vre/.env && \
+    echo "MINIO_URL=${MINIO_URL}" > /app/mddb-vre/.env && \
+    echo "NODE_NAME=${NODE_NAME}" > /app/mddb-vre/.env
 
 # Change working directory to /app/mddb-vre
 WORKDIR /app/mddb-vre
@@ -42,10 +59,8 @@ RUN curl -O https://dl.min.io/client/mc/release/linux-amd64/mc && \
     chmod +x mc && \
     mv mc /usr/local/bin/
 
-# Expose the port the app runs on
-EXPOSE 3001
-
 # Define arguments passed from docker-compose
+ARG VRE_LITE_INNER_PORT
 ARG MINIO_ROOT_USER
 ARG MINIO_ROOT_PASSWORD
 ARG MINIO_API_PORT
@@ -64,6 +79,9 @@ RUN echo '#!/bin/sh' > entrypoint.sh && \
     echo 'mc alias set myminio http://minio:$MINIO_API_PORT $MINIO_ROOT_USER $MINIO_ROOT_PASSWORD' >> entrypoint.sh && \
     echo 'exec pm2-runtime start ecosystem.config.cjs --name mddb-vre' >> entrypoint.sh && \
     chmod +x entrypoint.sh
+
+# Expose the port the app runs on
+EXPOSE ${VRE_LITE_INNER_PORT}
 
 # Serve the app
 ENTRYPOINT ["/app/entrypoint.sh"]
