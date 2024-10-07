@@ -7,10 +7,7 @@ WORKDIR /app
 # Clone mddb-vre repo
 RUN git clone https://mmb.irbbarcelona.org/gitlab/gbayarri/mddb-vre.git
 
-# Copy the .env file into the Docker image
-# COPY .env /app/mddb-vre
-
-# Define environment variables
+# Define the build arguments
 ARG VRE_LITE_BASE_URL_DEVELOPMENT
 ARG VRE_LITE_BASE_URL_STAGING
 ARG VRE_LITE_BASE_URL_PRODUCTION

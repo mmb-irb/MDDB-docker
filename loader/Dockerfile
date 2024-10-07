@@ -16,9 +16,6 @@ RUN apt-get update && \
 # Clone loader repo
 RUN git clone https://mmb.irbbarcelona.org/gitlab/aluciani/MoDEL-CNS_DB_loader.git
 
-# Copy the .env file into the Docker image
-# COPY .env /app/MoDEL-CNS_DB_loader
-
 # Define environment variables
 ARG DB_SERVER
 ARG DB_PORT

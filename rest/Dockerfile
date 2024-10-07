@@ -21,9 +21,6 @@ VOLUME /data
 # Clone MoDEL-CNS_REST_API repo
 RUN git clone https://mmb.irbbarcelona.org/gitlab/aluciani/MoDEL-CNS_REST_API
 
-# Copy the .env file into the Docker image
-# COPY .env /app/MoDEL-CNS_REST_API
-
 # Define environment variables
 ARG DB_SERVER
 ARG DB_PORT
