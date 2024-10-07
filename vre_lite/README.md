@@ -6,36 +6,6 @@ For this project, the following repo has been used:
 
 https://mmb.irbbarcelona.org/gitlab/gbayarri/mddb-vre
 
-## Config files
-
-### .env file
-
-⚠️ No sensible default value is provided for any of these fields, they **need to be defined** ⚠️
-
-An `.env` file must be created in the **vre** folder. The file [**.env.git**](../vre/.env.git) can be taken as an example. The file must contain the following environment variables:
-
-| key              | value   | description                                     |
-| ---------------- | ------- | ----------------------------------------------- |
-| BASE_URL_DEVELOPMENT         | string  | baseURL for development                                        |
-| BASE_URL_STAGING      | string  | baseURL for staging                                    |
-| BASE_URL_PRODUCTION          | string | baseURL for production                            |
-| DATA_PATH          | number  | path where the data will be saved (relative to the docker)                           |
-| MAX_FILE_SIZE      | string  | maximum size for all the trajectory files in bytes                      |
-| MINIO_URL    | `<url>`  | url for minio (ie localhost)                             |
-| NODE_NAME    | number  | node identifier to deploy                               |
-
-Example:
-
-```
-BASE_URL_DEVELOPMENT=/vre/
-BASE_URL_STAGING=/vre/
-BASE_URL_PRODUCTION=/vre/
-DATA_PATH=/data
-MAX_FILE_SIZE=1000000000
-MINIO_URL=localhost
-NODE_NAME=jsc
-```
-
 ## Dockerfile
 
 This Dockerfile is used taking as a starting point the **repository** of the VRE.
@@ -50,8 +20,22 @@ WORKDIR /app
 # Clone mddb-vre repo
 RUN git clone https://mmb.irbbarcelona.org/gitlab/gbayarri/mddb-vre.git
 
-# Copy the .env file into the Docker image
-COPY .env /app/mddb-vre
+# Define the build arguments
+ARG VRE_LITE_BASE_URL_DEVELOPMENT
+ARG VRE_LITE_BASE_URL_STAGING
+ARG VRE_LITE_BASE_URL_PRODUCTION
+ARG VRE_LITE_DATA_PATH
+ARG VRE_LITE_MAX_FILE_SIZE
+ARG MINIO_URL
+ARG NODE_NAME
+
+RUN echo "BASE_URL_DEVELOPMENT=${VRE_LITE_BASE_URL_DEVELOPMENT}" > /app/mddb-vre/.env && \
+    echo "BASE_URL_STAGING=${VRE_LITE_BASE_URL_STAGING}" >> /app/mddb-vre/.env && \
+    echo "BASE_URL_PRODUCTION=${VRE_LITE_BASE_URL_PRODUCTION}" >> /app/mddb-vre/.env && \
+    echo "DATA_PATH=${VRE_LITE_DATA_PATH}" >> /app/mddb-vre/.env && \
+    echo "MAX_FILE_SIZE=${VRE_LITE_MAX_FILE_SIZE}" >> /app/mddb-vre/.env && \
+    echo "MINIO_URL=${MINIO_URL}" >> /app/mddb-vre/.env && \
+    echo "NODE_NAME=${NODE_NAME}" >> /app/mddb-vre/.env
 
 # Change working directory to /app/mddb-vre
 WORKDIR /app/mddb-vre
@@ -85,10 +69,8 @@ RUN curl -O https://dl.min.io/client/mc/release/linux-amd64/mc && \
     chmod +x mc && \
     mv mc /usr/local/bin/
 
-# Expose the port the app runs on
-EXPOSE 3001
-
 # Define arguments passed from docker-compose
+ARG VRE_LITE_INNER_PORT
 ARG MINIO_ROOT_USER
 ARG MINIO_ROOT_PASSWORD
 ARG MINIO_API_PORT
@@ -108,7 +90,9 @@ RUN echo '#!/bin/sh' > entrypoint.sh && \
     echo 'exec pm2-runtime start ecosystem.config.cjs --name mddb-vre' >> entrypoint.sh && \
     chmod +x entrypoint.sh
 
+# Expose the port the app runs on
+EXPOSE ${VRE_LITE_INNER_PORT}
+
 # Serve the app
 ENTRYPOINT ["/app/entrypoint.sh"]
-
 ```

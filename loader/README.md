@@ -6,40 +6,6 @@ For this project, the following repo has been used:
 
 https://mmb.irbbarcelona.org/gitlab/aluciani/MoDEL-CNS_DB_loader
 
-## Config files
-
-### .env file
-
-⚠️ No sensible default value is provided for any of these fields, they **need to be defined** ⚠️
-
-An `.env` file must be created in the **loader** folder. The file [**.env.git**](../loader/.env.git) can be taken as an example. The file must contain the following environment variables (the DB user needs to have writing rights):
-
-| key              | value   | description                                     |
-| ---------------- | ------- | ----------------------------------------------- |
-| DB_AUTH_USER         | string  | db user                                         |
-| DB_AUTH_PASSWORD      | string  | db password                                     |
-| DB_SERVER          | `<url>` | url of the db server                            |
-| DB_PORT          | number  | port of the db server                           |
-| DB_NAME      | string  | name of the dbcollection                        |
-| DB_AUTHSOURCE    | string  | authentication db                               |
-
-Example:
-
-```
-DB_SERVER=my_mongo_container
-DB_PORT=27017
-DB_NAME=mddb_db
-DB_AUTH_USER=user_rw
-DB_AUTH_PASSWORD=pwd_rw
-DB_AUTHSOURCE=mddb_db
-```
-
-The **DB_SERVER** must be the same name as the **mongodb container_name** in the [**docker-compose.yml**](../docker-compose-git.yml) file.
-
-The **DB_NAME** must be the same used in the [**mongo-init.js**](../mongo-init.js) file.
-
-The credentials **DB_AUTH_USER** and **DB_AUTH_PASSWORD** must be the same defined in the [**mongo-init.js**](../mongo-init.js) file with the **readWrite role**.
-
 ## Dockerfile
 
 This Dockerfile is used taking as a starting point the **repository** of the loader.
@@ -63,8 +29,21 @@ RUN apt-get update && \
 # Clone loader repo
 RUN git clone https://mmb.irbbarcelona.org/gitlab/aluciani/MoDEL-CNS_DB_loader.git
 
-# Copy the .env file into the Docker image
-COPY .env /app/MoDEL-CNS_DB_loader
+# Define environment variables
+ARG DB_SERVER
+ARG DB_PORT
+ARG DB_NAME
+ARG DB_AUTHSOURCE
+ARG DB_AUTH_USER
+ARG DB_AUTH_PASSWORD
+
+# Create .env file with environment variables
+RUN echo "DB_SERVER=${DB_SERVER}" > /app/MoDEL-CNS_DB_loader/.env && \
+    echo "DB_PORT=${DB_PORT}" >> /app/MoDEL-CNS_DB_loader/.env && \
+    echo "DB_NAME=${DB_NAME}" >> /app/MoDEL-CNS_DB_loader/.env && \
+    echo "DB_AUTHSOURCE=${DB_AUTHSOURCE}" >> /app/MoDEL-CNS_DB_loader/.env && \
+    echo "DB_AUTH_USER=${DB_AUTH_USER}" >> /app/MoDEL-CNS_DB_loader/.env && \
+    echo "DB_AUTH_PASSWORD=${DB_AUTH_PASSWORD}" >> /app/MoDEL-CNS_DB_loader/.env
 
 # Copy the environment.yml file into the Docker image
 COPY environment.yml /app

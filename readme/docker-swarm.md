@@ -44,13 +44,14 @@ Check services:
 ```sh
 $ docker stack services my_stack
 ID             NAME                MODE         REPLICAS   IMAGE                   PORTS
+<ID>           my_stack_apache     replicated   1/1        apache_image:latest     *:80->80/tcp, *:443->443/tcp
 <ID>           my_stack_client     replicated   2/2        client_image:latest     *:8080->80/tcp
 <ID>           my_stack_loader     replicated   0/0        loader_image:latest     
-<ID>           my_stack_minio      replicated   1/1        minio/minio:latest      *:9000-9001->9000-9001/tcp
+<ID>           my_stack_minio      replicated   1/1        minio/minio:latest      *:7000->7000/tcp, *:9001->9001/tcp
 <ID>           my_stack_mongodb    replicated   1/1        mongo:6                 *:27017->27017/tcp
 <ID>           my_stack_rest       replicated   4/4        rest_image:latest       *:8081->3000/tcp
-<ID>           my_stack_vre        replicated   1/1        vre_image:latest        *:8082->3001/tcp
-<ID>           my_stack_workflow   replicated   0/0        workflow_image:latest
+<ID>           my_stack_vre_lite   replicated   1/1        vre_lite_image:latest   *:8082->3001/tcp
+<ID>           my_stack_workflow   replicated   0/0        workflow_image:latest  
 ```
 
 Check nodes:
@@ -115,9 +116,9 @@ Open a browser and type:
 http://localhost:8081
 ```
 
-Or modify the port 8081 by the one defined as **ports** in the **rest service** of the [**docker-compose.yml**](../docker-compose.yml) file. 
+Or modify the port 8081 by the one defined as **REST_OUTER_PORT** in the [**.env**](../.env.git) file. 
 
-If the server has [**apache already configured**](setup.md#installation-and-configuration-of-apache), go to:
+If services are already online, go to:
 
     http(s)://your_server_ip/api/rest/
 
@@ -129,9 +130,9 @@ Open a browser and type:
 http://localhost:8080
 ```
 
-Or modify the port 8080 by the one defined as **ports** in the **client service** of the [**docker-compose.yml**](../docker-compose.yml) file. 
+Or modify the port 8080 by the one defined as **CLIENT_OUTER_PORT** in the [**.env**](../.env.git) file. 
 
-If the server has [**apache already configured**](setup.md#installation-and-configuration-of-apache), go to:
+If services are already online, go to:
 
     http(s)://your_server_ip
 
@@ -157,16 +158,17 @@ Check that at least the mongo, rest and client containers are up & running:
 
 ```sh
 $ docker ps -a
-CONTAINER ID   IMAGE                 COMMAND                  CREATED        STATUS        PORTS       NAMES
-<ID>           rest_image:latest     "pm2-runtime start i…"   17 hours ago   Up 17 hours             3000/tcp    my_stack_rest.2.<ID>
-<ID>           rest_image:latest     "pm2-runtime start i…"   17 hours ago   Up 17 hours             3000/tcp    my_stack_rest.1.<ID>
-<ID>           rest_image:latest     "pm2-runtime start i…"   17 hours ago   Up 17 hours             3000/tcp    my_stack_rest.3.<ID>
-<ID>           rest_image:latest     "pm2-runtime start i…"   17 hours ago   Up 17 hours             3000/tcp    my_stack_rest.4.<ID>
-<ID>           mongo:6               "docker-entrypoint.s…"   17 hours ago   Up 17 hours             27017/tcp   my_stack_mongodb.1.<ID>
-<ID>           client_image:latest   "/docker-entrypoint.…"   17 hours ago   Up 17 hours             80/tcp      my_stack_client.2.<ID>
-<ID>           client_image:latest   "/docker-entrypoint.…"   17 hours ago   Up 17 hours             80/tcp      my_stack_client.1.<ID>
-<ID>           minio/minio:latest    "/usr/bin/docker-ent…"   17 hours ago   Up 17 hours (healthy)   9000/tcp    my_stack_minio.1.<ID>
-<ID>           vre_image:latest      "/app/entrypoint.sh"     17 hours ago   Up 17 hours             3001/tcp    my_stack_vre.1.<ID>
+CONTAINER ID   IMAGE                   COMMAND                  CREATED       STATUS                 PORTS             NAMES
+<ID>           rest_image:latest     "pm2-runtime start i…"   17 hours ago   Up 17 hours             3000/tcp          my_stack_rest.2.<ID>
+<ID>           rest_image:latest     "pm2-runtime start i…"   17 hours ago   Up 17 hours             3000/tcp          my_stack_rest.1.<ID>
+<ID>           rest_image:latest     "pm2-runtime start i…"   17 hours ago   Up 17 hours             3000/tcp          my_stack_rest.3.<ID>
+<ID>           rest_image:latest     "pm2-runtime start i…"   17 hours ago   Up 17 hours             3000/tcp          my_stack_rest.4.<ID>
+<ID>           mongo:6               "docker-entrypoint.s…"   17 hours ago   Up 17 hours             27017/tcp         my_stack_mongodb.1.<ID>
+<ID>           client_image:latest   "/docker-entrypoint.…"   17 hours ago   Up 17 hours             80/tcp            my_stack_client.2.<ID>
+<ID>           client_image:latest   "/docker-entrypoint.…"   17 hours ago   Up 17 hours             80/tcp            my_stack_client.1.<ID>
+<ID>           minio/minio:latest    "/usr/bin/docker-ent…"   17 hours ago   Up 17 hours (healthy)   9000/tcp          my_stack_minio.1.<ID>
+<ID>           apache_image:latest   "httpd-foreground"       17 hours ago   Up 17 hours             80/tcp, 443/tcp   my_stack_apache.1.<ID>
+<ID>           vre_lite_image:latest "/app/entrypoint.sh"     17 hours ago   Up 17 hours             3001/tcp          my_stack_vre_lite.1.<ID>
 ```
 
 ### Inspect docker network 
@@ -206,35 +208,35 @@ It should show something like:
         },
         "ConfigOnly": false,
         "Containers": {
-            "2fc8e2f395ee804abaa8add31ac7e718ecf4fd47a71dbc68a8309a39d778f35a": {
+            "<ID>": {
                 "Name": "my_stack_rest.4.<ID>",
                 "EndpointID": "<ID>",
                 "MacAddress": "<MAC>",
                 "IPv4Address": "<IP>",
                 "IPv6Address": ""
             },
-            "4f3e4b457ac2781704e4e195f2ae10d0898287152d55cca828c29b262c122c11": {
+            "<ID>": {
                 "Name": "my_stack_rest.2.<ID>",
                 "EndpointID": "<ID>",
                 "MacAddress": "<MAC>",
                 "IPv4Address": "<IP>",
                 "IPv6Address": ""
             },
-            "5ec96d93cf872482e118900ba0cb8a42ff444491b122283dd79b3416c28b1059": {
+            "<ID>": {
                 "Name": "my_stack_rest.3.<ID>",
                 "EndpointID": "<ID>",
                 "MacAddress": "<MAC>",
                 "IPv4Address": "<IP>",
                 "IPv6Address": ""
             },
-            "a47a078c1b0d359726d6e5f322315504648e53f6c311e19d6d9b37457675e4ed": {
+            "<ID>": {
                 "Name": "my_stack_mongodb.1.<ID>",
                 "EndpointID": "<ID>",
                 "MacAddress": "<MAC>",
                 "IPv4Address": "<IP>",
                 "IPv6Address": ""
             },
-            "f09f5aabfdb253900d0f445f692b0d877f14473a3155b49559add968f76f8065": {
+            "<ID>": {
                 "Name": "my_stack_rest.1.<ID>",
                 "EndpointID": "<ID>",
                 "MacAddress": "<MAC>",
@@ -280,5 +282,6 @@ CONTAINER ID   NAME                                           CPU %     MEM USAG
 <ID>           my_stack_client.2.<ID>                         0.00%     12.7MiB / 8GiB      0.16%     90.5kB / 886kB    0B / 12.3kB   17
 <ID>           my_stack_client.1.<ID>                         0.00%     12.87MiB / 8GiB     0.16%     86.1kB / 4.12MB   0B / 12.3kB   17
 <ID>           my_stack_minio.1.<ID>                          0.04%     110MiB / 4GiB       2.68%     1.93GB / 1.38GB   0B / 2.14GB   21
-<ID>           my_stack_vre.1.<ID>                            2.65%     384.5MiB / 4GiB     9.39%     1.5MB / 23kB      0B / 3.09MB   187
+<ID>           my_stack_apache.1.<ID>                         0.00%     25.78MiB / 1GiB     2.52%     57.8MB / 59.1MB   0B / 4.1kB    109
+<ID>           my_stack_vre_lite.1.<ID>                       2.65%     384.5MiB / 4GiB     9.39%     1.5MB / 23kB      0B / 3.09MB   187
 ```

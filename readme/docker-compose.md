@@ -6,7 +6,7 @@ Compose **simplifies** the control of your entire application stack, making it e
 
 ## Build services
 
-For building the services via **Docker Compose**, please execute the following instruction from the same folder where the [**docker-compose.yml**](../docker-compose-git.yml) file is:
+For building the services via **Docker Compose**, please execute the following instruction from the same folder where the [**docker-compose.yml**](../compose/docker-compose-git.yml) file is:
 
 ```sh
 docker-compose up -d
@@ -32,7 +32,7 @@ docker-compose run workflow mwf -h
 
 Please read carefully the [**workflow help**](../workflow) as it has an extensive documentation. 
 
-Example of running the workflow downloading an already **loaded trajectory** and saving the results into a **folder** that must be **inside the volume** defined in the [**docker-compose.yml**](../docker-compose-git.yml) file.
+Example of running the workflow downloading an already **loaded trajectory** and saving the results into a **folder** that must be **inside the volume** defined in the [**docker-compose.yml**](../compose/docker-compose-git.yml) file.
 
 ```sh
 docker-compose run workflow mwf run -proj <ACCESSION ID> -smp -e clusters energies pockets -dir <FOLDER>
@@ -56,7 +56,7 @@ docker-compose run loader list
 docker-compose run loader load <trajectory_dir>
 ```
 
-Take into account that **trajectory_dir** must be inside **/path/to/loader/files** defined in [**docker-compose.yml**](../docker-compose-git.yml).
+Take into account that **trajectory_dir** must be inside **/path/to/loader/files** defined in [**docker-compose.yml**](../compose/docker-compose-git.yml).
 
 **Remove** database document:
 
@@ -72,7 +72,7 @@ Open a browser and type:
 http://localhost:8081
 ```
 
-Or modify the port 8081 by the one defined as **ports** in the **rest service** of the [**docker-compose.yml**](../docker-compose-git.yml) file. 
+Or modify the port 8081 by the one defined as **ports** in the **rest service** of the [**docker-compose.yml**](../compose/docker-compose-git.yml) file. 
 
 If the server has [**apache already configured**](setup.md#installation-and-configuration-of-apache), go to:
 
@@ -86,7 +86,7 @@ Open a browser and type:
 http://localhost:8080
 ```
 
-Or modify the port 8080 by the one defined as **ports** in the **client service** of the [**docker-compose.yml**](../docker-compose-git.yml) file. 
+Or modify the port 8080 by the one defined as **ports** in the **client service** of the [**docker-compose.yml**](../compose/docker-compose-git.yml) file. 
 
 If the server has [**apache already configured**](setup.md#installation-and-configuration-of-apache), go to:
 

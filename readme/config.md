@@ -1,18 +1,10 @@
 # Set Up Configuration Files
 
-There are several **configuration files** that must be created and modified. As almost each of the different **docker blocks** of the project have **one or more** configuration files, this section is divided by these **blocks**:
-
-* [Global](#global)
-* [Client](#client)
-* [Loader](#loader)
-* [REST API](#rest-api)
-* [VRE](#vre)
+* [.env file](#env-file)
 * [MongoDB](#mongodb)
 * [Docker Compose](#docker-compose)
 
-## Global
-
-### .env file
+## .env file
 
 ⚠️ No sensible default value is provided for any of these fields, they **need to be defined** ⚠️
 
@@ -22,48 +14,92 @@ An `.env` file must be created in the **root** of the project. The file [**.env.
 | ---------------- | ------- | ----------------------------------------------- |
 | DOCKER_DEFAULT_PLATFORM         | string  | default platform (architecture and operating system), ie linux/amd64                               |
 | NODE         | string  | node identifier to deploy                                     |
+| &nbsp;
+| APACHE_HTTP_OUTER_PORT         | number  | apache outer port for http protocol                                        |
+| APACHE_HTTPS_OUTER_PORT         | number  | apache outer port for https protocol                                        |
+| APACHE_HTTP_INNER_PORT         | number  | apache inner port for http protocol                                        |
+| APACHE_HTTPS_INNER_PORT         | number  | apache inner port for https protocol                                        |
+| APACHE_REPLICAS         | number  | apache number of replicas to deploy                                        |
+| APACHE_CPU_LIMIT         | string  | apache limit number of CPUs                                        |
+| APACHE_MEMORY_LIMIT         | string  | apache limit memory                                        |
+| APACHE_CPU_RESERVATION         | string  | apache reserved number of CPUs                                        |
+| APACHE_MEMORY_RESERVATION         | string  | apache reserved memory                                        |
+| &nbsp;
 | LOADER_VOLUME_PATH         | string  | path where the loader will look for files                                        |
 | LOADER_REPLICAS      | string  | number of replicas to deploy                                    |
 | LOADER_CPU_LIMIT      | string  | loader limit number of CPUs                                    |
 | LOADER_MEMORY_LIMIT          | string | loader limit memory                           |
 | LOADER_CPU_RESERVATION          | string  | loader reserved number of CPUs                           |
 | LOADER_MEMORY_RESERVATION      | string  | loader reserved memory                         |
+| LOADER_DB_LOGIN      | string  | db user for loader                         |
+| LOADER_DB_PASSWORD      | string  | db password for loader                       |
+| &nbsp;
 | WORKFLOW_VOLUME_PATH         | string  | path where the workflow will save the files                                        |
 | WORKFLOW_REPLICAS      | string  | number of replicas to deploy                                    |
 | WORKFLOW_CPU_LIMIT      | string  | workflow limit number of CPUs                                    |
 | WORKFLOW_MEMORY_LIMIT          | string | workflow limit memory                           |
 | WORKFLOW_CPU_RESERVATION          | string  | workflow reserved number of CPUs                           |
 | WORKFLOW_MEMORY_RESERVATION      | string  | workflow reserved memory                         |
+| &nbsp;
 | CLIENT_REPLICAS      | string  | number of replicas to deploy                                    |
+| CLIENT_OUTER_PORT         | number  | client outer port                                         |
+| CLIENT_INNER_PORT         | number  | client inner port                                         |
 | CLIENT_CPU_LIMIT    | string  | client limit number of CPUs                               |
 | CLIENT_MEMORY_LIMIT    | string  | client limit memory                             |
 | CLIENT_CPU_RESERVATION    | string  | client reserved number of CPUs                               |
 | CLIENT_MEMORY_RESERVATION    | string  | client reserved memory                               |
+| &nbsp;
 | REST_REPLICAS      | string  | number of replicas to deploy                                    |
+| REST_OUTER_PORT         | number  | REST outer port                                         |
+| REST_INNER_PORT         | number  | REST inner port                                         |
 | REST_CPU_LIMIT    | string  | REST limit number of CPUs                               |
 | REST_MEMORY_LIMIT    | string  | REST limit memory                             |
 | REST_CPU_RESERVATION    | string  | REST reserved number of CPUs                               |
 | REST_MEMORY_RESERVATION    | string  | REST reserved memory                               |
+| REST_DB_LOGIN    | string  | db user for website REST API                               |
+| REST_DB_PASSWORD    | string  | db password for website REST API                               |
+| &nbsp;
 | DB_VOLUME_PATH         | string  | path where the DB will deploy the mongoDB file system                                        |
 | DB_REPLICAS      | string  | number of replicas to deploy                                    |
+| DB_OUTER_PORT         | number  | DB outer port                                         |
+| DB_INNER_PORT         | number  | DB inner port                                         |
 | DB_CPU_LIMIT      | string  | DB limit number of CPUs                                    |
 | DB_MEMORY_LIMIT          | string | DB limit memory                           |
 | DB_CPU_RESERVATION          | string  | DB reserved number of CPUs                           |
 | DB_MEMORY_RESERVATION      | string  | DB reserved memory                         |
+| DB_SERVER      | `<url>`  | url of the db server                          |
+| DB_NAME      | string  | name of the  DB collection                          |
+| DB_AUTHSOURCE      | string  | the DB collection the user will attempt to authenticate to                           |
+| &nbsp;
 | MINIO_VOLUME_PATH         | string  | path where MinIO will save / retrieve the files                                        |
 | MINIO_REPLICAS      | string  | number of replicas to deploy                                    |
+| MINIO_API_OUTER_PORT         | number  | MinIO API outer port                                         |
+| MINIO_API_INNER_PORT         | number  | MinIO API inner port                                         |
+| MINIO_UI_OUTER_PORT         | number  | MinIO WebUI outer port                                         |
+| MINIO_UI_INNER_PORT         | number  | MinIO WebUI inner port                                         |
 | MINIO_CPU_LIMIT      | string  | MinIO limit number of CPUs                                    |
 | MINIO_MEMORY_LIMIT          | string | MinIO limit memory                           |
 | MINIO_CPU_RESERVATION          | string  | MinIO reserved number of CPUs                           |
 | MINIO_MEMORY_RESERVATION      | string  | MinIO reserved memory                         |
-| VRE_VOLUME_PATH         | string  | path where the VRE will save the files                                        |
-| VRE_REPLICAS      | string  | number of replicas to deploy                                    |
-| VRE_CPU_LIMIT      | string  | VRE limit number of CPUs                                    |
-| VRE_MEMORY_LIMIT          | string | VRE limit memory                           |
-| VRE_CPU_RESERVATION          | string  | VRE reserved number of CPUs                           |
-| VRE_MEMORY_RESERVATION      | string  | VRE reserved memory                         |
+| MINIO_URL      | `<url>`  | url for MinIO (ie localhost)                          |
+| &nbsp;
+| VRE_LITE_VOLUME_PATH         | string  | path where the VRE lite will save the files                                        |
+| VRE_LITE_REPLICAS      | string  | number of replicas to deploy                                    |
+| VRE_LITE_OUTER_PORT         | number  | VRE lite outer port                                         |
+| VRE_LITE_INNER_PORT         | number  | VRE lite inner port                                         |
+| VRE_LITE_CPU_LIMIT      | string  | VRE lite limit number of CPUs                                    |
+| VRE_LITE_MEMORY_LIMIT          | string | VRE lite limit memory                           |
+| VRE_LITE_CPU_RESERVATION          | string  | VRE lite reserved number of CPUs                           |
+| VRE_LITE_MEMORY_RESERVATION      | string  | VRE lite reserved memory                         |
+| VRE_LITE_BASE_URL_DEVELOPMENT         | string  | VRE lite baseURL for development                                        |
+| VRE_LITE_BASE_URL_STAGING      | string  | VRE lite baseURL for staging                                    |
+| VRE_LITE_BASE_URL_PRODUCTION          | string | VRE lite baseURL for production                            |
+| VRE_LITE_DATA_PATH          | string  | path where the data will be saved (relative to the docker)                           |
+| VRE_LITE_MAX_FILE_SIZE      | number  | maximum size for all the trajectory files in bytes                      |
+| &nbsp;
 | MONGO_INITDB_ROOT_USERNAME      | string  | root user for the DB                         |
 | MONGO_INITDB_ROOT_PASSWORD      | string  | root password for the DB                       |
+| &nbsp;
 | MINIO_ROOT_USER      | string  | MinIO user                         |
 | MINIO_ROOT_PASSWORD      | string  | MinIO password                      |
 | MINIO_BROWSER_REDIRECT_URL      | `<url>`  | MinIO base URL (full URI, ie http(s)://your-domain.com/minio)                      |
@@ -71,123 +107,21 @@ An `.env` file must be created in the **root** of the project. The file [**.env.
 **Important:** the formats of **cpus** and **memory** must be in string format between single quotes, while **replicas** must be in integer format. Example:
 
 ```
-VRE_VOLUME_PATH=/path/to/vre/data  # path to volume
-VRE_REPLICAS=2  # number of replicas to deploy
-VRE_CPU_LIMIT='4.00'  # cpus in float format
-VRE_MEMORY_LIMIT='2G'  # memory indicating unit (G, M)
+VRE_LITE_VOLUME_PATH=/path/to/vre/data  # path to volume
+VRE_LITE_REPLICAS=2  # number of replicas to deploy
+VRE_LITE_CPU_LIMIT='4.00'  # cpus in float format
+VRE_LITE_MEMORY_LIMIT='2G'  # memory indicating unit (G, M)
 ```
 
-## Client
-
-The client has its **own repository** with the builds for each node:
-
-https://mmb.irbbarcelona.org/gitlab/gbayarri/mdposit-client-build
-
-All the instructions for creating a **new build** are in this repository.
-
-## Loader
-
-### .env file
-
-⚠️ No sensible default value is provided for any of these fields, they **need to be defined** ⚠️
-
-An `.env` file must be created in the **loader** folder. The file [**.env.git**](../loader/.env.git) can be taken as an example. The file must contain the following environment variables (the DB user needs to have writing rights):
-
-| key              | value   | description                                     |
-| ---------------- | ------- | ----------------------------------------------- |
-| DB_AUTH_USER         | string  | db user                                         |
-| DB_AUTH_PASSWORD      | string  | db password                                     |
-| DB_SERVER          | `<url>` | url of the db server                            |
-| DB_PORT          | number  | port of the db server                           |
-| DB_NAME      | string  | name of the dbcollection                        |
-| DB_AUTHSOURCE    | string  | authentication db                               |
-
-Example:
-
-```
-DB_SERVER=my_stack_mongodb
-DB_PORT=27017
-DB_NAME=mddb_db
-DB_AUTH_USER=user_rw
-DB_AUTH_PASSWORD=pwd_rw
-DB_AUTHSOURCE=mddb_db
-```
-
-If deploying via **Docker Swarm**, the **DB_SERVER** must be **<stack_name>_<service_name>** where **stack_name** is the one used when [**deploying the stack**](docker-swarm.md#build-services) and **service_name** is the mongodb name of the service as defined in [**docker-compose.yml**](../docker-compose.yml) file.
-
-If deploying via **Docker Compose**, the **DB_SERVER** must be the same name as the **mongodb container_name** in the [**docker-compose.yml**](../docker-compose-git.yml) file.
+Tthe **DB_SERVER** must be **<stack_name>_<service_name>** where **stack_name** is the one used when [**deploying the stack**](docker-swarm.md#build-services) and **service_name** is the mongodb name of the service as defined in [**docker-compose.yml**](../docker-compose.yml) file.
 
 The **DB_NAME** and **DB_AUTHSOURCE** must be the same used in the [**mongo-init.js**](../mongo-init.js) file.
 
-The credentials **DB_AUTH_USER** and **DB_AUTH_PASSWORD** must be the same defined in the [**mongo-init.js**](../mongo-init.js) file with the **readWrite** role.
+The credentials **LOADER_DB_LOGIN** and **LOADER_DB_PASSWORD** must be the same defined in the [**mongo-init.js**](../mongo-init.js) file with the **readWrite** role.
 
-## REST API
+The credentials **REST_DB_LOGIN** and **REST_DB_PASSWORD** must be the same defined in the **mongo-init.js** file with the **read** role.
 
-### .env file
-
-⚠️ No sensible default value is provided for any of these fields, they **need to be defined** ⚠️
-
-An `.env` file must be created in the **rest** folder. The file [**.env.git**](../rest/.env.git) can be taken as an example. The file must contain the following environment variables (the DB user needs to have reading rights):
-
-| key              | value   | description                                     |
-| ---------------- | ------- | ----------------------------------------------- |
-| DB_AUTH_USER         | string  | db user                                         |
-| DB_AUTH_PASSWORD      | string  | db password                                     |
-| DB_SERVER          | `<url>` | url of the db server                            |
-| DB_PORT          | number  | port of the db server                           |
-| DB_NAME      | string  | name of the dbcollection                        |
-| DB_AUTHSOURCE    | string  | authentication db                               |
-| LISTEN_PORT    | number  | port to query the API                               |
-
-Example:
-
-```
-DB_SERVER=my_stack_mongodb
-DB_PORT=27017
-DB_NAME=mddb_db
-DB_AUTH_USER=user_r
-DB_AUTH_PASSWORD=pwd_r
-DB_AUTHSOURCE=mddb_db
-LISTEN_PORT=3000
-```
-
-If deploying via **Docker Swarm**, the **DB_SERVER** must be **<stack_name>_<service_name>** where **stack_name** is the one used when [**deploying the stack**](docker-swarm.md#build-services) and **service_name** is the mongodb name of the service as defined in [**docker-compose.yml**](../docker-compose.yml) file.
-
-If deploying via **Docker Compose**, the **DB_SERVER** must be the same name as the **mongodb container_name** in the [**docker-compose.yml**](../docker-compose-git.yml) file.
-
-The **DB_NAME** and **DB_AUTHSOURCE** must be the same used in the [**mongo-init.js**](../mongo-init.js) file.
-
-The credentials **DB_AUTH_USER** and **DB_AUTH_PASSWORD** must be the same defined in the [**mongo-init.js**](../mongo-init.js) file with the **read** role.
-
-The **LISTEN_PORT** must be the same exposed in the [**REST Dockerfile**](../rest/Dockerfile).
-
-## VRE
-
-⚠️ No sensible default value is provided for any of these fields, they **need to be defined** ⚠️
-
-An `.env` file must be created in the **vre** folder. The file [**.env.git**](../vre/.env.git) can be taken as an example. The file must contain the following environment variables:
-
-| key              | value   | description                                     |
-| ---------------- | ------- | ----------------------------------------------- |
-| BASE_URL_DEVELOPMENT         | string  | baseURL for development                                        |
-| BASE_URL_STAGING      | string  | baseURL for staging                                    |
-| BASE_URL_PRODUCTION          | string | baseURL for production                            |
-| DATA_PATH          | number  | path where the data will be saved (relative to the docker)                           |
-| MAX_FILE_SIZE      | string  | maximum size for all the trajectory files in bytes                      |
-| MINIO_URL    | `<url>`  | url for minio (ie localhost)                             |
-| NODE_NAME    | number  | node identifier to deploy                               |
-
-Example:
-
-```
-BASE_URL_DEVELOPMENT=/vre/
-BASE_URL_STAGING=/vre/
-BASE_URL_PRODUCTION=/vre/
-DATA_PATH=/data
-MAX_FILE_SIZE=1000000000
-MINIO_URL=localhost
-NODE_NAME=jsc
-```
+Neither the **VRE_LITE_BASE_URL_DEVELOPMENT** nor the **VRE_LITE_BASE_URL_STAGING** shouldn't be used when running as a docker service. 
 
 ## MongoDB
 
@@ -222,24 +156,53 @@ Please modify the values of **user** and **pwd** for both users and be sure that
 
 ## Docker Compose
 
-Two **docker-compose.yml** files are provided for the sake of running the services either via **Docker Compose** or via **Docker Swarm**.
+The [**docker-compose.yml**](./docker-compose.yml) is the file that specifies what **images** are required, what **ports** they need to expose, whether they have access to the host **filesystem**, what **commands** should be run when they start up, and so on.
 
-### docker-compose.yml file for Docker Swarm
-
-For deploying via **Docker Swarm**, use the file [**docker-compose.yml**](../docker-compose.yml).
-
-Take a look as well at the **client/rest ports**. They may change depending on the host configuration. Changing the ports **inside the containers** implies to change it as well in the [**client Dockerfile**](../client/Dockerfile) and in the [**REST API Dockerfile**](../rest/Dockerfile). If changing the ports **on the host machine**, take into account that they must mach with the ones defined in the [**Set Up of the Virtual Hosts**](setup.md#setting-up-virtual-hosts).
-
-As for the **resources**, **paths** and client **NODE_ID**, all of these variables must be provided in the [**global .env file**](#global).
-
-Finally, a root credentials **MONGO_INITDB_ROOT_USERNAME** and **MONGO_INITDB_ROOT_USERNAME** for the mongoDB database must be defined as well in the [**global .env file**](#global).
+All the configurable variables such as **resources**, **paths**, **ports** and so on must be defined in the [**global .env file**](#env-file).
 
 ```yaml
 services:
+  apache:
+    image: apache_image   # name of apache image
+    build:
+      context: ./apache   # folder to search Dockerfile for this image
+      args:
+        APACHE_HTTP_INNER_PORT: ${APACHE_HTTP_INNER_PORT}
+        APACHE_HTTPS_INNER_PORT: ${APACHE_HTTPS_INNER_PORT}
+        APACHE_HTTP_OUTER_PORT: ${APACHE_HTTP_OUTER_PORT}
+        APACHE_HTTPS_OUTER_PORT: ${APACHE_HTTPS_OUTER_PORT}
+        CLIENT_INNER_PORT: ${CLIENT_INNER_PORT}
+        REST_INNER_PORT: ${REST_INNER_PORT}
+        VRE_LITE_INNER_PORT: ${VRE_LITE_INNER_PORT}
+        MINIO_UI_INNER_PORT: ${MINIO_UI_INNER_PORT}
+    ports:
+      - "${APACHE_HTTP_OUTER_PORT}:${APACHE_HTTP_INNER_PORT}"   # http port mapping
+      - "${APACHE_HTTPS_OUTER_PORT}:${APACHE_HTTPS_INNER_PORT}"   # https port mapping
+    networks:
+      - web_network
+    deploy:
+      replicas: ${APACHE_REPLICAS}  # Ensure this service is not deployed by default as it is a one-time task
+      resources:
+        limits:
+          cpus: ${APACHE_CPU_LIMIT}   # Specify the limit number of CPUs
+          memory: ${APACHE_MEMORY_LIMIT}   # Specify the limit memory
+        reservations:
+          cpus: ${APACHE_CPU_RESERVATION}   # Specify the reserved number of CPUs
+          memory: ${APACHE_MEMORY_RESERVATION}   # Specify the reserved memory
+      restart_policy:
+        condition: any   # Restart always
+
   loader:
     image: loader_image   # name of loader image
     build:
       context: ./loader   # folder to search Dockerfile for this image
+      args:
+        DB_SERVER: ${DB_SERVER}
+        DB_PORT: ${DB_OUTER_PORT}
+        DB_NAME: ${DB_NAME}
+        DB_AUTH_USER: ${LOADER_DB_LOGIN}
+        DB_AUTH_PASSWORD: ${LOADER_DB_PASSWORD}
+        DB_AUTHSOURCE: ${DB_AUTHSOURCE}
     volumes:
       - loader_volume:/data   # path where the loader will look for files
     networks:
@@ -276,8 +239,11 @@ services:
       context: ./client  # folder to search Dockerfile for this image
       args:
         NODE_ID: ${NODE}  # Pass here the build argument with the node id
+        CLIENT_INNER_PORT: ${CLIENT_INNER_PORT}
     ports:
-      - "${CLIENT_PORT}:80"  # port mapping, be aware that the second port is the same exposed in the client/Dockerfile
+      - "${CLIENT_OUTER_PORT}:${CLIENT_INNER_PORT}"  # port mapping
+    networks:
+      - web_network
     deploy:
       replicas: ${CLIENT_REPLICAS}   # Specify the number of replicas for Docker Swarm
       resources:
@@ -296,12 +262,21 @@ services:
     image: rest_image
     build:
       context: ./rest   # folder to search Dockerfile for this image
+      args:
+        DB_SERVER: ${DB_SERVER}
+        DB_PORT: ${DB_OUTER_PORT}
+        DB_NAME: ${DB_NAME}
+        DB_AUTH_USER: ${REST_DB_LOGIN}
+        DB_AUTH_PASSWORD: ${REST_DB_PASSWORD}
+        DB_AUTHSOURCE: ${DB_AUTHSOURCE}
+        REST_INNER_PORT: ${REST_INNER_PORT}
     depends_on:
       - mongodb
     ports:
-      - "${REST_PORT}:3000"   # port mapping, be aware that the second port is the same exposed in the rest/Dockerfile
+      - "${REST_OUTER_PORT}:${REST_INNER_PORT}"   # port mapping
     networks:
       - data_network
+      - web_network
     deploy:
       replicas: ${REST_REPLICAS}   # Specify the number of replicas for Docker Swarm
       resources:
@@ -322,7 +297,8 @@ services:
       MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME}
       MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD}
     ports:
-      - "${DB_PORT}:27017"
+      - "${DB_OUTER_PORT}:${DB_INNER_PORT}"
+    command: mongod --port ${DB_OUTER_PORT}
     volumes:
       - ${DB_VOLUME_PATH}:/data/db  # path where the database will be stored (outside the container, in the host machine)
       - ./mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro # path to the initialization script
@@ -349,10 +325,11 @@ services:
     volumes:
       - minio_volume:/data   # path where minio will store the data in object storage format (outside the container, in the host machine)
     ports:
-      - "${MINIO_API_PORT}:${MINIO_API_PORT}"
-      - "${MINIO_UI_PORT}:${MINIO_UI_PORT}"   # port for the minio console (only for development)
+      - "${MINIO_API_OUTER_PORT}:${MINIO_API_INNER_PORT}"
+      - "${MINIO_UI_INNER_PORT}:${MINIO_UI_INNER_PORT}"   # port for the minio console (only for development)
     networks:
-      - vre_network
+      - vre_lite_network
+      - web_network
     deploy:
       replicas: ${MINIO_REPLICAS}   # Specify the number of replicas for Docker Swarm
       resources:
@@ -364,38 +341,47 @@ services:
           memory: ${MINIO_MEMORY_RESERVATION}   # Specify the reserved memory
       restart_policy:
         condition: on-failure   # Restart only on failure
-    command: server --address ":${MINIO_API_PORT}" /data --console-address ":${MINIO_UI_PORT}"   # Command to run the minio console (only for development)
+    command: server --address ":${MINIO_API_INNER_PORT}" /data --console-address ":${MINIO_UI_INNER_PORT}"   # Remove the console-address flag for production
     healthcheck:  # Health check for the minio service
-      test: ["CMD", "curl", "-f", "http://localhost:${MINIO_API_PORT}/minio/health/live"]
+      test: ["CMD", "curl", "-f", "http://localhost:${MINIO_API_INNER_PORT}/minio/health/live"]
       interval: 30s
       timeout: 10s
       retries: 5
 
-  vre:
-    image: vre_image 
+  vre_lite:
+    image: vre_lite_image 
     build:
-      context: ./vre
+      context: ./vre_lite
       args:
         MINIO_ROOT_USER: ${MINIO_ROOT_USER}
         MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
-        MINIO_API_PORT: ${MINIO_API_PORT}
+        MINIO_API_PORT: ${MINIO_API_INNER_PORT}
+        VRE_LITE_INNER_PORT: ${VRE_LITE_INNER_PORT}
+        VRE_LITE_BASE_URL_DEVELOPMENT: ${VRE_LITE_BASE_URL_DEVELOPMENT}
+        VRE_LITE_BASE_URL_STAGING: ${VRE_LITE_BASE_URL_STAGING}
+        VRE_LITE_BASE_URL_PRODUCTION: ${VRE_LITE_BASE_URL_PRODUCTION}
+        VRE_LITE_DATA_PATH: ${VRE_LITE_DATA_PATH}
+        VRE_LITE_MAX_FILE_SIZE: ${VRE_LITE_MAX_FILE_SIZE}
+        MINIO_URL: ${MINIO_URL}
+        NODE_NAME: ${NODE}
     volumes:
-      - vre_volume:/data
+      - vre_lite_volume:/data
     ports:
-      - "${VRE_PORT}:3001"
+      - "${VRE_LITE_OUTER_PORT}:${VRE_LITE_INNER_PORT}"
     networks:
-      - vre_network
+      - vre_lite_network
+      - web_network
     depends_on:
       - minio
     deploy:
-      replicas: ${VRE_REPLICAS}   # Specify the number of replicas for Docker Swarm
+      replicas: ${VRE_LITE_REPLICAS}   # Specify the number of replicas for Docker Swarm
       resources:
         limits:
-          cpus: ${VRE_CPU_LIMIT}   # Specify the limit number of CPUs
-          memory: ${VRE_MEMORY_LIMIT}   # Specify the limit memory
+          cpus: ${VRE_LITE_CPU_LIMIT}   # Specify the limit number of CPUs
+          memory: ${VRE_LITE_MEMORY_LIMIT}   # Specify the limit memory
         reservations:
-          cpus: ${VRE_CPU_RESERVATION}   # Specify the reserved number of CPUs
-          memory: ${VRE_MEMORY_RESERVATION}   # Specify the reserved memory
+          cpus: ${VRE_LITE_CPU_RESERVATION}   # Specify the reserved number of CPUs
+          memory: ${VRE_LITE_MEMORY_RESERVATION}   # Specify the reserved memory
       restart_policy:
         condition: any   # Restart always
       update_config:
@@ -420,97 +406,20 @@ volumes:
       type: none
       o: bind
       device: ${MINIO_VOLUME_PATH}   # bind the volume to MINIO_VOLUME_PATH on the host
-  vre_volume:
+  vre_lite_volume:
     driver: local
     driver_opts:
       type: none
       o: bind
-      device: ${VRE_VOLUME_PATH}   # bind the volume to VRE_VOLUME_PATH on the host
+      device: ${VRE_LITE_VOLUME_PATH}   # bind the volume to VRE_LITE_VOLUME_PATH on the host
 
 networks:
   data_network: 
     external: true   # Use an external network
-  vre_network: 
-    external: true   # Use an external network
-```
-
-### docker-compose.yml file for Docker Compose
-
-For deploying via **Docker Compose**, a`docker-compose.yml` file must be created in the root of the project. The file [**docker-compose-git.yml**](../docker-compose-git.yml) can be taken as an example.
-
-Once created, open the **docker-compose.yml** with an editor and modify the volumes' routes.
-
-Take a look as well at the **client/rest ports**. They may change depending on the host configuration. Changing the ports **inside the containers** implies to change it as well in the [**client Dockerfile**](../client/Dockerfile) and in the [**REST API Dockerfile**](../rest/Dockerfile). If changing the ports **on the host machine**, take into account that they must mach with the ones defined in the [**Set Up of the Virtual Hosts**](setup.md#setting-up-virtual-hosts).
-
-As for the client, a **NODE_ID** with the **name of the node** must be provided.
-
-Finally, a root credentials **MONGO_INITDB_ROOT_USERNAME** and **MONGO_INITDB_ROOT_USERNAME** for the mongoDB database must be defined as well in this file.
-
-```yaml
-services:
-  loader:
-    image: loader_image   # name of loader image
-    container_name: my_loader   # name of loader container
-    platform: linux/amd64
-    build:
-      context: ./loader   # folder to search Dockerfile for this image
-    depends_on:
-      - mongodb
-    working_dir: /data
-    volumes:
-      - /path/to/loader/files:/data   # path in the host machine where the loader will look for files
-    networks:
-      - my_network
-
-  workflow:
-    image: workflow_image
-    container_name: my_workflow
-    platform: linux/amd64
-    build:
-      context: ./workflow   # folder to search Dockerfile for this image
-    working_dir: /data
-    volumes:
-      - /path/to/workflow/files:/data   # path in the host machine where the workflow will save the data
-
-  client:
-    image: client_image
-    container_name: my_client
-    platform: linux/amd64
-    build:
-      context: ./client  # folder to search Dockerfile for this image
-      args:
-        NODE_ID: NODE  # Pass here the build argument with the node id
-    ports:
-      - "8080:80"  # port mapping, be aware that the second port is the same exposed in the client/Dockerfile
-
-  rest:
-    image: rest_image
-    container_name: my_rest
-    platform: linux/amd64
-    build:
-      context: ./rest   # folder to search Dockerfile for this image
-    depends_on:
-      - mongodb
-    ports:
-      - "8081:3000"   # port mapping, be aware that the second port is the same exposed in the rest/Dockerfile
-    networks:
-      - my_network
-
-  mongodb:
-    container_name: my_mongo_container
-    image: mongo:6
-    environment:
-      MONGO_INITDB_ROOT_USERNAME: ROOT_USER
-      MONGO_INITDB_ROOT_PASSWORD: ROOT_PASSWORD
-    ports:
-      - "27017:27017"
-    volumes:
-      - /path/to/db:/data/db  # path where the database will be stored (outside the container, in the host machine)
-      - ./mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro # path to the initialization script
-    networks:
-      - my_network
-
-networks:
-  my_network: 
-    name: my_network    # network name
+  vre_lite_network: 
+    name: vre_lite_network 
+    driver: overlay   # Use an overlay network
+  web_network:
+    name: web_network
+    driver: overlay   # Use an overlay network
 ```
