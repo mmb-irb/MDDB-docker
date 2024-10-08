@@ -74,6 +74,11 @@ Workflow **help**:
 docker-compose run --rm workflow mwf -h
 ```
 
+###################################
+TODO IF NOT WORKING ABOVE
+docker-compose run --rm --no-deps workflow mwf -h
+###################################
+
 Please read carefully the [**workflow help**](../workflow) as it has an extensive documentation. 
 
 Example of running the workflow downloading an already **loaded trajectory** and saving the results into a **folder** that must be already created inside **WORKFLOW_VOLUME_PATH** defined in [**global .env**](config.md#global).
