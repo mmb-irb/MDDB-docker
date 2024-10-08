@@ -74,7 +74,7 @@ RUN echo '#!/bin/sh' > entrypoint.sh && \
     # echo '  sleep 5' >> entrypoint.sh && \
     # echo 'done' >> entrypoint.sh && \
     # echo 'mc alias set myminio http://minio:$MINIO_API_PORT $MINIO_ROOT_USER $MINIO_ROOT_PASSWORD' >> entrypoint.sh && \
-    echo 'exec pm2-runtime start ecosystem.config.cjs --name mddb-vre' >> entrypoint.sh && \
+    echo 'exec pm2-runtime start ecosystem.config.cjs --name mddb-vre' >> entrypoint.sh
     chmod +x entrypoint.sh
 
 # Expose the port the app runs on
