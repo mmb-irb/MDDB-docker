@@ -208,7 +208,7 @@ services:
     ports:
       - "${VRE_LITE_OUTER_PORT}:${VRE_LITE_INNER_PORT}"
     networks:
-      - vre_lite_network
+      #- vre_lite_network
       - web_network
     depends_on:
       - minio
@@ -223,8 +223,8 @@ services:
           memory: ${VRE_LITE_MEMORY_RESERVATION}   # Specify the reserved memory
       restart_policy:
         condition: any   # Restart always
-      update_config:
-        order: start-first  # Priority over other services
+      # update_config:
+      #   order: start-first  # Priority over other services
 
 volumes:
   loader_volume:
