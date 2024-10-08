@@ -253,11 +253,11 @@ volumes:
       device: ${VRE_LITE_VOLUME_PATH}   # bind the volume to VRE_LITE_VOLUME_PATH on the host
 
 networks:
+  data_network: 
+    external: true   # Use an external network
   vre_lite_network: 
     name: vre_lite_network 
     driver: overlay   # Use an overlay network
   web_network:
     name: web_network
     driver: overlay   # Use an overlay network
-  data_network: 
-    external: true   # Use an external network
