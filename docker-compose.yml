@@ -208,7 +208,7 @@ services:
     ports:
       - "${VRE_LITE_OUTER_PORT}:${VRE_LITE_INNER_PORT}"
     networks:
-      #- vre_lite_network
+      - vre_lite_network
       - web_network
     depends_on:
       - minio
