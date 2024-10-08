@@ -210,8 +210,8 @@ services:
     networks:
       - vre_lite_network
       - web_network
-    #depends_on:
-    #  - minio
+    depends_on:
+      - minio
     deploy:
       replicas: ${VRE_LITE_REPLICAS}   # Specify the number of replicas for Docker Swarm
       resources:
@@ -223,8 +223,8 @@ services:
           memory: ${VRE_LITE_MEMORY_RESERVATION}   # Specify the reserved memory
       restart_policy:
         condition: any   # Restart always
-      # update_config:
-      #   order: start-first  # Priority over other services
+      update_config:
+        order: start-first  # Priority over other services
 
 volumes:
   loader_volume:
