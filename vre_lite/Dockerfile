@@ -69,15 +69,13 @@ ENV MINIO_API_PORT=$MINIO_API_PORT
 
 # Create the entrypoint script
 RUN echo '#!/bin/sh' > entrypoint.sh && \
-    # echo 'until curl -f http://minio:$MINIO_API_PORT/minio/health/live; do' >> entrypoint.sh && \
-    # echo '  echo "Waiting for minio to be healthy..."' >> entrypoint.sh && \
-    # echo '  sleep 5' >> entrypoint.sh && \
-    # echo 'done' >> entrypoint.sh && \
-    # echo 'mc alias set myminio http://minio:$MINIO_API_PORT $MINIO_ROOT_USER $MINIO_ROOT_PASSWORD' >> entrypoint.sh && \
+    echo 'until curl -f http://minio:$MINIO_API_PORT/minio/health/live; do' >> entrypoint.sh && \
+    echo '  echo "Waiting for minio to be healthy..."' >> entrypoint.sh && \
+    echo '  sleep 5' >> entrypoint.sh && \
+    echo 'done' >> entrypoint.sh && \
+    echo 'mc alias set myminio http://minio:$MINIO_API_PORT $MINIO_ROOT_USER $MINIO_ROOT_PASSWORD' >> entrypoint.sh && \
     echo 'exec pm2-runtime start ecosystem.config.cjs --name mddb-vre' >> entrypoint.sh && \
     chmod +x entrypoint.sh
-
-RUN echo ${VRE_LITE_INNER_PORT}
 
 # Expose the port the app runs on
 EXPOSE ${VRE_LITE_INNER_PORT}
