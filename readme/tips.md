@@ -116,3 +116,7 @@ Show logs for a container:
 ```sh
 docker logs my_rest
 ```
+
+## Apache logs
+
+    docker logs <apache_container_ID>
