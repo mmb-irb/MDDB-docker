@@ -256,7 +256,8 @@ networks:
   data_network: 
     external: true   # Use an external network
   vre_lite_network: 
-    external: true   # Use an external network
+    name: vre_lite_network 
+    driver: overlay   # Use an overlay network
   web_network:
     name: web_network
     driver: overlay   # Use an overlay network
