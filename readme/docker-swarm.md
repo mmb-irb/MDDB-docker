@@ -76,7 +76,7 @@ docker-compose run --rm workflow mwf -h
 
 ###################################
 TODO IF NOT WORKING ABOVE
-docker-compose run --rm --no-deps workflow mwf -h
+docker run --network data_network workflow_image mwf -h
 ###################################
 
 Please read carefully the [**workflow help**](../workflow) as it has an extensive documentation. 
