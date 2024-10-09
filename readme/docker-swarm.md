@@ -74,10 +74,11 @@ Workflow **help**:
 docker-compose run --rm workflow mwf -h
 ```
 
-###################################
-TODO IF NOT WORKING ABOVE
-docker run --network data_network workflow_image mwf -h
-###################################
+Or, if the above doesn't work:
+
+```sh
+docker run --rm workflow_image mwf -h
+```
 
 Please read carefully the [**workflow help**](../workflow) as it has an extensive documentation. 
 
@@ -85,6 +86,12 @@ Example of running the workflow downloading an already **loaded trajectory** and
 
 ```sh
 docker-compose run --rm workflow mwf run -proj <ACCESSION ID> -smp -e clusters energies pockets -dir /data/<folder>
+```
+
+Or, if the above doesn't work:
+
+```sh
+docker run --rm workflow_image --cpus "${WORKFLOW_CPU_LIMIT}" --memory "${WORKFLOW_MEMORY_LIMIT}" mwf run -proj <ACCESSION ID> -smp -e clusters energies pockets -dir /data/<folder>
 ```
 
 Note that this run excludes clusters, energies and pockets analyses. Adding the -smp flag it downloads only 10 frames of the trajectory. As this instruction is a test, this will save a lot of computational time.
@@ -99,10 +106,22 @@ While the **mongodb**, **client** and **rest** containers will remain up, the **
 docker-compose run --rm loader list
 ```
 
+Or, if the above doesn't work:
+
+```sh
+docker run --rm --network data_network --cpus "${LOADER_CPU_LIMIT}" --memory "${LOADER_MEMORY_LIMIT}" loader_image list
+```
+
 **Load** documents to database:
 
 ```sh
 docker-compose run --rm loader load /data/<trajectory_dir>
+```
+
+Or, if the above doesn't work:
+
+```sh
+docker run --rm --network data_network --cpus "${LOADER_CPU_LIMIT}" --memory "${LOADER_MEMORY_LIMIT}" loader_image loader load /data/<trajectory_dir>
 ```
 
 Take into account that **trajectory_dir** must be inside **LOADER_VOLUME_PATH** defined in [**global .env**](config.md#global).
@@ -111,6 +130,12 @@ Take into account that **trajectory_dir** must be inside **LOADER_VOLUME_PATH** 
 
 ```sh
 docker-compose run --rm loader delete <project_id>
+```
+
+Or, if the above doesn't work:
+
+```sh
+docker run --rm --network data_network --cpus "${LOADER_CPU_LIMIT}" --memory "${LOADER_MEMORY_LIMIT}" loader_image loader delete <project_id>
 ```
 
 ### Check rest

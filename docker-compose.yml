@@ -60,8 +60,6 @@ services:
       context: ./workflow   # folder to search Dockerfile for this image
     volumes:
       - workflow_volume:/data  # path where the workflow will look for files
-    networks:
-      - dummy_network
     deploy:
       replicas: ${WORKFLOW_REPLICAS}  # Ensure this service is not deployed by default as it is a one-time task
       resources:
@@ -263,5 +261,3 @@ networks:
   web_network:
     name: web_network
     driver: overlay   # Use an overlay network
-  dummy_network:
-    driver: overlay  # Use a bridge network
