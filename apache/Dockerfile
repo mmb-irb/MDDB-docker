@@ -6,8 +6,10 @@ COPY apache-config.conf /usr/local/apache2/conf/conf.d/custom.conf
 # Define the build arguments
 ARG APACHE_HTTP_INNER_PORT
 ARG APACHE_HTTPS_INNER_PORT
+ARG APACHE_MINIO_INNER_PORT
 ARG APACHE_HTTP_OUTER_PORT
 ARG APACHE_HTTPS_OUTER_PORT
+ARG APACHE_MINIO_OUTER_PORT
 ARG CLIENT_INNER_PORT
 ARG REST_INNER_PORT
 ARG VRE_LITE_INNER_PORT
@@ -18,6 +20,7 @@ ARG SERVER_URL
 # Perform search and replace using sed
 RUN sed -i "s/APACHE_HTTP_OUTER_PORT/${APACHE_HTTP_OUTER_PORT}/g" /usr/local/apache2/conf/conf.d/custom.conf
 RUN sed -i "s/APACHE_HTTPS_OUTER_PORT/${APACHE_HTTPS_OUTER_PORT}/g" /usr/local/apache2/conf/conf.d/custom.conf
+RUN sed -i "s/APACHE_MINIO_OUTER_PORT/${APACHE_MINIO_OUTER_PORT}/g" /usr/local/apache2/conf/conf.d/custom.conf
 RUN sed -i "s/CLIENT_INNER_PORT/${CLIENT_INNER_PORT}/g" /usr/local/apache2/conf/conf.d/custom.conf
 RUN sed -i "s/REST_INNER_PORT/${REST_INNER_PORT}/g" /usr/local/apache2/conf/conf.d/custom.conf
 RUN sed -i "s/VRE_LITE_INNER_PORT/${VRE_LITE_INNER_PORT}/g" /usr/local/apache2/conf/conf.d/custom.conf
@@ -35,4 +38,4 @@ RUN mkdir -p /usr/local/apache2/conf/ssl
 COPY www_mddbr_eu_chain.pem /usr/local/apache2/conf/ssl/www_mddbr_eu_chain.pem
 COPY www_mddbr_eu.key /usr/local/apache2/conf/ssl/www_mddbr_eu.key
 
-EXPOSE ${APACHE_HTTP_INNER_PORT} ${APACHE_HTTPS_INNER_PORT}
+EXPOSE ${APACHE_HTTP_INNER_PORT} ${APACHE_HTTPS_INNER_PORT} ${APACHE_MINIO_INNER_PORT}

@@ -8,6 +8,8 @@ services:
         APACHE_HTTPS_INNER_PORT: ${APACHE_HTTPS_INNER_PORT}
         APACHE_HTTP_OUTER_PORT: ${APACHE_HTTP_OUTER_PORT}
         APACHE_HTTPS_OUTER_PORT: ${APACHE_HTTPS_OUTER_PORT}
+        APACHE_MINIO_OUTER_PORT: ${APACHE_MINIO_OUTER_PORT}
+        APACHE_MINIO_INNER_PORT: ${APACHE_MINIO_INNER_PORT}
         CLIENT_INNER_PORT: ${CLIENT_INNER_PORT}
         REST_INNER_PORT: ${REST_INNER_PORT}
         VRE_LITE_INNER_PORT: ${VRE_LITE_INNER_PORT}
@@ -17,7 +19,7 @@ services:
     ports:
       - "${APACHE_HTTP_OUTER_PORT}:${APACHE_HTTP_INNER_PORT}"   # http port mapping
       - "${APACHE_HTTPS_OUTER_PORT}:${APACHE_HTTPS_INNER_PORT}"   # https port mapping
-      - "7000:${MINIO_API_INNER_PORT}"   # minio console port mapping
+      - "${APACHE_MINIO_OUTER_PORT}:${APACHE_MINIO_INNER_PORT}"      # minio console port mapping
     networks:
       - web_network
     deploy:
