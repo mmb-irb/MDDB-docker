@@ -166,7 +166,6 @@ services:
       - MINIO_BROWSER_REDIRECT_URL=${MINIO_BROWSER_REDIRECT_URL}  # Set the base URL for the Minio console
     volumes:
       - minio_volume:/data   # path where minio will store the data in object storage format (outside the container, in the host machine)
-      # - /path/to/certs:/root/.minio/certs
     ports:
       - "${MINIO_API_OUTER_PORT}:${MINIO_API_INNER_PORT}"
       - "${MINIO_UI_INNER_PORT}:${MINIO_UI_INNER_PORT}"   # port for the minio console (only for development)
@@ -185,7 +184,6 @@ services:
       restart_policy:
         condition: on-failure   # Restart only on failure
     command: server --address ":${MINIO_API_INNER_PORT}" --console-address ":${MINIO_UI_INNER_PORT}" /data    # Remove the console-address flag for production
-    # command: server --address ":${MINIO_API_INNER_PORT}" --console-address ":${MINIO_UI_INNER_PORT}" --certs-dir /path/to/certs /data   # Remove the console-address flag for production
     healthcheck:  # Health check for the minio service
       test: ["CMD", "curl", "-f", "http://localhost:${MINIO_API_INNER_PORT}/minio/health/live"]
       interval: 30s
