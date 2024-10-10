@@ -17,7 +17,7 @@ services:
     ports:
       - "${APACHE_HTTP_OUTER_PORT}:${APACHE_HTTP_INNER_PORT}"   # http port mapping
       - "${APACHE_HTTPS_OUTER_PORT}:${APACHE_HTTPS_INNER_PORT}"   # https port mapping
-      - "${MINIO_UI_OUTER_PORT}:${MINIO_UI_INNER_PORT}"   # minio console port mapping
+      - "${MINIO_API_OUTER_PORT}:${MINIO_API_OUTER_PORT}"   # minio console port mapping
     networks:
       - web_network
     deploy:
