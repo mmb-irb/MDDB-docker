@@ -12,6 +12,8 @@ services:
         REST_INNER_PORT: ${REST_INNER_PORT}
         VRE_LITE_INNER_PORT: ${VRE_LITE_INNER_PORT}
         MINIO_UI_INNER_PORT: ${MINIO_UI_INNER_PORT}
+        MINIO_API_INNER_PORT: ${MINIO_API_INNER_PORT}
+        SERVER_URL: ${MINIO_URL}
     ports:
       - "${APACHE_HTTP_OUTER_PORT}:${APACHE_HTTP_INNER_PORT}"   # http port mapping
       - "${APACHE_HTTPS_OUTER_PORT}:${APACHE_HTTPS_INNER_PORT}"   # https port mapping
