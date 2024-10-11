@@ -1,12 +1,12 @@
 // Switch to the desired database
-db = db.getSiblingDB('mddb_db'); // Replace 'mddb_db' with your database name
+db = db.getSiblingDB('{{DB_NAME}}'); // Replace 'mddb_db' with your database name
 
 // Create a user with readWrite permissions on 'mddb_db' database. This user will be used for the loader
 db.createUser({
   user: '{{LOADER_DB_LOGIN}}',
   pwd: '{{LOADER_DB_PASSWORD}}',
   roles: [
-    { role: 'readWrite', db: 'mddb_db' }
+    { role: 'readWrite', db: '{{DB_NAME}}' }
   ]
 });
 
@@ -15,6 +15,6 @@ db.createUser({
   user: '{{REST_DB_LOGIN}}',
   pwd: '{{REST_DB_PASSWORD}}',
   roles: [
-    { role: 'read', db: 'mddb_db' }
+    { role: 'read', db: '{{DB_NAME}}' }
   ]
 });

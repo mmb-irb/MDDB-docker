@@ -122,9 +122,9 @@ VRE_LITE_MEMORY_LIMIT='2G'  # memory indicating unit (G, M)
 
 Tthe **DB_SERVER** must be **<stack_name>_<service_name>** where **stack_name** is the one used when [**deploying the stack**](docker-swarm.md#build-services) and **service_name** is the mongodb name of the service as defined in [**docker-compose.yml**](../docker-compose.yml) file.
 
-The **DB_NAME** and **DB_AUTHSOURCE** must be the same used in the [**mongo-init.js**](../mongo-init.js) file.
+The **DB_NAME** and **DB_AUTHSOURCE** must be the same used in the [**mongo-init.js**](../mongodb/mongo-init.js) file.
 
-The credentials **LOADER_DB_LOGIN** and **LOADER_DB_PASSWORD** must be the same defined in the [**mongo-init.js**](../mongo-init.js) file with the **readWrite** role.
+The credentials **LOADER_DB_LOGIN** and **LOADER_DB_PASSWORD** must be the same defined in the [**mongo-init.js**](../mongodb/mongo-init.js) file with the **readWrite** role.
 
 The credentials **REST_DB_LOGIN** and **REST_DB_PASSWORD** must be the same defined in the **mongo-init.js** file with the **read** role.
 
@@ -138,23 +138,23 @@ This file is used for **initializing mongoDB** in docker-compose. It contains a 
 
 ```js
 // Switch to the desired database
-db = db.getSiblingDB('mddb_db'); // Replace 'mddb_db' with your database name
+db = db.getSiblingDB('{{DB_NAME}}'); // Replace 'mddb_db' with your database name
 
 // Create a user with readWrite permissions on 'mddb_db' database. This user will be used for the loader
 db.createUser({
-  user: 'user_rw',
-  pwd: 'pwd_rw',
+  user: '{{LOADER_DB_LOGIN}}',
+  pwd: '{{LOADER_DB_PASSWORD}}',
   roles: [
-    { role: 'readWrite', db: 'mddb_db' }
+    { role: 'readWrite', db: '{{DB_NAME}}' }
   ]
 });
 
 // Create a user with read permissions on 'mddb_db' database. This user will be used for the REST API
 db.createUser({
-  user: 'user_r',
-  pwd: 'pwd_r',
+  user: '{{REST_DB_LOGIN}}',
+  pwd: '{{REST_DB_PASSWORD}}',
   roles: [
-    { role: 'read', db: 'mddb_db' }
+    { role: 'read', db: '{{DB_NAME}}' }
   ]
 });
 ```

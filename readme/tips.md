@@ -113,13 +113,13 @@ And then:
 mongosh 
 ```
 
-For entering the database in **terminal mode**. Take into account that, for **checking** your database and its **collections**, you must use the **authentication credentials** defined in the [**mongo-init.js**](../mongo-init.js) file. For example, for checking the **collections** of the mddb_db **database**, please follow the next steps:
+For entering the database in **terminal mode**. Take into account that, for **checking** your database and its **collections**, you must use the **authentication credentials** defined in the [**mongo-init.js**](../mongodb/mongo-init.js) file. For example, for checking the **collections** of the mddb_db **database**, please follow the next steps:
 
-Switch to **mddb_db** database (or the name defined in the [**mongo-init.js**](../mongo-init.js) file):
+Switch to **mddb_db** database (or the name defined in the [**mongo-init.js**](../mongodb/mongo-init.js) file):
 
     use mddb_db
 
-**Authenticate** with one of the **users** defined in the [**mongo-init.js**](../mongo-init.js) file:
+**Authenticate** with one of the **users** defined in the [**mongo-init.js**](../mongodb/mongo-init.js) file:
 
     db.auth('user_r','pwd_r');
 
@@ -131,7 +131,7 @@ Additionally, users are able to access the database as a **root/admin** user, as
 
     mongosh --username <ROOT_USER> --password <ROOT_PASSWORD>
 
-Take into account that acessing mongoDB as **root/admin** user is **not recommended** as with this user there are **no restrictions** once inside the database. We strongly recommend to use the **users** defined in the [**mongo-init.js**](../mongo-init.js) file for accessing the database.
+Take into account that acessing mongoDB as **root/admin** user is **not recommended** as with this user there are **no restrictions** once inside the database. We strongly recommend to use the **users** defined in the [**mongo-init.js**](../mongodb/mongo-init.js) file for accessing the database.
 
 ## Docker logs
 
