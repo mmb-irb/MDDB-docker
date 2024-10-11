@@ -17,8 +17,10 @@ An `.env` file must be created in the **root** of the project. The file [**.env.
 | &nbsp;
 | APACHE_HTTP_OUTER_PORT         | number  | apache outer port for http protocol                                        |
 | APACHE_HTTPS_OUTER_PORT         | number  | apache outer port for https protocol                                        |
+| APACHE_MINIO_OUTER_PORT         | number  | apache outer port for MinIO API                                         |
 | APACHE_HTTP_INNER_PORT         | number  | apache inner port for http protocol                                        |
 | APACHE_HTTPS_INNER_PORT         | number  | apache inner port for https protocol                                        |
+| APACHE_MINIO_INNER_PORT         | number  | apache inner port for MinIO API                                        |
 | APACHE_REPLICAS         | number  | apache number of replicas to deploy                                        |
 | APACHE_CPU_LIMIT         | string  | apache limit number of CPUs                                        |
 | APACHE_MEMORY_LIMIT         | string  | apache limit memory                                        |
@@ -81,6 +83,7 @@ An `.env` file must be created in the **root** of the project. The file [**.env.
 | MINIO_MEMORY_LIMIT          | string | MinIO limit memory                           |
 | MINIO_CPU_RESERVATION          | string  | MinIO reserved number of CPUs                           |
 | MINIO_MEMORY_RESERVATION      | string  | MinIO reserved memory                         |
+| MINIO_PROTOCOL      | string  | MinIO API protocol (http|https)                        |
 | MINIO_URL      | `<url>`  | url for MinIO (ie localhost)                          |
 | &nbsp;
 | VRE_LITE_VOLUME_PATH         | string  | path where the VRE lite will save the files                                        |
@@ -367,7 +370,9 @@ services:
         VRE_LITE_BASE_URL_PRODUCTION: ${VRE_LITE_BASE_URL_PRODUCTION}
         VRE_LITE_DATA_PATH: ${VRE_LITE_DATA_PATH}
         VRE_LITE_MAX_FILE_SIZE: ${VRE_LITE_MAX_FILE_SIZE}
+        MINIO_PROTOCOL: ${MINIO_PROTOCOL}
         MINIO_URL: ${MINIO_URL}
+        MINIO_PORT: ${APACHE_MINIO_OUTER_PORT}
         NODE_NAME: ${NODE}
     volumes:
       - vre_lite_volume:/data

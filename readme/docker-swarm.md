@@ -32,7 +32,7 @@ For building the services via **Docker Compose**, please execute the following i
 docker-compose build
 ```
 
-Export environment variables defined in [**global .env file**](config.md#global) and deploy docker stack:
+Export environment variables defined in [**global .env file**](config.md#env-file) and deploy docker stack:
 
 ```sh
 export $(grep -v '^#' .env | xargs)
@@ -44,10 +44,10 @@ Check services:
 ```sh
 $ docker stack services my_stack
 ID             NAME                MODE         REPLICAS   IMAGE                   PORTS
-<ID>           my_stack_apache     replicated   1/1        apache_image:latest     *:80->80/tcp, *:443->443/tcp
+<ID>           my_stack_apache     replicated   1/1        apache_image:latest     *:80->80/tcp, *:443->443/tcp, *:7000->7000/tcp
 <ID>           my_stack_client     replicated   2/2        client_image:latest     *:8080->80/tcp
 <ID>           my_stack_loader     replicated   0/0        loader_image:latest     
-<ID>           my_stack_minio      replicated   1/1        minio/minio:latest      *:7000->7000/tcp, *:9001->9001/tcp
+<ID>           my_stack_minio      replicated   1/1        minio/minio:latest      *:9000-9001->9000-9001/tcp
 <ID>           my_stack_mongodb    replicated   1/1        mongo:6                 *:27017->27017/tcp
 <ID>           my_stack_rest       replicated   4/4        rest_image:latest       *:8081->3000/tcp
 <ID>           my_stack_vre_lite   replicated   1/1        vre_lite_image:latest   *:8082->3001/tcp
@@ -82,7 +82,7 @@ docker run --rm workflow_image mwf -h
 
 Please read carefully the [**workflow help**](../workflow) as it has an extensive documentation. 
 
-Example of running the workflow downloading an already **loaded trajectory** and saving the results into a **folder** that must be already created inside **WORKFLOW_VOLUME_PATH** defined in [**global .env**](config.md#global).
+Example of running the workflow downloading an already **loaded trajectory** and saving the results into a **folder** that must be already created inside **WORKFLOW_VOLUME_PATH** defined in [**global .env**](config.md#env-file).
 
 ```sh
 docker-compose run --rm workflow mwf run -proj <ACCESSION ID> -smp -e clusters energies pockets -dir /data/<folder>
@@ -124,7 +124,7 @@ Or, if the above doesn't work:
 docker run --rm --network data_network --cpus "${LOADER_CPU_LIMIT}" --memory "${LOADER_MEMORY_LIMIT}" loader_image loader load /data/<trajectory_dir>
 ```
 
-Take into account that **trajectory_dir** must be inside **LOADER_VOLUME_PATH** defined in [**global .env**](config.md#global).
+Take into account that **trajectory_dir** must be inside **LOADER_VOLUME_PATH** defined in [**global .env**](config.md#env-file).
 
 **Remove** database document:
 
@@ -188,17 +188,17 @@ Check that at least the mongo, rest and client containers are up & running:
 
 ```sh
 $ docker ps -a
-CONTAINER ID   IMAGE                   COMMAND                  CREATED       STATUS                 PORTS             NAMES
-<ID>           rest_image:latest     "pm2-runtime start i…"   17 hours ago   Up 17 hours             3000/tcp          my_stack_rest.2.<ID>
-<ID>           rest_image:latest     "pm2-runtime start i…"   17 hours ago   Up 17 hours             3000/tcp          my_stack_rest.1.<ID>
-<ID>           rest_image:latest     "pm2-runtime start i…"   17 hours ago   Up 17 hours             3000/tcp          my_stack_rest.3.<ID>
-<ID>           rest_image:latest     "pm2-runtime start i…"   17 hours ago   Up 17 hours             3000/tcp          my_stack_rest.4.<ID>
-<ID>           mongo:6               "docker-entrypoint.s…"   17 hours ago   Up 17 hours             27017/tcp         my_stack_mongodb.1.<ID>
-<ID>           client_image:latest   "/docker-entrypoint.…"   17 hours ago   Up 17 hours             80/tcp            my_stack_client.2.<ID>
-<ID>           client_image:latest   "/docker-entrypoint.…"   17 hours ago   Up 17 hours             80/tcp            my_stack_client.1.<ID>
-<ID>           minio/minio:latest    "/usr/bin/docker-ent…"   17 hours ago   Up 17 hours (healthy)   9000/tcp          my_stack_minio.1.<ID>
-<ID>           apache_image:latest   "httpd-foreground"       17 hours ago   Up 17 hours             80/tcp, 443/tcp   my_stack_apache.1.<ID>
-<ID>           vre_lite_image:latest "/app/entrypoint.sh"     17 hours ago   Up 17 hours             3001/tcp          my_stack_vre_lite.1.<ID>
+CONTAINER ID   IMAGE                   COMMAND                  CREATED       STATUS                 PORTS                       NAMES
+<ID>           rest_image:latest     "pm2-runtime start i…"   17 hours ago   Up 17 hours             3000/tcp                    my_stack_rest.2.<ID>
+<ID>           rest_image:latest     "pm2-runtime start i…"   17 hours ago   Up 17 hours             3000/tcp                    my_stack_rest.1.<ID>
+<ID>           rest_image:latest     "pm2-runtime start i…"   17 hours ago   Up 17 hours             3000/tcp                    my_stack_rest.3.<ID>
+<ID>           rest_image:latest     "pm2-runtime start i…"   17 hours ago   Up 17 hours             3000/tcp                    my_stack_rest.4.<ID>
+<ID>           mongo:6               "docker-entrypoint.s…"   17 hours ago   Up 17 hours             27017/tcp                   my_stack_mongodb.1.<ID>
+<ID>           client_image:latest   "/docker-entrypoint.…"   17 hours ago   Up 17 hours             80/tcp                      my_stack_client.2.<ID>
+<ID>           client_image:latest   "/docker-entrypoint.…"   17 hours ago   Up 17 hours             80/tcp                      my_stack_client.1.<ID>
+<ID>           minio/minio:latest    "/usr/bin/docker-ent…"   17 hours ago   Up 17 hours (healthy)   9000/tcp                    my_stack_minio.1.<ID>
+<ID>           apache_image:latest   "httpd-foreground"       17 hours ago   Up 17 hours             80/tcp, 443/tcp, 7000/tcp   my_stack_apache.1.<ID>
+<ID>           vre_lite_image:latest "/app/entrypoint.sh"     17 hours ago   Up 17 hours             3001/tcp                    my_stack_vre_lite.1.<ID>
 ```
 
 ### Inspect docker network 
