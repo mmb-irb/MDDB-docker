@@ -3,8 +3,8 @@ db = db.getSiblingDB('mddb_db'); // Replace 'mddb_db' with your database name
 
 // Create a user with readWrite permissions on 'mddb_db' database. This user will be used for the loader
 db.createUser({
-  user: 'user_rw',
-  pwd: 'pwd_rw',
+  user: '{{LOADER_DB_LOGIN}}',
+  pwd: '{{LOADER_DB_PASSWORD}}',
   roles: [
     { role: 'readWrite', db: 'mddb_db' }
   ]
@@ -12,8 +12,8 @@ db.createUser({
 
 // Create a user with read permissions on 'mddb_db' database. This user will be used for the REST API
 db.createUser({
-  user: 'user_r',
-  pwd: 'pwd_r',
+  user: '{{REST_DB_LOGIN}}',
+  pwd: '{{REST_DB_PASSWORD}}',
   roles: [
     { role: 'read', db: 'mddb_db' }
   ]

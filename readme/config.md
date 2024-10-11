@@ -312,7 +312,7 @@ services:
       MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD}
     ports:
       - "${DB_OUTER_PORT}:${DB_INNER_PORT}"
-    command: mongod --port ${DB_OUTER_PORT}
+    command: mongod --port ${DB_INNER_PORT}
     volumes:
       - ${DB_VOLUME_PATH}:/data/db  # path where the database will be stored (outside the container, in the host machine)
       - ./mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro # path to the initialization script
