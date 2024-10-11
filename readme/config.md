@@ -171,13 +171,18 @@ services:
         APACHE_HTTPS_INNER_PORT: ${APACHE_HTTPS_INNER_PORT}
         APACHE_HTTP_OUTER_PORT: ${APACHE_HTTP_OUTER_PORT}
         APACHE_HTTPS_OUTER_PORT: ${APACHE_HTTPS_OUTER_PORT}
+        APACHE_MINIO_OUTER_PORT: ${APACHE_MINIO_OUTER_PORT}
+        APACHE_MINIO_INNER_PORT: ${APACHE_MINIO_INNER_PORT}
         CLIENT_INNER_PORT: ${CLIENT_INNER_PORT}
         REST_INNER_PORT: ${REST_INNER_PORT}
         VRE_LITE_INNER_PORT: ${VRE_LITE_INNER_PORT}
         MINIO_UI_INNER_PORT: ${MINIO_UI_INNER_PORT}
+        MINIO_API_INNER_PORT: ${MINIO_API_INNER_PORT}
+        SERVER_URL: ${MINIO_URL}
     ports:
       - "${APACHE_HTTP_OUTER_PORT}:${APACHE_HTTP_INNER_PORT}"   # http port mapping
       - "${APACHE_HTTPS_OUTER_PORT}:${APACHE_HTTPS_INNER_PORT}"   # https port mapping
+      - "${APACHE_MINIO_OUTER_PORT}:${APACHE_MINIO_INNER_PORT}"      # minio console port mapping
     networks:
       - web_network
     deploy:
@@ -328,7 +333,7 @@ services:
       - "${MINIO_API_OUTER_PORT}:${MINIO_API_INNER_PORT}"
       - "${MINIO_UI_INNER_PORT}:${MINIO_UI_INNER_PORT}"   # port for the minio console (only for development)
     networks:
-      - vre_lite_network
+      - minio_network
       - web_network
     deploy:
       replicas: ${MINIO_REPLICAS}   # Specify the number of replicas for Docker Swarm
@@ -341,7 +346,7 @@ services:
           memory: ${MINIO_MEMORY_RESERVATION}   # Specify the reserved memory
       restart_policy:
         condition: on-failure   # Restart only on failure
-    command: server --address ":${MINIO_API_INNER_PORT}" /data --console-address ":${MINIO_UI_INNER_PORT}"   # Remove the console-address flag for production
+    command: server --address ":${MINIO_API_INNER_PORT}" --console-address ":${MINIO_UI_INNER_PORT}" /data    # Remove the console-address flag for production
     healthcheck:  # Health check for the minio service
       test: ["CMD", "curl", "-f", "http://localhost:${MINIO_API_INNER_PORT}/minio/health/live"]
       interval: 30s
@@ -369,7 +374,7 @@ services:
     ports:
       - "${VRE_LITE_OUTER_PORT}:${VRE_LITE_INNER_PORT}"
     networks:
-      - vre_lite_network
+      - minio_network
       - web_network
     depends_on:
       - minio
@@ -416,8 +421,8 @@ volumes:
 networks:
   data_network: 
     external: true   # Use an external network
-  vre_lite_network: 
-    name: vre_lite_network 
+  minio_network: 
+    name: minio_network 
     driver: overlay   # Use an overlay network
   web_network:
     name: web_network

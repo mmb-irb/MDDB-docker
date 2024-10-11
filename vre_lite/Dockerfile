@@ -13,7 +13,9 @@ ARG VRE_LITE_BASE_URL_STAGING
 ARG VRE_LITE_BASE_URL_PRODUCTION
 ARG VRE_LITE_DATA_PATH
 ARG VRE_LITE_MAX_FILE_SIZE
+ARG MINIO_PROTOCOL
 ARG MINIO_URL
+ARG MINIO_PORT
 ARG NODE_NAME
 
 RUN echo "BASE_URL_DEVELOPMENT=${VRE_LITE_BASE_URL_DEVELOPMENT}" > /app/mddb-vre/.env && \
@@ -21,7 +23,9 @@ RUN echo "BASE_URL_DEVELOPMENT=${VRE_LITE_BASE_URL_DEVELOPMENT}" > /app/mddb-vre
     echo "BASE_URL_PRODUCTION=${VRE_LITE_BASE_URL_PRODUCTION}" >> /app/mddb-vre/.env && \
     echo "DATA_PATH=${VRE_LITE_DATA_PATH}" >> /app/mddb-vre/.env && \
     echo "MAX_FILE_SIZE=${VRE_LITE_MAX_FILE_SIZE}" >> /app/mddb-vre/.env && \
+    echo "MINIO_PROTOCOL=${MINIO_PROTOCOL}" >> /app/mddb-vre/.env && \
     echo "MINIO_URL=${MINIO_URL}" >> /app/mddb-vre/.env && \
+    echo "MINIO_PORT=${MINIO_PORT}" >> /app/mddb-vre/.env && \
     echo "NODE_NAME=${NODE_NAME}" >> /app/mddb-vre/.env
 
 # Change working directory to /app/mddb-vre
