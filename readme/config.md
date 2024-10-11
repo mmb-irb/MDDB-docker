@@ -74,7 +74,10 @@ An `.env` file must be created in the **root** of the project. The file [**.env.
 | DB_NAME      | string  | name of the  DB collection                          |
 | DB_AUTHSOURCE      | string  | the DB collection the user will attempt to authenticate to                           |
 | &nbsp;
-| MINIO_VOLUME_PATH         | string  | path where MinIO will save / retrieve the files                                        |
+| MINIO_VOLUME_PATH1         | string  | path for the volume1 where MinIO will save / retrieve the files                              |
+| MINIO_VOLUME_PATH2         | string  | path for the volume2 where MinIO will save / retrieve the files                              |
+| MINIO_VOLUME_PATH3         | string  | path for the volume3 where MinIO will save / retrieve the files                              |
+| MINIO_VOLUME_PATH4         | string  | path for the volume4 where MinIO will save / retrieve the files                              |
 | MINIO_REPLICAS      | string  | number of replicas to deploy                                    |
 | MINIO_API_OUTER_PORT         | number  | MinIO API outer port                                         |
 | MINIO_API_INNER_PORT         | number  | MinIO API inner port                                         |
@@ -334,7 +337,11 @@ services:
       - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD}
       - MINIO_BROWSER_REDIRECT_URL=${MINIO_BROWSER_REDIRECT_URL}  # Set the base URL for the Minio console
     volumes:
-      - minio_volume:/data   # path where minio will store the data in object storage format (outside the container, in the host machine)
+      # paths where minio will store the data in object storage format (outside the container, in the host machine)
+      - minio_volume1:/mnt/disk1   
+      - minio_volume2:/mnt/disk2
+      - minio_volume3:/mnt/disk3
+      - minio_volume4:/mnt/disk4
     ports:
       - "${MINIO_API_OUTER_PORT}:${MINIO_API_INNER_PORT}"
       - "${MINIO_UI_INNER_PORT}:${MINIO_UI_INNER_PORT}"   # port for the minio console (only for development)
@@ -343,6 +350,8 @@ services:
       - web_network
     deploy:
       replicas: ${MINIO_REPLICAS}   # Specify the number of replicas for Docker Swarm
+      placement:
+        max_replicas_per_node: ${MINIO_REPLICAS}   # Specify the maximum number of replicas per node
       resources:
         limits:
           cpus: ${MINIO_CPU_LIMIT}    # Specify the limit number of CPUs
@@ -352,7 +361,9 @@ services:
           memory: ${MINIO_MEMORY_RESERVATION}   # Specify the reserved memory
       restart_policy:
         condition: on-failure   # Restart only on failure
-    command: server --address ":${MINIO_API_INNER_PORT}" --console-address ":${MINIO_UI_INNER_PORT}" /data    # Remove the console-address flag for production
+    hostname: minio
+    command: server --address ":${MINIO_API_INNER_PORT}" --console-address ":${MINIO_UI_INNER_PORT}" http://minio/mnt/disk{1...4}    # Remove the console-address flag for production
+    # command: server --address ":${MINIO_API_INNER_PORT}" --console-address ":${MINIO_UI_INNER_PORT}" http://minio{1...3}/mnt/disk{1...4}    # For multiple nodes (ie 3 nodes)
     healthcheck:  # Health check for the minio service
       test: ["CMD", "curl", "-f", "http://localhost:${MINIO_API_INNER_PORT}/minio/health/live"]
       interval: 30s
@@ -419,12 +430,30 @@ volumes:
       type: none
       o: bind
       device: ${WORKFLOW_VOLUME_PATH}   # bind the volume to WORKFLOW_VOLUME_PATH on the host
-  minio_volume:
+  minio_volume1:
     driver: local
     driver_opts:
       type: none
       o: bind
-      device: ${MINIO_VOLUME_PATH}   # bind the volume to MINIO_VOLUME_PATH on the host
+      device: ${MINIO_VOLUME_PATH1}   # bind the volume to MINIO_VOLUME_PATH1 on the host
+  minio_volume2:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${MINIO_VOLUME_PATH2}   # bind the volume to MINIO_VOLUME_PATH2 on the host
+  minio_volume3:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${MINIO_VOLUME_PATH3}   # bind the volume to MINIO_VOLUME_PATH3 on the host
+  minio_volume4:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${MINIO_VOLUME_PATH4}   # bind the volume to MINIO_VOLUME_PATH4 on the host
   vre_lite_volume:
     driver: local
     driver_opts:

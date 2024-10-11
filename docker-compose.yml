@@ -265,25 +265,25 @@ volumes:
     driver_opts:
       type: none
       o: bind
-      device: ${MINIO_VOLUME_PATH1}   # bind the volume to MINIO_VOLUME_PATH on the host
+      device: ${MINIO_VOLUME_PATH1}   # bind the volume to MINIO_VOLUME_PATH1 on the host
   minio_volume2:
     driver: local
     driver_opts:
       type: none
       o: bind
-      device: ${MINIO_VOLUME_PATH2}   # bind the volume to MINIO_VOLUME_PATH on the host
+      device: ${MINIO_VOLUME_PATH2}   # bind the volume to MINIO_VOLUME_PATH2 on the host
   minio_volume3:
     driver: local
     driver_opts:
       type: none
       o: bind
-      device: ${MINIO_VOLUME_PATH3}   # bind the volume to MINIO_VOLUME_PATH on the host
+      device: ${MINIO_VOLUME_PATH3}   # bind the volume to MINIO_VOLUME_PATH3 on the host
   minio_volume4:
     driver: local
     driver_opts:
       type: none
       o: bind
-      device: ${MINIO_VOLUME_PATH4}   # bind the volume to MINIO_VOLUME_PATH on the host
+      device: ${MINIO_VOLUME_PATH4}   # bind the volume to MINIO_VOLUME_PATH4 on the host
   vre_lite_volume:
     driver: local
     driver_opts:
