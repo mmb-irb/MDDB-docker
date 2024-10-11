@@ -1,7 +1,7 @@
 FROM httpd:2.4
 
 # Copy the custom Apache configuration file
-# COPY apache-config.conf /usr/local/apache2/conf/conf.d/custom.conf
+COPY apache-config.conf /usr/local/apache2/conf/conf.d/custom.conf
 
 # Define the build arguments
 ARG APACHE_HTTP_INNER_PORT
