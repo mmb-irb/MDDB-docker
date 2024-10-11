@@ -21,6 +21,7 @@ An `.env` file must be created in the **root** of the project. The file [**.env.
 | APACHE_HTTP_INNER_PORT         | number  | apache inner port for http protocol                                        |
 | APACHE_HTTPS_INNER_PORT         | number  | apache inner port for https protocol                                        |
 | APACHE_MINIO_INNER_PORT         | number  | apache inner port for MinIO API                                        |
+| APACHE_CERTS_VOLUME_PATH         | string  | path where the SSL certificates are stored                                |
 | APACHE_REPLICAS         | number  | apache number of replicas to deploy                                        |
 | APACHE_CPU_LIMIT         | string  | apache limit number of CPUs                                        |
 | APACHE_MEMORY_LIMIT         | string  | apache limit memory                                        |

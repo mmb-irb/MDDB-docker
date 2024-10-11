@@ -17,6 +17,7 @@ services:
         MINIO_API_INNER_PORT: ${MINIO_API_INNER_PORT}
         SERVER_URL: ${MINIO_URL}
     volumes:
+      - conf_volume:/usr/local/apache2/conf/conf.d/custom.conf   # path to apache configuration file
       - certs_volume:/usr/local/apache2/conf/ssl   # path to SSL certificates
     ports:
       - "${APACHE_HTTP_OUTER_PORT}:${APACHE_HTTP_INNER_PORT}"   # http port mapping
@@ -234,12 +235,18 @@ services:
         order: start-first  # Priority over other services
 
 volumes:
+  conf_volume:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${APACHE_CONF_VOLUME_PATH}   # bind the volume to APACHE_CONF_VOLUME_PATH on the host
   certs_volume:
     driver: local
     driver_opts:
       type: none
       o: bind
-      device: ${CERTS_VOLUME_PATH}   # bind the volume to CERTS_VOLUME_PATH on the host
+      device: ${APACHE_CERTS_VOLUME_PATH}   # bind the volume to APACHE_CERTS_VOLUME_PATH on the host
   loader_volume:
     driver: local
     driver_opts:
