@@ -144,15 +144,15 @@ services:
       - "${DB_OUTER_PORT}:${DB_INNER_PORT}"
     volumes:
       - ${DB_VOLUME_PATH}:/data/db  # path where the database will be stored (outside the container, in the host machine)
-      - ./mongodb/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init-template.js:ro # path to the initialization script
+      - ./mongodb/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init-template.js:ro # path to the template initialization script
+    # before init mongo, replace the template with the actual values
     entrypoint: >
       sh -c "sed 's/\DB_NAME/'${DB_NAME}'/' /docker-entrypoint-initdb.d/mongo-init-template.js | 
       sed 's/\LOADER_DB_LOGIN/'${LOADER_DB_LOGIN}'/' | 
       sed 's/\LOADER_DB_PASSWORD/'${LOADER_DB_PASSWORD}'/' | 
       sed 's/\REST_DB_LOGIN/'${REST_DB_LOGIN}'/' | 
       sed 's/\REST_DB_PASSWORD/'${REST_DB_PASSWORD}'/' > /docker-entrypoint-initdb.d/mongo-init.js &&
-      mongod --port ${DB_INNER_PORT} --bind_ip_all --auth &&
-      mongo --eval 'load(\"/docker-entrypoint-initdb.d/mongo-init.js\")'"
+      mongod --port ${DB_INNER_PORT} --bind_ip_all --auth"
     networks:
       - data_network
     deploy:
@@ -181,7 +181,7 @@ services:
       - minio_volume4:/mnt/disk4
     ports:
       - "${MINIO_API_OUTER_PORT}:${MINIO_API_INNER_PORT}"
-      - "${MINIO_UI_INNER_PORT}:${MINIO_UI_INNER_PORT}"   # port for the minio console (only for development)
+      - "${MINIO_UI_INNER_PORT}:${MINIO_UI_INNER_PORT}"   # port for the minio webUI (only for development)
     networks:
       - minio_network
       - web_network
