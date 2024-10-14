@@ -146,10 +146,11 @@ services:
       - ${DB_VOLUME_PATH}:/data/db  # path where the database will be stored (outside the container, in the host machine)
       - ./mongodb/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro # path to the initialization script
     entrypoint: >
-      sh -c "sed 's/\${LOADER_DB_LOGIN}/'$LOADER_DB_LOGIN'/' /docker-entrypoint-initdb.d/mongo-init.js | 
-      sed 's/\${LOADER_DB_PASSWORD}/'$LOADER_DB_PASSWORD'/' | 
-      sed 's/\${REST_DB_LOGIN}/'$REST_DB_LOGIN'/' | 
-      sed 's/\${REST_DB_PASSWORD}/'$REST_DB_PASSWORD'/' > /docker-entrypoint-initdb.d/mongo-init-final.js &&
+      sh -c "sed 's/\DB_NAME/'${DB_NAME}'/' /docker-entrypoint-initdb.d/mongo-init.js | 
+      sed 's/\LOADER_DB_PASSWORD/'${LOADER_DB_PASSWORD}'/' | 
+      sed 's/\LOADER_DB_PASSWORD/'${LOADER_DB_PASSWORD}'/' | 
+      sed 's/\REST_DB_LOGIN/'${REST_DB_LOGIN}'/' | 
+      sed 's/\REST_DB_PASSWORD/'${REST_DB_PASSWORD}'/' > /docker-entrypoint-initdb.d/mongo-init-final.js &&
       mongod --port ${DB_INNER_PORT} --bind_ip_all --auth &&
       mongo --eval 'load(\"/docker-entrypoint-initdb.d/mongo-init-final.js\")'"
     networks:
