@@ -1,5 +1,5 @@
 // Switch to the desired database
-db = db.getSiblingDB('DB_NAME'); // Replace 'DB_NAME' with your database name
+db = db.getSiblingDB('DB_NAME');
 
 // Create a user with readWrite permissions on 'DB_NAME' database. This user will be used for the loader
 db.createUser({
