@@ -43,15 +43,16 @@ Check services:
 
 ```sh
 $ docker stack services my_stack
-ID             NAME                MODE         REPLICAS   IMAGE                   PORTS
-<ID>           my_stack_apache     replicated   1/1        apache_image:latest     *:80->80/tcp, *:443->443/tcp, *:7000->7000/tcp
-<ID>           my_stack_client     replicated   2/2        client_image:latest     *:8080->80/tcp
-<ID>           my_stack_loader     replicated   0/0        loader_image:latest     
-<ID>           my_stack_minio      replicated   1/1        minio/minio:latest      *:9000-9001->9000-9001/tcp
-<ID>           my_stack_mongodb    replicated   1/1        mongo:6                 *:27017->27017/tcp
-<ID>           my_stack_rest       replicated   4/4        rest_image:latest       *:8081->3000/tcp
-<ID>           my_stack_vre_lite   replicated   1/1        vre_lite_image:latest   *:8082->3001/tcp
-<ID>           my_stack_workflow   replicated   0/0        workflow_image:latest  
+ID             NAME                MODE         REPLICAS               IMAGE                   PORTS
+<ID>           my_stack_apache     replicated   1/1                    apache_image:latest     *:80->80/tcp, *:443->443/tcp, *:7000->7000/tcp
+<ID>           my_stack_client     replicated   2/2                    client_image:latest     *:8080->80/tcp
+<ID>           my_stack_cronjobs   replicated   1/1                    cronjobs_image:latest 
+<ID>           my_stack_loader     replicated   0/0                    loader_image:latest     
+<ID>           my_stack_minio      replicated   1/1 (max 1 per node)   minio/minio:latest      *:9000-9001->9000-9001/tcp
+<ID>           my_stack_mongodb    replicated   1/1                    mongo:6                 *:27017->27017/tcp
+<ID>           my_stack_rest       replicated   4/4                    rest_image:latest       *:8081->3000/tcp
+<ID>           my_stack_vre_lite   replicated   1/1                    vre_lite_image:latest   *:8082->3001/tcp
+<ID>           my_stack_workflow   replicated   0/0                    workflow_image:latest  
 ```
 
 Check nodes:
@@ -166,6 +167,54 @@ If services are already online, go to:
 
     http(s)://your_server_ip
 
+### Check MinIO
+
+#### WebUI
+
+The **MinIo WebUI** interface only should be available in **development**.
+
+Open a browser and type:
+
+```
+http://localhost:9001
+```
+
+Or modify the port 9001 by the one defined as **MINIO_UI_OUTER_PORT** in the [**.env**](../.env.git) file. 
+
+If services are already online, go to:
+
+    http(s)://your_server_ip/minio
+
+#### API
+
+In terminal, do:
+
+```
+curl -f http://localhost:9000/minio/health/live
+```
+
+Or modify the port 9000 by the one defined as **MINIO_API_OUTER_PORT** in the [**.env**](../.env.git) file. 
+
+If services are already online, do:
+
+    curl -f http(s)://your_server_ip:9000/minio/health/live
+
+### Check VRE lite
+
+This service **depends on MinIO**, so until the MinIO service is up & running, the VRE lite will apear as down.
+
+Open a browser and type:
+
+```
+http://localhost:8082
+```
+
+Or modify the port 8082 by the one defined as **VRE_LITE_OUTER_PORT** in the [**.env**](../.env.git) file. 
+
+If services are already online, go to:
+
+    http(s)://your_server_ip/vre_lite/
+
 ## Stop services
 
 Remove stack:
@@ -188,17 +237,18 @@ Check that at least the mongo, rest and client containers are up & running:
 
 ```sh
 $ docker ps -a
-CONTAINER ID   IMAGE                   COMMAND                  CREATED       STATUS                 PORTS                       NAMES
-<ID>           rest_image:latest     "pm2-runtime start i…"   17 hours ago   Up 17 hours             3000/tcp                    my_stack_rest.2.<ID>
-<ID>           rest_image:latest     "pm2-runtime start i…"   17 hours ago   Up 17 hours             3000/tcp                    my_stack_rest.1.<ID>
-<ID>           rest_image:latest     "pm2-runtime start i…"   17 hours ago   Up 17 hours             3000/tcp                    my_stack_rest.3.<ID>
-<ID>           rest_image:latest     "pm2-runtime start i…"   17 hours ago   Up 17 hours             3000/tcp                    my_stack_rest.4.<ID>
-<ID>           mongo:6               "docker-entrypoint.s…"   17 hours ago   Up 17 hours             27017/tcp                   my_stack_mongodb.1.<ID>
-<ID>           client_image:latest   "/docker-entrypoint.…"   17 hours ago   Up 17 hours             80/tcp                      my_stack_client.2.<ID>
-<ID>           client_image:latest   "/docker-entrypoint.…"   17 hours ago   Up 17 hours             80/tcp                      my_stack_client.1.<ID>
-<ID>           minio/minio:latest    "/usr/bin/docker-ent…"   17 hours ago   Up 17 hours (healthy)   9000/tcp                    my_stack_minio.1.<ID>
-<ID>           apache_image:latest   "httpd-foreground"       17 hours ago   Up 17 hours             80/tcp, 443/tcp, 7000/tcp   my_stack_apache.1.<ID>
-<ID>           vre_lite_image:latest "/app/entrypoint.sh"     17 hours ago   Up 17 hours             3001/tcp                    my_stack_vre_lite.1.<ID>
+CONTAINER ID   IMAGE                   COMMAND                  CREATED        STATUS                  PORTS                       NAMES
+<ID>           cronjobs_image:latest   "sh -c 'crond && tai…"   17 hours ago   Up 17 hours                                         my_stack_cronjobs.1.<ID>
+<ID>           rest_image:latest       "pm2-runtime start i…"   17 hours ago   Up 17 hours             3000/tcp                    my_stack_rest.2.<ID>
+<ID>           rest_image:latest       "pm2-runtime start i…"   17 hours ago   Up 17 hours             3000/tcp                    my_stack_rest.1.<ID>
+<ID>           rest_image:latest       "pm2-runtime start i…"   17 hours ago   Up 17 hours             3000/tcp                    my_stack_rest.3.<ID>
+<ID>           rest_image:latest       "pm2-runtime start i…"   17 hours ago   Up 17 hours             3000/tcp                    my_stack_rest.4.<ID>
+<ID>           mongo:6                 "docker-entrypoint.s…"   17 hours ago   Up 17 hours             27017/tcp                   my_stack_mongodb.1.<ID>
+<ID>           client_image:latest     "/docker-entrypoint.…"   17 hours ago   Up 17 hours             80/tcp                      my_stack_client.2.<ID>
+<ID>           client_image:latest     "/docker-entrypoint.…"   17 hours ago   Up 17 hours             80/tcp                      my_stack_client.1.<ID>
+<ID>           minio/minio:latest      "/usr/bin/docker-ent…"   17 hours ago   Up 17 hours (healthy)   9000/tcp                    my_stack_minio.1.<ID>
+<ID>           apache_image:latest     "httpd-foreground"       17 hours ago   Up 17 hours             80/tcp, 443/tcp, 7000/tcp   my_stack_apache.1.<ID>
+<ID>           vre_lite_image:latest   "/app/entrypoint.sh"     17 hours ago   Up 17 hours             3001/tcp                    my_stack_vre_lite.1.<ID>
 ```
 
 ### Inspect docker network 
@@ -308,6 +358,7 @@ CONTAINER ID   NAME                                           CPU %     MEM USAG
 <ID>           my_stack_rest.1.<ID>                           0.19%     69.7MiB / 10GiB     0.68%     5.63MB / 1.81MB   0B / 24.6kB   22
 <ID>           my_stack_rest.3.<ID>                           0.18%     69.14MiB / 10GiB    0.68%     5.5MB / 2.17MB    0B / 24.6kB   22
 <ID>           my_stack_rest.4.<ID>                           0.25%     68.77MiB / 10GiB    0.67%     5.9MB / 2.63MB    0B / 24.6kB   22
+<ID>           my_stack_cronjobs.1.<ID>                       0.01%     524KiB / 512MiB     0.10%     1.19kB / 0B       0B / 4.1kB     2
 <ID>           my_stack_mongodb.1.<ID>                        0.61%     75.12MiB / 8GiB     0.92%     6.69MB / 22.3MB   0B / 93.5MB   44
 <ID>           my_stack_client.2.<ID>                         0.00%     12.7MiB / 8GiB      0.16%     90.5kB / 886kB    0B / 12.3kB   17
 <ID>           my_stack_client.1.<ID>                         0.00%     12.87MiB / 8GiB     0.16%     86.1kB / 4.12MB   0B / 12.3kB   17
