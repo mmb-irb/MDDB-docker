@@ -219,14 +219,14 @@ services:
         VRE_LITE_BASE_URL_DEVELOPMENT: ${VRE_LITE_BASE_URL_DEVELOPMENT}
         VRE_LITE_BASE_URL_STAGING: ${VRE_LITE_BASE_URL_STAGING}
         VRE_LITE_BASE_URL_PRODUCTION: ${VRE_LITE_BASE_URL_PRODUCTION}
-        VRE_LITE_DATA_PATH: ${VRE_LITE_DATA_PATH}
+        VRE_LITE_LOG_PATH: ${VRE_LITE_LOG_PATH}
         VRE_LITE_MAX_FILE_SIZE: ${VRE_LITE_MAX_FILE_SIZE}
         MINIO_PROTOCOL: ${MINIO_PROTOCOL}
         MINIO_URL: ${MINIO_URL}
         MINIO_PORT: ${APACHE_MINIO_OUTER_PORT}
         NODE_NAME: ${NODE}
     volumes:
-      - vre_lite_volume:/data
+      - vre_lite_log_volume:/data
     ports:
       - "${VRE_LITE_OUTER_PORT}:${VRE_LITE_INNER_PORT}"
     networks:
@@ -247,6 +247,35 @@ services:
         condition: any   # Restart always
       update_config:
         order: start-first  # Priority over other services
+
+  cronjobs:
+    image: cronjobs_image 
+    build:
+      context: ./cronjobs
+      args:
+        LOG_PATH: ${VRE_LITE_LOG_PATH}
+        TIME_DIFF: ${CRONJOB_TIME_DIFF}
+        MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+        MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+        MINIO_PORT: ${MINIO_API_INNER_PORT}
+    volumes:
+      - vre_lite_log_volume:/vre_lite
+    networks:
+      - minio_network
+    depends_on:
+      - minio
+    deploy:
+      replicas: ${CRONJOBS_REPLICAS}   # Specify the number of replicas for Docker Swarm
+      resources:
+        limits:
+          cpus: ${CRONJOBS_CPU_LIMIT}   # Specify the limit number of CPUs
+          memory: ${CRONJOBS_MEMORY_LIMIT}   # Specify the limit memory
+        reservations:
+          cpus: ${CRONJOBS_CPU_RESERVATION}   # Specify the reserved number of CPUs
+          memory: ${CRONJOBS_MEMORY_RESERVATION}   # Specify the reserved memory
+      restart_policy:
+        condition: on-failure   # Restart only on failure
+
 
 volumes:
   certs_volume:
@@ -291,12 +320,12 @@ volumes:
       type: none
       o: bind
       device: ${MINIO_VOLUME_PATH4}   # bind the volume to MINIO_VOLUME_PATH4 on the host
-  vre_lite_volume:
+  vre_lite_log_volume:
     driver: local
     driver_opts:
       type: none
       o: bind
-      device: ${VRE_LITE_VOLUME_PATH}   # bind the volume to VRE_LITE_VOLUME_PATH on the host
+      device: ${VRE_LITE_LOG_PATH}   # bind the volume to VRE_LITE_LOG_PATH on the host
 
 networks:
   data_network: 
