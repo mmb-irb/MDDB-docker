@@ -2,11 +2,11 @@
 FROM python:3.9-alpine
 
 # Define arguments passed from docker-compose
-ARG LOG_PATH=
-ARG TIME_DIFF=
-ARG MINIO_ROOT_USER=
-ARG MINIO_ROOT_PASSWORD=
-ARG MINIO_PORT=
+ARG LOG_PATH
+ARG TIME_DIFF
+ARG MINIO_ROOT_USER
+ARG MINIO_ROOT_PASSWORD
+ARG MINIO_PORT
 
 # Set the working directory
 WORKDIR /app

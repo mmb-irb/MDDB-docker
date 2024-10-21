@@ -226,7 +226,7 @@ services:
         MINIO_PORT: ${APACHE_MINIO_OUTER_PORT}
         NODE_NAME: ${NODE}
     volumes:
-      - vre_lite_log_volume:/data
+      - vre_lite_log_volume:/vre_lite
     ports:
       - "${VRE_LITE_OUTER_PORT}:${VRE_LITE_INNER_PORT}"
     networks:
@@ -325,7 +325,7 @@ volumes:
     driver_opts:
       type: none
       o: bind
-      device: ${VRE_LITE_LOG_PATH}   # bind the volume to VRE_LITE_LOG_PATH on the host
+      device: ${VRE_LITE_VOLUME_PATH}   # bind the volume to VRE_LITE_LOG_PATH on the host
 
 networks:
   data_network: 
