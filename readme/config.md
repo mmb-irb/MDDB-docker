@@ -29,7 +29,7 @@ An `.env` file must be created in the **root** of the project. The file [**.env.
 | APACHE_MEMORY_RESERVATION         | string  | apache reserved memory                                        |
 | &nbsp;
 | LOADER_VOLUME_PATH         | string  | path where the loader will look for files                                        |
-| LOADER_REPLICAS      | string  | number of replicas to deploy                                    |
+| LOADER_REPLICAS      | number  | number of replicas to deploy                                    |
 | LOADER_CPU_LIMIT      | string  | loader limit number of CPUs                                    |
 | LOADER_MEMORY_LIMIT          | string | loader limit memory                           |
 | LOADER_CPU_RESERVATION          | string  | loader reserved number of CPUs                           |
@@ -38,13 +38,13 @@ An `.env` file must be created in the **root** of the project. The file [**.env.
 | LOADER_DB_PASSWORD      | string  | db password for loader                       |
 | &nbsp;
 | WORKFLOW_VOLUME_PATH         | string  | path where the workflow will save the files                                        |
-| WORKFLOW_REPLICAS      | string  | number of replicas to deploy                                    |
+| WORKFLOW_REPLICAS      | number  | number of replicas to deploy                                    |
 | WORKFLOW_CPU_LIMIT      | string  | workflow limit number of CPUs                                    |
 | WORKFLOW_MEMORY_LIMIT          | string | workflow limit memory                           |
 | WORKFLOW_CPU_RESERVATION          | string  | workflow reserved number of CPUs                           |
 | WORKFLOW_MEMORY_RESERVATION      | string  | workflow reserved memory                         |
 | &nbsp;
-| CLIENT_REPLICAS      | string  | number of replicas to deploy                                    |
+| CLIENT_REPLICAS      | number  | number of replicas to deploy                                    |
 | CLIENT_OUTER_PORT         | number  | client outer port                                         |
 | CLIENT_INNER_PORT         | number  | client inner port                                         |
 | CLIENT_CPU_LIMIT    | string  | client limit number of CPUs                               |
@@ -52,7 +52,7 @@ An `.env` file must be created in the **root** of the project. The file [**.env.
 | CLIENT_CPU_RESERVATION    | string  | client reserved number of CPUs                               |
 | CLIENT_MEMORY_RESERVATION    | string  | client reserved memory                               |
 | &nbsp;
-| REST_REPLICAS      | string  | number of replicas to deploy                                    |
+| REST_REPLICAS      | number  | number of replicas to deploy                                    |
 | REST_OUTER_PORT         | number  | REST outer port                                         |
 | REST_INNER_PORT         | number  | REST inner port                                         |
 | REST_CPU_LIMIT    | string  | REST limit number of CPUs                               |
@@ -63,7 +63,7 @@ An `.env` file must be created in the **root** of the project. The file [**.env.
 | REST_DB_PASSWORD    | string  | db password for website REST API                               |
 | &nbsp;
 | DB_VOLUME_PATH         | string  | path where the DB will deploy the mongoDB file system                                        |
-| DB_REPLICAS      | string  | number of replicas to deploy                                    |
+| DB_REPLICAS      | number  | number of replicas to deploy                                    |
 | DB_OUTER_PORT         | number  | DB outer port                                         |
 | DB_INNER_PORT         | number  | DB inner port                                         |
 | DB_CPU_LIMIT      | string  | DB limit number of CPUs                                    |
@@ -78,7 +78,7 @@ An `.env` file must be created in the **root** of the project. The file [**.env.
 | MINIO_VOLUME_PATH2         | string  | path for the volume2 where MinIO will save / retrieve the files                              |
 | MINIO_VOLUME_PATH3         | string  | path for the volume3 where MinIO will save / retrieve the files                              |
 | MINIO_VOLUME_PATH4         | string  | path for the volume4 where MinIO will save / retrieve the files                              |
-| MINIO_REPLICAS      | string  | number of replicas to deploy                                    |
+| MINIO_REPLICAS      | number  | number of replicas to deploy                                    |
 | MINIO_API_OUTER_PORT         | number  | MinIO API outer port                                         |
 | MINIO_API_INNER_PORT         | number  | MinIO API inner port                                         |
 | MINIO_UI_OUTER_PORT         | number  | MinIO WebUI outer port                                         |
@@ -90,8 +90,8 @@ An `.env` file must be created in the **root** of the project. The file [**.env.
 | MINIO_PROTOCOL      | string  | MinIO API protocol (http|https)                        |
 | MINIO_URL      | `<url>`  | url for MinIO (ie localhost)                          |
 | &nbsp;
-| VRE_LITE_VOLUME_PATH         | string  | path where the VRE lite will save the files                                        |
-| VRE_LITE_REPLICAS      | string  | number of replicas to deploy                                    |
+| VRE_LITE_VOLUME_PATH         | string  | path where the VRE lite will save the logs                                        |
+| VRE_LITE_REPLICAS      | number  | number of replicas to deploy                                    |
 | VRE_LITE_OUTER_PORT         | number  | VRE lite outer port                                         |
 | VRE_LITE_INNER_PORT         | number  | VRE lite inner port                                         |
 | VRE_LITE_CPU_LIMIT      | string  | VRE lite limit number of CPUs                                    |
@@ -101,8 +101,15 @@ An `.env` file must be created in the **root** of the project. The file [**.env.
 | VRE_LITE_BASE_URL_DEVELOPMENT         | string  | VRE lite baseURL for development                                        |
 | VRE_LITE_BASE_URL_STAGING      | string  | VRE lite baseURL for staging                                    |
 | VRE_LITE_BASE_URL_PRODUCTION          | string | VRE lite baseURL for production                            |
-| VRE_LITE_DATA_PATH          | string  | path where the data will be saved (relative to the docker)                           |
+| VRE_LITE_LOG_PATH          | string  | path where the logs will be saved (relative to the docker)                           |
 | VRE_LITE_MAX_FILE_SIZE      | number  | maximum size for all the trajectory files in bytes                      |
+| &nbsp;
+| VRE_LITE_TIME_DIFF      | number  | number of days to be subtracted from now to run the cleaning jobs for the VRE lite          |
+| CRONJOB_REPLICAS      | number  | number of replicas to deploy                                    |
+| CRONJOB_CPU_LIMIT      | string  | Cronjobs limit number of CPUs                                    |
+| CRONJOB_MEMORY_LIMIT          | string | Cronjobs limit memory                           |
+| CRONJOB_CPU_RESERVATION          | string  | Cronjobs reserved number of CPUs                           |
+| CRONJOB_MEMORY_RESERVATION      | string  | Cronjobs reserved memory                         |
 | &nbsp;
 | MONGO_INITDB_ROOT_USERNAME      | string  | root user for the DB                         |
 | MONGO_INITDB_ROOT_PASSWORD      | string  | root password for the DB                       |
@@ -312,10 +319,17 @@ services:
       MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD}
     ports:
       - "${DB_OUTER_PORT}:${DB_INNER_PORT}"
-    command: mongod --port ${DB_INNER_PORT}
     volumes:
       - ${DB_VOLUME_PATH}:/data/db  # path where the database will be stored (outside the container, in the host machine)
-      - ./mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro # path to the initialization script
+      - ./mongodb/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init-template.js:ro # path to the template initialization script
+    # before init mongo, replace the template with the actual values
+    entrypoint: >
+      sh -c "sed 's/\DB_NAME/'${DB_NAME}'/' /docker-entrypoint-initdb.d/mongo-init-template.js | 
+      sed 's/\LOADER_DB_LOGIN/'${LOADER_DB_LOGIN}'/' | 
+      sed 's/\LOADER_DB_PASSWORD/'${LOADER_DB_PASSWORD}'/' | 
+      sed 's/\REST_DB_LOGIN/'${REST_DB_LOGIN}'/' | 
+      sed 's/\REST_DB_PASSWORD/'${REST_DB_PASSWORD}'/' > /docker-entrypoint-initdb.d/mongo-init.js &&
+      mongod --port ${DB_INNER_PORT} --bind_ip_all --auth"
     networks:
       - data_network
     deploy:
@@ -344,7 +358,7 @@ services:
       - minio_volume4:/mnt/disk4
     ports:
       - "${MINIO_API_OUTER_PORT}:${MINIO_API_INNER_PORT}"
-      - "${MINIO_UI_INNER_PORT}:${MINIO_UI_INNER_PORT}"   # port for the minio console (only for development)
+      - "${MINIO_UI_INNER_PORT}:${MINIO_UI_INNER_PORT}"   # port for the minio webUI (only for development)
     networks:
       - minio_network
       - web_network
@@ -382,14 +396,15 @@ services:
         VRE_LITE_BASE_URL_DEVELOPMENT: ${VRE_LITE_BASE_URL_DEVELOPMENT}
         VRE_LITE_BASE_URL_STAGING: ${VRE_LITE_BASE_URL_STAGING}
         VRE_LITE_BASE_URL_PRODUCTION: ${VRE_LITE_BASE_URL_PRODUCTION}
-        VRE_LITE_DATA_PATH: ${VRE_LITE_DATA_PATH}
+        VRE_LITE_LOG_PATH: ${VRE_LITE_LOG_PATH}
         VRE_LITE_MAX_FILE_SIZE: ${VRE_LITE_MAX_FILE_SIZE}
+        VRE_LITE_TIME_DIFF: ${CRONJOB_VRE_LITE_TIME_DIFF}
         MINIO_PROTOCOL: ${MINIO_PROTOCOL}
         MINIO_URL: ${MINIO_URL}
         MINIO_PORT: ${APACHE_MINIO_OUTER_PORT}
         NODE_NAME: ${NODE}
     volumes:
-      - vre_lite_volume:/data
+      - vre_lite_log_volume:/vre_lite
     ports:
       - "${VRE_LITE_OUTER_PORT}:${VRE_LITE_INNER_PORT}"
     networks:
@@ -410,6 +425,35 @@ services:
         condition: any   # Restart always
       update_config:
         order: start-first  # Priority over other services
+
+  cronjobs:
+    image: cronjobs_image 
+    build:
+      context: ./cronjobs
+      args:
+        LOG_PATH: ${VRE_LITE_LOG_PATH}
+        VRE_LITE_TIME_DIFF: ${CRONJOB_VRE_LITE_TIME_DIFF}
+        MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+        MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+        MINIO_PORT: ${MINIO_API_INNER_PORT}
+    volumes:
+      - vre_lite_log_volume:/vre_lite
+    networks:
+      - minio_network
+    depends_on:
+      - minio
+    deploy:
+      replicas: ${CRONJOBS_REPLICAS}   # Specify the number of replicas for Docker Swarm
+      resources:
+        limits:
+          cpus: ${CRONJOBS_CPU_LIMIT}   # Specify the limit number of CPUs
+          memory: ${CRONJOBS_MEMORY_LIMIT}   # Specify the limit memory
+        reservations:
+          cpus: ${CRONJOBS_CPU_RESERVATION}   # Specify the reserved number of CPUs
+          memory: ${CRONJOBS_MEMORY_RESERVATION}   # Specify the reserved memory
+      restart_policy:
+        condition: on-failure   # Restart only on failure
+
 
 volumes:
   certs_volume:
@@ -454,12 +498,12 @@ volumes:
       type: none
       o: bind
       device: ${MINIO_VOLUME_PATH4}   # bind the volume to MINIO_VOLUME_PATH4 on the host
-  vre_lite_volume:
+  vre_lite_log_volume:
     driver: local
     driver_opts:
       type: none
       o: bind
-      device: ${VRE_LITE_VOLUME_PATH}   # bind the volume to VRE_LITE_VOLUME_PATH on the host
+      device: ${VRE_LITE_VOLUME_PATH}   # bind the volume to VRE_LITE_LOG_PATH on the host
 
 networks:
   data_network: 

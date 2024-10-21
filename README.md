@@ -75,6 +75,10 @@ In order to provide the users a way to **transfer big files** that can't be uplo
 
 https://hub.docker.com/r/minio/minio
 
+### Cronjobs
+
+For the sake of performing **automatic operations** such as cleaning or checking, there is a **cron jobs service**.
+
 ## Installation
 
 Please execute the following steps for installing the **MDposit - MDDB Docker services**:
