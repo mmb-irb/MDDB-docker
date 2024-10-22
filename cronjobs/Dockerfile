@@ -49,6 +49,8 @@ RUN crontab /etc/cron.d/my-vrelite-cronjob
 #CMD ["sh", "-c", "crond && tail -f $CJ_VRE_LITE_LOG_PATH"]
 #CMD ["sh", "-c", "touch $CJ_VRE_LITE_LOG_PATH && crond && tail -f $CJ_VRE_LITE_LOG_PATH"]
 
+ENV CJ_VRE_LITE_LOG_PATH=$CJ_VRE_LITE_LOG_PATH
+
 # Create the initialization script
 RUN echo '#!/bin/sh' > /usr/local/bin/init.sh && \
     echo 'mkdir -p $(dirname $CJ_VRE_LITE_LOG_PATH)' >> /usr/local/bin/init.sh && \
