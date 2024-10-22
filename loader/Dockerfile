@@ -33,7 +33,7 @@ RUN echo "DB_SERVER=${DB_SERVER}" > /app/MoDEL-CNS_DB_loader/.env && \
 COPY environment.yml /app
 
 # Create new environment
-RUN conda env create -f /app/environment.yml
+RUN conda env create -f /app/environment.yml && conda clean -afy
 
 # Change working directory to /app/MoDEL-CNS_DB_loader
 WORKDIR /app/MoDEL-CNS_DB_loader
