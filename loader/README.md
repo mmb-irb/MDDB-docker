@@ -17,9 +17,6 @@ FROM continuumio/miniconda3
 # Define working dir
 WORKDIR /app
 
-# Define a directory for the volume
-VOLUME /data
-
 # Install Node.js
 RUN apt-get update && \
     apt-get install -y curl && \
@@ -49,7 +46,7 @@ RUN echo "DB_SERVER=${DB_SERVER}" > /app/MoDEL-CNS_DB_loader/.env && \
 COPY environment.yml /app
 
 # Create new environment
-RUN conda env create -f /app/environment.yml
+RUN conda env create -f /app/environment.yml && conda clean -afy
 
 # Change working directory to /app/MoDEL-CNS_DB_loader
 WORKDIR /app/MoDEL-CNS_DB_loader
