@@ -39,7 +39,8 @@ RUN chmod 0644 /etc/cron.d/my-vrelite-cronjob
 RUN crontab /etc/cron.d/my-vrelite-cronjob
 
 # Create the log file to be able to run tail
-RUN touch $CJ_VRE_LITE_LOG_PATH
+#RUN touch $CJ_VRE_LITE_LOG_PATH
+RUN mkdir -p $(dirname $CJ_VRE_LITE_LOG_PATH) && touch $CJ_VRE_LITE_LOG_PATH
 
 # more than one log file
 # RUN touch $CJ_VRE_LITE_LOG_PATH $CJ_OPENVRE_LOG_PATH
