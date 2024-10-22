@@ -22,6 +22,7 @@ def main(json_file_path, time_difference, mc_usr, mc_pwd, minio_host):
 
     # Get the current time
     current_time = datetime.now(timezone.utc)
+    print(current_time)
 
     # Process each item in the array
     for item in data:

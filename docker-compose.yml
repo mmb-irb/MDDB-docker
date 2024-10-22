@@ -254,8 +254,9 @@ services:
     build:
       context: ./cronjobs
       args:
-        LOG_PATH: ${VRE_LITE_LOG_PATH}
+        VRE_LITE_LOG_PATH: ${VRE_LITE_LOG_PATH}
         VRE_LITE_TIME_DIFF: ${CRONJOB_VRE_LITE_TIME_DIFF}
+        CJ_VRE_LITE_LOG_PATH: ${CJ_VRE_LITE_LOG_PATH}
         MINIO_ROOT_USER: ${MINIO_ROOT_USER}
         MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
         MINIO_PORT: ${MINIO_API_INNER_PORT}
