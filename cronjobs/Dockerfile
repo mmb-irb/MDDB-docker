@@ -47,7 +47,8 @@ RUN crontab /etc/cron.d/my-vrelite-cronjob
 
 # Run the command on container startup
 #CMD ["sh", "-c", "crond && tail -f $CJ_VRE_LITE_LOG_PATH"]
-CMD ["sh", "-c", "mkdir -p $(dirname $CJ_VRE_LITE_LOG_PATH) && touch $CJ_VRE_LITE_LOG_PATH && crond && tail -f $CJ_VRE_LITE_LOG_PATH"]
+RUN echo "$CJ_VRE_LITE_LOG_PATH"
+CMD ["sh", "-c", "touch $CJ_VRE_LITE_LOG_PATH && crond && tail -f $CJ_VRE_LITE_LOG_PATH"]
 
 # more than one log file
 # CMD ["sh", "-c", "crond && tail -f $CJ_VRE_LITE_LOG_PATH $CJ_OPENVRE_LOG_PATH"]
