@@ -4,9 +4,6 @@ FROM continuumio/miniconda3
 # Define working dir
 WORKDIR /app
 
-# Define a directory for the volume
-VOLUME /data
-
 # Install libgl1 for avoiding problems with VMD
 RUN apt-get update && apt-get install -y libgl1
 

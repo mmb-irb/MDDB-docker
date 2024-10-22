@@ -1,5 +1,5 @@
-# Use Alpine Linux as base image
-FROM alpine:latest
+# Stage 1: Build the NodeJS REST API
+FROM alpine:latest AS build
 
 # Install necessary packages
 RUN apk --no-cache add nodejs npm git
@@ -10,13 +10,11 @@ RUN apk add cmake
 WORKDIR /app
 
 # Clone and install the chemfiles fork customized to support '.bin' format reading and streaming.
-RUN git clone https://github.com/d-beltran/chemfiles --depth 1 && cd chemfiles && git fetch --unshallow  && mkdir build && cd build && cmake .. && make && make install
+RUN git clone https://github.com/d-beltran/chemfiles --depth 1 && cd chemfiles && git fetch --unshallow  && mkdir build && cd build && cmake .. && m
+ake && make install
 
 # Verify installation
 RUN node --version && npm --version && git --version
-
-# Define a directory for the volume
-VOLUME /data
 
 # Clone MoDEL-CNS_REST_API repo
 RUN git clone https://mmb.irbbarcelona.org/gitlab/aluciani/MoDEL-CNS_REST_API
@@ -48,8 +46,24 @@ RUN npm install
 # Build website
 RUN npm run build
 
+# Stage 2: Serve the REST API app with pm2
+FROM alpine:latest
+
+# Install necessary packages
+RUN apk --no-cache add nodejs npm curl
+
 # Install pm2
 RUN npm install pm2 -g
+
+# Set working directory
+WORKDIR /app
+
+# Copy from the previous stage
+COPY --from=build /app/MoDEL-CNS_REST_API /app/MoDEL-CNS_REST_API
+COPY --from=build /app/chemfiles /app/chemfiles
+
+# Change working directory to /app/MoDEL-CNS_REST_API
+WORKDIR /app/MoDEL-CNS_REST_API
 
 # Expose the port where the app runs on
 EXPOSE ${REST_INNER_PORT}

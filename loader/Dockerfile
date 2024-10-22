@@ -4,9 +4,6 @@ FROM continuumio/miniconda3
 # Define working dir
 WORKDIR /app
 
-# Define a directory for the volume
-VOLUME /data
-
 # Install Node.js
 RUN apt-get update && \
     apt-get install -y curl && \
