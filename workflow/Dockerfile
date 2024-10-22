@@ -11,7 +11,7 @@ RUN apt-get update && apt-get install -y libgl1
 RUN git clone https://mmb.irbbarcelona.org/gitlab/d.beltran.anadon/MoDEL-workflow.git
 
 # Create new environment
-RUN conda env create -f /app/MoDEL-workflow/environment.yml
+RUN conda env create -f /app/MoDEL-workflow/environment.yml && conda clean -afy
 
 # Make RUN commands use the new environment:
 SHELL ["conda", "run", "-n", "mwf_env", "/bin/bash", "-c"]
