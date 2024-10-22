@@ -64,6 +64,9 @@ COPY --from=build /app/chemfiles /app/chemfiles
 # Change working directory to /app/MoDEL-CNS_REST_API
 WORKDIR /app/MoDEL-CNS_REST_API
 
+# Define environment variable
+ARG REST_INNER_PORT
+
 # Expose the port where the app runs on
 EXPOSE ${REST_INNER_PORT}
 
