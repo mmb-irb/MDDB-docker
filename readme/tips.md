@@ -18,11 +18,32 @@ Ie when developing and doing changes in git repo.
 
     ```sh
     docker-compose build --no-cache
+
+3. Rebuild a single service avoiding cache but preserving the rest of services (only service_name has changed):
+
+    ```sh
+    docker-compose build --no-cache <service_name>
     ```
 
-3. Up services:
+4. Up services:
     ```sh
     docker-compose up -d
+    ```
+
+## Rebuild single service
+
+For rebuilding a single service avoiding cache but preserving the rest of services:
+
+1. **Rebuild the Service Image Without Cache:** Use docker-compose to rebuild the image locally, targeting only the service you want to update:
+
+    ```sh
+    docker-compose build --no-cache <service_name>
+    ```
+
+2. **Update the Service in the Swarm:** In Docker Swarm, you can force the service to use the updated image by running:
+
+    ```sh
+    docker service update --force <stack_name>_<service_name>
     ```
 
 ## Clean docker
