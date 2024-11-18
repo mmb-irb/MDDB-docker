@@ -341,8 +341,9 @@ networks:
   data_network: 
     external: true   # Use an external network
   minio_network: 
-    name: minio_network 
-    driver: overlay   # Use an overlay network
+    #name: minio_network 
+    #driver: overlay   # Use an overlay network
+    external: true   # Use an external network
   web_network:
     name: web_network
     driver: overlay   # Use an overlay network
