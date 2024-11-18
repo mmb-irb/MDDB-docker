@@ -51,7 +51,7 @@ RUN echo '#!/bin/sh' > entrypoint.sh && \
     #echo '  export AWS_SECRET_ACCESS_KEY=$MINIO_ROOT_PASSWORD' >> entrypoint.sh && \
     #echo '  /app/goofys --endpoint http://minio:$MINIO_API_PORT $BUCKET /mnt/s3/' >> entrypoint.sh && \
     #echo 'fi' >> entrypoint.sh && \
-    echo 'conda run --no-capture-output -n mwf_env' >> entrypoint.sh && \
+    echo 'conda run --no-capture-output -n mwf_env "$@"' >> entrypoint.sh && \
     #echo 'if [ -n $BUCKET ]; then' >> entrypoint.sh && \
     #echo '  fusermount -u /mnt/s3' >> entrypoint.sh && \
     #echo 'fi' >> entrypoint.sh && \
