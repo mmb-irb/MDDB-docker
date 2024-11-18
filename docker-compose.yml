@@ -65,8 +65,16 @@ services:
     image: workflow_image
     build:
       context: ./workflow   # folder to search Dockerfile for this image
+      args:
+        MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+        MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+        MINIO_API_PORT: ${MINIO_API_INNER_PORT}
     volumes:
       - workflow_volume:/data  # path where the workflow will look for files
+    networks:
+      - minio_network
+    depends_on:
+      - minio
     deploy:
       replicas: ${WORKFLOW_REPLICAS}  # Ensure this service is not deployed by default as it is a one-time task
       resources:
