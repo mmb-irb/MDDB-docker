@@ -87,7 +87,7 @@ Please execute the following steps for installing the **MDposit - MDDB Docker se
 
 The **Object Storage** and **Mongo** services will need a **disk path** to save all the **data** generated. The **Workflow** and the **Loader** services will need **another disk path** as well for **saving** (in the case of the workflow) and **retrieving** (in the case of the loader) the data that will be **uploaded** to the **website** in the last instance.
 
-[**Click here for seeing the detailed instructions for setting up the Storage**](readme/disks.md)
+[**Click here for seeing the detailed instructions for setting up the Storage**](readme/storage.md)
 
 ### Set Up Virtual Machine
 
