@@ -102,15 +102,15 @@ Before moving Docker's storage directory, you need to **stop** the Docker servic
 
 #### Move the Docker Root Dir
 
-Now, move Docker's current storage directory (`/var/lib/docker`) to the external disk:
+Now, move Docker's current storage directory (`/var/lib/docker`) to a volume out of the docker. This volume has been created previously in the [**storage step**](./storage.md#docker):
 
-    sudo mv /var/lib/docker /mnt/external_disk/docker
+    sudo mv /var/lib/docker /path/to/volume/docker
 
 #### Create a Symlink
 
 Create a **symbolic link** so that Docker continues to look in `/var/lib/docker`, but the actual data is stored on the external disk:
 
-    sudo ln -s /mnt/external_disk/docker /var/lib/docker
+    sudo ln -s /path/to/volume/docker /var/lib/docker
 
 ### Start docker
 
@@ -122,7 +122,7 @@ Now that Docker is configured to use the external disk, **start** the Docker ser
 
     docker info | grep "Docker Root Dir"
 
-You should see the new location, e.g., `/mnt/external_disk/docker`.
+You should see the new location, e.g., `/path/to/volume/docker`.
 
 ## Installation and configuration of Apache
 

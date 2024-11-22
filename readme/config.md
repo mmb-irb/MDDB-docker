@@ -103,8 +103,10 @@ An `.env` file must be created in the **root** of the project. The file [**.env.
 | VRE_LITE_BASE_URL_PRODUCTION          | string | VRE lite baseURL for production                            |
 | VRE_LITE_LOG_PATH          | string  | path where the logs will be saved (relative to the docker)                           |
 | VRE_LITE_MAX_FILE_SIZE      | number  | maximum size for all the trajectory files in bytes                      |
-| &nbsp;
 | VRE_LITE_TIME_DIFF      | number  | number of days to be subtracted from now to run the cleaning jobs for the VRE lite          |
+| &nbsp;
+| CJ_VRE_LITE_LOG_PATH      | string  | Path to the cronjobs log (relative to the VRE lite docker)                                    |
+| CRONJOB_VRE_LITE_TIME_DIFF      | number  | number of days that the VRE lite credentials will last                                    |
 | CRONJOB_REPLICAS      | number  | number of replicas to deploy                                    |
 | CRONJOB_CPU_LIMIT      | string  | Cronjobs limit number of CPUs                                    |
 | CRONJOB_MEMORY_LIMIT          | string | Cronjobs limit memory                           |
@@ -242,8 +244,16 @@ services:
     image: workflow_image
     build:
       context: ./workflow   # folder to search Dockerfile for this image
+      args:
+        MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+        MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+        MINIO_API_PORT: ${MINIO_API_INNER_PORT}
     volumes:
       - workflow_volume:/data  # path where the workflow will look for files
+    networks:
+      - minio_network
+    depends_on:
+      - minio
     deploy:
       replicas: ${WORKFLOW_REPLICAS}  # Ensure this service is not deployed by default as it is a one-time task
       resources:
@@ -431,8 +441,9 @@ services:
     build:
       context: ./cronjobs
       args:
-        LOG_PATH: ${VRE_LITE_LOG_PATH}
+        VRE_LITE_LOG_PATH: ${VRE_LITE_LOG_PATH}
         VRE_LITE_TIME_DIFF: ${CRONJOB_VRE_LITE_TIME_DIFF}
+        CJ_VRE_LITE_LOG_PATH: ${CJ_VRE_LITE_LOG_PATH}
         MINIO_ROOT_USER: ${MINIO_ROOT_USER}
         MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
         MINIO_PORT: ${MINIO_API_INNER_PORT}
@@ -509,8 +520,7 @@ networks:
   data_network: 
     external: true   # Use an external network
   minio_network: 
-    name: minio_network 
-    driver: overlay   # Use an overlay network
+    external: true   # Use an external network
   web_network:
     name: web_network
     driver: overlay   # Use an overlay network

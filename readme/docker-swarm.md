@@ -18,10 +18,11 @@ docker swarm init
 docker swarm init --advertise-addr <IP_ADDRESS>
 ```
 
-In order to execute the **long-term** tasks in **Docker Swarm** and the **one-off tasks**, such as the **loader** or the **workflow**, in **Docker Compose**, the **networks** are declared as **external** in the **docker-compose.yml** file, so they must be created before the `docker-compose build` and the `docker stak deploy`:
+In order to execute the **long-term** tasks in **Docker Swarm** and the **one-off tasks**, such as the **loader** or the **workflow**, in **Docker Compose**, some of the **networks** are declared as **external** in the **docker-compose.yml** file, so they must be created before the `docker-compose build` and the `docker stak deploy`:
 
 ```sh
 docker network create --driver overlay --attachable data_network
+docker network create --driver overlay --attachable minio_network
 ```
 
 > NOTE: **From July 2024 onwards**, the instruction for Docker Compose in **mac** is without hyphen, so from now on, `docker-compose build` is `docker compose build` when executing in **macOS**.
@@ -83,20 +84,38 @@ docker run --rm workflow_image mwf -h
 
 Please read carefully the [**workflow help**](../workflow) as it has an extensive documentation. 
 
-Example of running the workflow downloading an already **loaded trajectory** and saving the results into a **folder** that must be already created inside **WORKFLOW_VOLUME_PATH** defined in [**global .env**](config.md#env-file).
+#### Plain execution
+
+Example of **running** the workflow downloading an already **loaded trajectory** and saving the results into an **OUTPUT_FOLDER** that must be already created inside **WORKFLOW_VOLUME_PATH** defined in [**global .env**](config.md#env-file).
 
 ```sh
-docker-compose run --rm workflow mwf run -proj <ACCESSION ID> -smp -e clusters energies pockets -dir /data/<folder>
+docker-compose run --rm workflow mwf run -proj <ACCESSION ID> -smp -e clusters energies pockets -dir /data/<OUTPUT_FOLDER>
 ```
 
 Or, if the above doesn't work:
 
 ```sh
-docker run --rm workflow_image --cpus "${WORKFLOW_CPU_LIMIT}" --memory "${WORKFLOW_MEMORY_LIMIT}" mwf run -proj <ACCESSION ID> -smp -e clusters energies pockets -dir /data/<folder>
+docker run --rm workflow_image -v <WORKFLOW_VOLUME_PATH>:/data --cpus "${WORKFLOW_CPU_LIMIT}" --memory "${WORKFLOW_MEMORY_LIMIT}" mwf run -proj <ACCESSION ID> -smp -e clusters energies pockets -dir /data/<OUTPUT_FOLDER>
 ```
 
 Note that this run excludes clusters, energies and pockets analyses. Adding the -smp flag it downloads only 10 frames of the trajectory. As this instruction is a test, this will save a lot of computational time.
 
+#### Usual execution
+
+Example of **running** the workflow from data **uploaded via VRE lite**:
+
+```sh
+docker run --rm -e BUCKET=<BUCKET> --network minio_network -v <WORKFLOW_VOLUME_PATH>:/data  --cpus "${WORKFLOW_CPU_LIMIT}" --memory "${WORKFLOW_MEMORY_LIMIT}" --cap-add SYS_ADMIN --device /dev/fuse --security-opt apparmor:unconfined workflow_image mwf run -dir /data/<OUTPUT_FOLDER> -top /mnt/<FOLDER>/<TOPOLOGY> -stru /mnt/<FOLDER>/<TOPOLOGY> -traj ../../mnt/<FOLDER>/<TRAJECTORY> -mdir <REPLICA_FOLDER> -inp /mnt/<FOLDER>/metadata.yaml -filt
+```
+
+* **BUCKET:** Bucket created in MinIO via **VRE lite**. Given along with the credentials when **uploading** the data via **command line**. In format **YYYYMMDD**.
+* **WORKFLOW_VOLUME_PATH:** Workflow output path defined in [**global .env**](config.md#env-file).
+* **OUTPUT_FOLDER:** Folder inside **WORKFLOW_VOLUME_PATH**, it must be created beforehand.
+* **FOLDER:** Folder inside **BUCKET**. Given along with the credentials when **uploading** the data via **command line**.
+* **TOPOLOGY:** **Topology** file name. File uploaded via **VRE lite**.
+* **TRAJECTORY:** **Trajectory** file name. File uploaded via **VRE lite**.
+* **REPLICA_FOLDER:** Replica folder created beforehand **inside <WORKFLOW_VOLUME_PATH>/<OUTPUT_FOLDER>**
+ 
 ### Use loader
 
 While the **mongodb**, **client** and **rest** containers will remain up, the **loader** must be called every time is needed. As it is a **one-off task**, **Docker Compose** is used for running it.
@@ -116,16 +135,16 @@ docker run --rm --network data_network --cpus "${LOADER_CPU_LIMIT}" --memory "${
 **Load** documents to database:
 
 ```sh
-docker-compose run --rm loader load /data/<trajectory_dir>
+docker-compose run --rm loader load /data/<OUTPUT_FOLDER>
 ```
 
 Or, if the above doesn't work:
 
 ```sh
-docker run --rm --network data_network --cpus "${LOADER_CPU_LIMIT}" --memory "${LOADER_MEMORY_LIMIT}" loader_image loader load /data/<trajectory_dir>
+docker run --rm --network data_network -v <WORKFLOW_VOLUME_PATH>:/data --cpus "${LOADER_CPU_LIMIT}" --memory "${LOADER_MEMORY_LIMIT}" loader_image load -a <ACCESSION> /data/<OUTPUT_FOLDER>
 ```
 
-Take into account that **trajectory_dir** must be inside **LOADER_VOLUME_PATH** defined in [**global .env**](config.md#env-file).
+Take into account that **OUTPUT_FOLDER** must be inside **WORKFLOW_VOLUME_PATH**, defined in [**global .env**](config.md#env-file).
 
 **Remove** database document:
 
@@ -136,7 +155,7 @@ docker-compose run --rm loader delete <project_id>
 Or, if the above doesn't work:
 
 ```sh
-docker run --rm --network data_network --cpus "${LOADER_CPU_LIMIT}" --memory "${LOADER_MEMORY_LIMIT}" loader_image loader delete <project_id>
+docker run --rm --network data_network --cpus "${LOADER_CPU_LIMIT}" --memory "${LOADER_MEMORY_LIMIT}" loader_image delete <project_id>
 ```
 
 ### Check rest

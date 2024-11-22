@@ -83,6 +83,12 @@ For the sake of performing **automatic operations** such as cleaning or checking
 
 Please execute the following steps for installing the **MDposit - MDDB Docker services**:
 
+### Set Up Storage
+
+The **Object Storage** and **Mongo** services will need a **disk path** to save all the **data** generated. The **Workflow** and the **Loader** services will need **another disk path** as well for **saving** (in the case of the workflow) and **retrieving** (in the case of the loader) the data that will be **uploaded** to the **website** in the last instance.
+
+[**Click here for seeing the detailed instructions for setting up the Storage**](readme/disks.md)
+
 ### Set Up Virtual Machine
 
 Let's take a **clear** and **empty Virtual Machine** as a starting point for installing the **MDposit - MDDB Docker services**. It's highly recommended to have installed in it **Ubuntu 18.04 or superior**, though the services should work in other **Linux** distributions.
@@ -100,8 +106,6 @@ First off, all the **environment files** must be created and updated as well as 
 Once the Virtual Machine has all the **dependencies installed** and all the **config** files are **set up**, it's the moment of executing the **Docker Swarm** service. **Docker Swarm** is a **container orchestration** tool for **clustering** and **scheduling** Docker containers. 
 
 [**Click here for seeing the detailed instructions for executing Docker Swarm**](readme/docker-swarm.md)
-
- or [Click here](readme/docker-compose.md) for the detailed instructions for executing Docker Compose.
 
 ### Tips
 

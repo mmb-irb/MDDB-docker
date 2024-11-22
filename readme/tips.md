@@ -46,6 +46,18 @@ For rebuilding a single service avoiding cache but preserving the rest of servic
     docker service update --force <stack_name>_<service_name>
     ```
 
+3. **Remove Stopped Container(s):** After updating the service, the old container remains stopped, execute the following instruction for removing it:
+
+    ```sh
+    docker container prune -f
+    ````
+
+4. **Remove Unused Image(s):** After rebuilding the image, the old image remains unused, execute the following instruction for removing it:
+
+    ```sh
+    docker image prune -f
+    ```
+
 ## Clean docker
 
 When working with Docker, **even after removing images and containers**, Docker can leave behind various unused resources that take up **disk space**. To clean up your system effectively, you can use the following commands:
