@@ -5,6 +5,11 @@ import time
 
 
 def create_folders():
+    # Check if script was executed with sudo
+    if 'SUDO_USER' not in os.environ:
+        ask_sudo = input("Script was executed without sudo, in some cases you may need sudo permissions for create new folders in the storage system, do you want to continue? (y/n): ")
+        if not ask_sudo.lower() == "y":
+            return
     # Ask for main path
     main_path = input("Enter the main path for the storage system: ")
     if not main_path:
@@ -116,8 +121,8 @@ def poll_minio(minio_port):
 
 
 def deploy_stack():
-    aks_env = input("Do you have created the .env file in this same folder? (y/n): ")
-    if not aks_env.lower() == "y":
+    ask_env = input("Do you have created the .env file in this same folder? (y/n): ")
+    if not ask_env.lower() == "y":
         print("Please create the .env environment file first.")
         return
     if not check_env_exists():

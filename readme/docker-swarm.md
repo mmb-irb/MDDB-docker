@@ -1,4 +1,4 @@
-# Execute Docker Swarm
+# Deploy Docker Swarm
 
 **Docker Swarm** is a native **clustering** and **orchestration tool** for Docker containers. It allows you to **manage** a group of Docker hosts as a **single virtual system**, simplifying container **orchestration**, **deployment**, and **management**. With **Docker Swarm**, you can **scale** up and down, **manage** multiple containers, and ensure **high availability** of your applications.
 

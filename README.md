@@ -89,11 +89,17 @@ A **deploy script** is provided for executing the **different steps** of the dep
 * Install docker and docker-compose
 * Deploy Docker Swarm stack
 
+How to execute the script from the root of this repository:
+
+```sh
+python3 scripts/deploy.py -h
+```
+
 Be aware that you will need **sudo user** for executing the installation of **docker** and **docker-compose** and, depending on the path, for creating the **storage folders**.
 
 Besides, a **.env** file must be created taking [**.env.git**](./.env.git) as an example. For more information about all the **environment** variables that must be set in this file, pelase visit the [**configuration section**](./readme/config.md#env-file).
 
-⚠️ **It is highly recommended to read all the documentation before starting the automatic installation** ⚠️ 
+⚠️ **It's highly recommended to read all the documentation before starting the automatic installation** ⚠️ 
 
 The different sections of the documentation are:
 
