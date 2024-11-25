@@ -81,10 +81,10 @@ def install_docker():
     print("For changing Docker Root Dir: \n sudo systemctl stop docker \n sudo mv /var/lib/docker /path/to/volume/docker \n sudo ln -s /path/to/volume/docker /var/lib/docker \n sudo systemctl start docker")
 
 
-def check_env_exists():
+def check_file_exists(fname):
     # Check if .env file exists and has all variables filled
-    if not os.path.exists('.env'):
-        print("Error: .env file does not exist.")
+    if not os.path.exists(fname):
+        print(f"Error: {fname} file does not exist.")
         return False
     return True
 
@@ -133,7 +133,7 @@ def deploy_stack(rm):
     if not ask_env.lower() == "y":
         print("Please create the .env environment file first.")
         return
-    if not check_env_exists():
+    if not check_file_exists('.env') or check_file_exists('docker-compose.yml'):
         return
     env_vars = read_env_file('.env')
 
@@ -176,7 +176,7 @@ def deploy_stack(rm):
     subprocess.run(['docker', 'network', 'create', '--driver', 'overlay', 'data_network'])
     subprocess.run(['docker', 'network', 'create', '--driver', 'overlay', 'minio_network'])
     subprocess.run(['docker-compose', 'build'])
-    subprocess.run(['export', "$(grep -v '^#' .env | xargs)", '&&', 'docker', 'stack', 'deploy', '-c', 'docker-compose.yml', stack_name])
+    subprocess.run(f"export $(grep -v '^#' .env | xargs) && docker stack deploy -c docker-compose.yml {stack_name}", shell=True, check=True, executable='/bin/bash')
 
     # Poll until MinIO is up and running
     poll_minio(env_vars.get('MINIO_API_OUTER_PORT'))
