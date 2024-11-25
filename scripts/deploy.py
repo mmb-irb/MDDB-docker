@@ -78,7 +78,24 @@ def install_docker():
     subprocess.run(['sudo', 'ln', '-s', '/usr/local/bin/docker-compose', '/usr/bin/docker-compose'])
     print("Docker Compose installed.")
 
-    print("For changing Docker Root Dir: \n sudo systemctl stop docker \n sudo mv /var/lib/docker /path/to/volume/docker \n sudo ln -s /path/to/volume/docker /var/lib/docker \n sudo systemctl start docker")
+    # Ask for main path
+    main_path = input("Enter the main path for the storage system. This script will create a /docker folder where all the docker images will be stored: ")
+    if not main_path:
+        print("Error: No path provided.")
+        return
+    if not os.path.exists(main_path):
+        print(f"Error: The path {main_path} does not exist.")
+        return
+
+    docker_path = os.path.join(main_path, 'docker')
+    subprocess.run(['sudo', 'mkdir', docker_path])
+
+    print("Changing Docker Root Dir.")
+    subprocess.run(['sudo', 'systemctl', 'stop', 'docker'])
+    subprocess.run(['sudo', 'mv', '/var/lib/docker', docker_path])
+    subprocess.run(['sudo', 'ln', '-s', docker_path, '/var/lib/docker'])
+    subprocess.run(['sudo', 'systemctl', 'start', 'docker'])
+    subprocess.run(['sudo', 'docker', 'info', '|', 'grep', '"Docker Root Dir"'])
 
 
 def check_file_exists(fname):
@@ -226,19 +243,15 @@ def deploy_stack(rm):
 
 def main():
     parser = argparse.ArgumentParser(description='Storage creation, system setup and Docker Swarm deploying for an MDDB node. If no arguments are provided, the script will run all the actions.')
-    parser.add_argument('-c', '--create-folders', action='store_true', help='Create storage folders')
-    parser.add_argument('-d', '--install-docker', action='store_true', help='Install docker and docker-compose')
-    parser.add_argument('-s', '--deploy-swarm', action='store_true', help='Deploy Docker Swarm stack')
+    parser.add_argument('-d', '--install-docker', action='store_true', help='Install docker and docker-compose. Sudo permissions are required.')
+    parser.add_argument('-s', '--deploy-swarm', action='store_true', help='Deploy Docker Swarm stack. Sudo permissions may be required.')
     parser.add_argument('-r', '--remove-cache', action='store_true', help='Leave the swarm and remove all cache before deploying the stack (only when -s selected as well)')
 
     args = parser.parse_args()
 
-    if not args.create_folders and not args.install_docker and not args.deploy_swarm:
+    if not args.install_docker and not args.deploy_swarm:
         print('No arguments provided. Please add one of the options to the command line. Use -h for help.')
         return
-
-    if args.create_folders:
-        create_folders()
 
     if args.install_docker:
         install_docker()
