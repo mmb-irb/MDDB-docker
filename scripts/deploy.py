@@ -128,6 +128,42 @@ def get_stack_name():
         print("Stack name cannot be empty. Please enter a valid stack name.")
 
 
+def is_node_in_swarm():
+    try:
+        # Run `docker info` command
+        result = subprocess.run(
+            ["docker", "info", "--format", "{{.Swarm.LocalNodeState}}"],
+            capture_output=True,
+            text=True,
+            check=True
+        )
+        # The output will be "active", "inactive", or "pending"
+        node_state = result.stdout.strip()
+        if node_state == "active":
+            print("The node is already part of a Swarm.")
+            return True
+        elif node_state == "inactive":
+            print("The node is not part of any Swarm.")
+            return False
+        else:
+            print(f"The node is in a pending state: {node_state}.")
+            return False
+    except subprocess.CalledProcessError as e:
+        print("Error running docker command:", e)
+        return False
+
+
+def check_network_exists(network_name):
+    try:
+        result = subprocess.run(
+            ["docker", "network", "ls", "--filter", f"name={network_name}", "--format", "{{.Name}}"],
+            capture_output=True, text=True, check=True
+        )
+        return network_name in result.stdout.strip()
+    except subprocess.CalledProcessError:
+        return False
+
+
 def deploy_stack(rm):
     ask_env = input("Do you have created the .env file in this same folder? (y/n): ")
     if not ask_env.lower() == "y":
@@ -172,9 +208,12 @@ def deploy_stack(rm):
     stack_name = input("Enter stack name (default: my_stack): ") or "my_stack"
 
     # Docker swarm, network create, build and deploy
-    subprocess.run(['docker', 'swarm', 'init'])
-    subprocess.run(['docker', 'network', 'create', '--driver', 'overlay', 'data_network'])
-    subprocess.run(['docker', 'network', 'create', '--driver', 'overlay', 'minio_network'])
+    if not is_node_in_swarm():
+        subprocess.run(['docker', 'swarm', 'init'])
+    if not check_network_exists('data_network'):
+        subprocess.run(['docker', 'network', 'create', '--driver', 'overlay', 'data_network'])
+    if not check_network_exists('minio_network'):
+        subprocess.run(['docker', 'network', 'create', '--driver', 'overlay', 'minio_network'])
     subprocess.run(['docker-compose', 'build'])
     subprocess.run(f"export $(grep -v '^#' .env | xargs) && docker stack deploy -c docker-compose.yml {stack_name}", shell=True, check=True, executable='/bin/bash')
 
