@@ -120,6 +120,14 @@ def poll_minio(minio_port):
         time.sleep(5)
 
 
+def get_stack_name():
+    while True:
+        stack_name = input("Enter stack name: ")
+        if stack_name.strip():  # Check if the input is not empty or just whitespace
+            return stack_name
+        print("Stack name cannot be empty. Please enter a valid stack name.")
+
+
 def deploy_stack(rm):
     ask_env = input("Do you have created the .env file in this same folder? (y/n): ")
     if not ask_env.lower() == "y":
@@ -145,6 +153,15 @@ def deploy_stack(rm):
 
     # Remove all cache before deploying the stack
     if rm:
+        stack_name = get_stack_name()
+        # Check if the stack name exists
+        result = subprocess.run(["docker", "stack", "ls"], capture_output=True, text=True, check=True)
+        if stack_name not in result.stdout:
+            print(f"Stack '{stack_name}' does not exist.")
+            return
+        print(f"Removing {stack_name} stack and leaving swarm.")
+        subprocess.run(['docker', 'stack', 'rm', stack_name])
+        subprocess.run(['docker', 'swarm', 'leave', '--force'])
         print("Removing all cache.")
         subprocess.run(['docker', 'system', 'prune', '-f'])
         subprocess.run(['docker', 'builder', 'prune', '-a', '-f'])
@@ -173,7 +190,7 @@ def main():
     parser.add_argument('-c', '--create-folders', action='store_true', help='Create storage folders')
     parser.add_argument('-d', '--install-docker', action='store_true', help='Install docker and docker-compose')
     parser.add_argument('-s', '--deploy-swarm', action='store_true', help='Deploy Docker Swarm stack')
-    parser.add_argument('-r', '--remove-cache', action='store_true', help='Remove all cache before deploying the stack')
+    parser.add_argument('-r', '--remove-cache', action='store_true', help='Leave the swarm and remove all cache before deploying the stack (only when -s selected as well)')
 
     args = parser.parse_args()
 
