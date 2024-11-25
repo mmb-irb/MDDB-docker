@@ -120,7 +120,7 @@ def poll_minio(minio_port):
         time.sleep(5)
 
 
-def deploy_stack():
+def deploy_stack(rm):
     ask_env = input("Do you have created the .env file in this same folder? (y/n): ")
     if not ask_env.lower() == "y":
         print("Please create the .env environment file first.")
@@ -134,14 +134,22 @@ def deploy_stack():
     if not check_env_paths(paths):
         return
 
-    # check that there are two certificates in the certs folder
+    # check that there are at least two files in the certs folder
     certs_path = env_vars.get('APACHE_CERTS_VOLUME_PATH')
     cert_files = os.listdir(certs_path)
     if len(cert_files) < 2:
-        print(f"Warning: The certificates path {certs_path} does not contain at least two files (private key and public certificate).")
+        print(f"Warning: The certificates path {certs_path} does not contain at least two files (private key and public certificate). This can give problems with the https acess to the services.")
         cont = input("Do you want to continue? (y/n): ")
         if not cont.lower() == "y":
             return
+
+    # Remove all cache before deploying the stack
+    if rm:
+        print("Removing all cache.")
+        subprocess.run(['docker', 'system', 'prune', '-f'])
+        subprocess.run(['docker', 'builder', 'prune', '-a', '-f'])
+        subprocess.run(['docker', 'system', 'prune', '--volumes', '-f'])
+        subprocess.run(['docker', 'network', 'prune', '-f'])
 
     # ask for stack name
     stack_name = input("Enter stack name (default: my_stack): ") or "my_stack"
@@ -165,6 +173,7 @@ def main():
     parser.add_argument('-c', '--create-folders', action='store_true', help='Create storage folders')
     parser.add_argument('-d', '--install-docker', action='store_true', help='Install docker and docker-compose')
     parser.add_argument('-s', '--deploy-swarm', action='store_true', help='Deploy Docker Swarm stack')
+    parser.add_argument('-r', '--remove-cache', action='store_true', help='Remove all cache before deploying the stack')
 
     args = parser.parse_args()
 
@@ -179,7 +188,7 @@ def main():
         install_docker()
 
     if args.deploy_swarm:
-        deploy_stack()
+        deploy_stack(args.remove_cache)
 
 
 if __name__ == '__main__':
