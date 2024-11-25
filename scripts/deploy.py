@@ -133,7 +133,7 @@ def deploy_stack(rm):
     if not ask_env.lower() == "y":
         print("Please create the .env environment file first.")
         return
-    if not check_file_exists('.env') or check_file_exists('docker-compose.yml'):
+    if not check_file_exists('.env') or not check_file_exists('docker-compose.yml'):
         return
     env_vars = read_env_file('.env')
 
