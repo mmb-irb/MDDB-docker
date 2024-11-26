@@ -4,53 +4,6 @@ import subprocess
 import time
 
 
-def create_folders():
-    # Check if script was executed with sudo
-    if 'SUDO_USER' not in os.environ:
-        ask_sudo = input("Script was executed without sudo, in some cases you may need sudo permissions for create new folders in the storage system, do you want to continue? (y/n): ")
-        if not ask_sudo.lower() == "y":
-            return
-    # Ask for main path
-    main_path = input("Enter the main path for the storage system: ")
-    if not main_path:
-        print("Error: No path provided.")
-        return
-    if not os.path.exists(main_path):
-        print(f"Error: The path {main_path} does not exist.")
-        return
-
-    docker_path = input("Enter the path for the docker directory (default: docker): ") or "docker"
-    minio_path = input("Enter the path for the minio directory (default: minio): ") or "minio"
-    db_path = input("Enter the path for the MondoDB data directory (default: db): ") or "db"
-    data_path = input("Enter the path for the data directory (default: data): ") or "data"
-    certs_path = input("Enter the path for the certificates directory (default: certs): ") or "certs"
-    logs_path = input("Enter the path for the minio directory (default: logs): ") or "logs"
-
-    # Create necessary folders
-    os.makedirs(os.path.join(main_path, docker_path), exist_ok=True)
-    os.makedirs(os.path.join(main_path, minio_path), exist_ok=True)
-    os.makedirs(os.path.join(main_path, minio_path, "disk1"), exist_ok=True)
-    os.makedirs(os.path.join(main_path, minio_path, "disk2"), exist_ok=True)
-    os.makedirs(os.path.join(main_path, minio_path, "disk3"), exist_ok=True)
-    os.makedirs(os.path.join(main_path, minio_path, "disk4"), exist_ok=True)
-    os.makedirs(os.path.join(main_path, db_path), exist_ok=True)
-    os.makedirs(os.path.join(main_path, data_path), exist_ok=True)
-    os.makedirs(os.path.join(main_path, certs_path), exist_ok=True)
-    cert_key = input(f"Enter where the private key is located, it will be copied into {os.path.join(main_path, certs_path)}: ")
-    if not os.path.exists(cert_key):
-        print(f"Warning! The private key {cert_key} does not exist.")
-    else:
-        subprocess.run(['cp', cert_key, os.path.join(main_path, certs_path)])
-    cert_pem = input(f"Enter where the public certificate is located, it will be copied into {os.path.join(main_path, certs_path)}: ")
-    if not os.path.exists(cert_pem):
-        print(f"Warning! The public certificate {cert_pem} does not exist.")
-    else:
-        subprocess.run(['cp', cert_pem, os.path.join(main_path, certs_path)])
-    os.makedirs(os.path.join(main_path, logs_path), exist_ok=True)
-
-    print(f"Folders {os.path.join(main_path, docker_path)}, {os.path.join(main_path, minio_path)}, {os.path.join(main_path, db_path)}, {os.path.join(main_path, data_path)}, {os.path.join(main_path, certs_path)} and {os.path.join(main_path, logs_path)} created.")
-
-
 def install_docker():
     # Install Docker
     print("Installing Docker.")
@@ -98,10 +51,11 @@ def install_docker():
     subprocess.run(['sudo', 'docker', 'info', '|', 'grep', '"Docker Root Dir"'])
 
 
-def check_file_exists(fname):
+def check_file_exists(fname, warning=False):
     # Check if .env file exists and has all variables filled
     if not os.path.exists(fname):
-        print(f"Error: {fname} file does not exist.")
+        if warning:
+            print(f"Error: {fname} file does not exist.")
         return False
     return True
 
@@ -118,12 +72,28 @@ def read_env_file(file_path):
     return env_vars
 
 
-def check_env_paths(paths):
-    for path in paths:
-        if not os.path.exists(path):
-            print(f"Error: {path} does not exist.")
-            return False
+def check_path(path):
+    if not os.path.exists(path):
+        print(f"Error: {path} does not exist.")
+        return False
     return True
+
+
+def set_main_path():
+    while True:
+        main_path = input("Enter the main path for the storage system. This script will create all the necessary folders for the services in this path: ")
+        if main_path.strip():  # Check if the input is not empty or just whitespace
+            if not os.path.exists(main_path):
+                print(f"Error: The path {main_path} does not exist.")
+                return False
+            return main_path
+        print("The main path cannot be empty. Please enter a valid value.")
+
+
+def save_env_vars_to_file(env_vars, file_path):
+    with open(file_path, 'w') as f:
+        for key, value in env_vars.items():
+            f.write(f"{key}={value}\n")
 
 
 def poll_minio(minio_port):
@@ -137,12 +107,12 @@ def poll_minio(minio_port):
         time.sleep(5)
 
 
-def get_stack_name():
+def get_mandatory_var(label):
     while True:
-        stack_name = input("Enter stack name: ")
-        if stack_name.strip():  # Check if the input is not empty or just whitespace
-            return stack_name
-        print("Stack name cannot be empty. Please enter a valid stack name.")
+        var_name = input(f"Enter {label} name: ")
+        if var_name.strip():  # Check if the input is not empty or just whitespace
+            return var_name
+        print(f"Please enter a valid {label} name, it can't be empty.")
 
 
 def is_node_in_swarm():
@@ -182,31 +152,99 @@ def check_network_exists(network_name):
 
 
 def deploy_stack(rm):
-    ask_env = input("Do you have created the .env file in this same folder? (y/n): ")
-    if not ask_env.lower() == "y":
-        print("Please create the .env environment file first.")
-        return
-    if not check_file_exists('.env') or not check_file_exists('docker-compose.yml'):
-        return
-    env_vars = read_env_file('.env')
-
-    # check that .env path variables exist
-    paths = [env_vars.get('APACHE_CERTS_VOLUME_PATH'), env_vars.get('LOADER_VOLUME_PATH'), env_vars.get('WORKFLOW_VOLUME_PATH'), env_vars.get('DB_VOLUME_PATH'), env_vars.get('MINIO_VOLUME_PATH1'), env_vars.get('MINIO_VOLUME_PATH2'), env_vars.get('MINIO_VOLUME_PATH3'), env_vars.get('MINIO_VOLUME_PATH4'), env_vars.get('VRE_LITE_VOLUME_PATH')]
-    if not check_env_paths(paths):
-        return
-
-    # check that there are at least two files in the certs folder
-    certs_path = env_vars.get('APACHE_CERTS_VOLUME_PATH')
-    cert_files = os.listdir(certs_path)
-    if len(cert_files) < 2:
-        print(f"Warning: The certificates path {certs_path} does not contain at least two files (private key and public certificate). This can give problems with the https acess to the services.")
-        cont = input("Do you want to continue? (y/n): ")
-        if not cont.lower() == "y":
+    # Check if script was executed with sudo
+    if 'SUDO_USER' not in os.environ:
+        ask_sudo = input("The script was executed without sudo, in some cases you may need sudo permissions for create new folders in the storage system, do you want to continue? (y/n): ")
+        if not ask_sudo.lower() == "y":
+            print("Please run the script with sudo: sudo python3 scripts/deploy.py -s")
             return
+
+    if not check_file_exists('docker-compose.yml', warning=True):
+        return
+
+    if not check_file_exists('.env'):
+        print("The file .env does not exist, creating it.")
+        env_vars = read_env_file('.env.git')
+        main_path = set_main_path()
+        if not main_path:
+            return
+
+        minio_path = os.path.join(main_path, 'minio')
+        subprocess.run(['sudo', 'mkdir', minio_path])
+        subprocess.run(['sudo', 'mkdir', os.path.join(minio_path, 'disk1')])
+        subprocess.run(['sudo', 'mkdir', os.path.join(minio_path, 'disk2')])
+        subprocess.run(['sudo', 'mkdir', os.path.join(minio_path, 'disk3')])
+        subprocess.run(['sudo', 'mkdir', os.path.join(minio_path, 'disk4')])
+        print(f"Created MinIO volumes: {minio_path}/disk1, {minio_path}/disk2, {minio_path}/disk3, {minio_path}/disk4.")
+        env_vars["MINIO_VOLUME_PATH1"] = os.path.join(minio_path, 'disk1')
+        env_vars["MINIO_VOLUME_PATH2"] = os.path.join(minio_path, 'disk2')
+        env_vars["MINIO_VOLUME_PATH3"] = os.path.join(minio_path, 'disk3')
+        env_vars["MINIO_VOLUME_PATH4"] = os.path.join(minio_path, 'disk4')
+
+        db_path = os.path.join(main_path, 'db')
+        subprocess.run(['sudo', 'mkdir', db_path])
+        print(f"Created MongoDB volume: {db_path}.")
+        env_vars["DB_VOLUME_PATH"] = db_path
+
+        data_path = os.path.join(main_path, 'data')
+        subprocess.run(['sudo', 'mkdir', data_path])
+        print(f"Created data volume: {data_path}.")
+        env_vars["LOADER_VOLUME_PATH"] = data_path
+        env_vars["WORKFLOW_VOLUME_PATH"] = data_path
+
+        logs_path = os.path.join(main_path, 'logs')
+        subprocess.run(['sudo', 'mkdir', logs_path])
+        print(f"Created logs volume: {logs_path}.")
+        env_vars["VRE_LITE_VOLUME_PATH"] = logs_path
+
+        certs_path = os.path.join(main_path, 'certs')
+        subprocess.run(['sudo', 'mkdir', certs_path])
+        print(f"Created certificates volume: {certs_path}.")
+        env_vars["APACHE_CERTS_VOLUME_PATH"] = certs_path
+
+        cert_key = input(f"Enter where the private key is located, it will be copied into {certs_path}: ")
+        if not os.path.exists(cert_key):
+            print(f"Warning! The private key {cert_key} does not exist.")
+            cont = input("Do you want to continue? (y/n): ")
+            if not cont.lower() == "y":
+                return
+        else:
+            subprocess.run(['cp', cert_key, certs_path])
+            print(f"{cert_key} copied into {certs_path}.")
+        cert_pem = input(f"Enter where the public certificate is located, it will be copied into {certs_path}: ")
+        if not os.path.exists(cert_pem):
+            print(f"Warning! The public certificate {cert_pem} does not exist.")
+            cont = input("Do you want to continue? (y/n): ")
+            if not cont.lower() == "y":
+                return
+        else:
+            subprocess.run(['cp', cert_pem, certs_path])
+            print(f"{cert_pem} copied into {certs_path}.")
+
+        env_vars["NODE"] = get_mandatory_var("node")
+        stack_name = input("Enter stack name (default: my_stack): ") or "my_stack"
+        env_vars["DB_SERVER"] = f"{stack_name}_mongodb"
+        db_name = input("Enter the database name (default: mddb_db): ") or "mddb_db"
+        env_vars["DB_NAME"] = db_name
+        env_vars["DB_AUTHSOURCE"] = db_name
+        env_vars["MONGO_INITDB_ROOT_USERNAME"] = input("Enter the root database user (default: root): ") or "root"
+        env_vars["MONGO_INITDB_ROOT_PASSWORD"] = input("Enter the root database password (default: root): ") or "root"
+        env_vars["LOADER_DB_LOGIN"] = input("Enter the R/W database user for the loader service (default: user_rw): ") or "user_rw"
+        env_vars["LOADER_DB_PASSWORD"] = input("Enter the R/W database user for the loader service (default: pwd_rw): ") or "pwd_rw"
+        env_vars["REST_DB_LOGIN"] = input("Enter the R database user for the REST API service (default: user_r): ") or "user_r"
+        env_vars["REST_DB_PASSWORD"] = input("Enter the R database user for the REST API service (default: pwd_r): ") or "pwd_r"
+        env_vars["MINIO_ROOT_USER"] = input("Enter the MinIO root user (default: admin): ") or "admin"
+        env_vars["MINIO_ROOT_PASSWORD"] = input("Enter the MinIO root password (default: secretpassword): ") or "secretpassword"
+        env_vars["APACHE_MINIO_OUTER_PORT"] = input("Enter the API MinIO port (default: 9000): ") or "9000"
+        env_vars["APACHE_MINIO_INNER_PORT"] = env_vars["APACHE_MINIO_OUTER_PORT"]
+        env_vars["MINIO_BROWSER_REDIRECT_URL"] = f"https://{env_vars['NODE']}.mddbr.eu/minio"
+
+        print("Creating .env file.")
+        save_env_vars_to_file(env_vars, '.env')
 
     # Remove all cache before deploying the stack
     if rm:
-        stack_name = get_stack_name()
+        stack_name = get_mandatory_var("stack")
         # Check if the stack name exists
         result = subprocess.run(["docker", "stack", "ls"], capture_output=True, text=True, check=True)
         if stack_name not in result.stdout:
@@ -221,8 +259,9 @@ def deploy_stack(rm):
         subprocess.run(['docker', 'system', 'prune', '--volumes', '-f'])
         subprocess.run(['docker', 'network', 'prune', '-f'])
 
-    # ask for stack name
-    stack_name = input("Enter stack name (default: my_stack): ") or "my_stack"
+    # ask for stack name if not provided
+    if 'stack_name' not in locals():
+        stack_name = input("Enter stack name (default: my_stack): ") or "my_stack"
 
     # Docker swarm, network create, build and deploy
     if not is_node_in_swarm():
