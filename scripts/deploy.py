@@ -267,11 +267,14 @@ def deploy_stack(rm):
     if not is_node_in_swarm():
         subprocess.run(['docker', 'swarm', 'init'])
     if not check_network_exists('data_network'):
-        subprocess.run(['docker', 'network', 'create', '--driver', 'overlay', 'data_network'])
+        print("Creating data network.")
+        subprocess.run(['docker', 'network', 'create', '--driver', 'overlay', ' --attachable', 'data_network'])
     if not check_network_exists('minio_network'):
-        subprocess.run(['docker', 'network', 'create', '--driver', 'overlay', 'minio_network'])
+        print("Creating MinIO network.")
+        subprocess.run(['docker', 'network', 'create', '--driver', 'overlay', ' --attachable', 'minio_network'])
     if not check_network_exists('web_network'):
-        subprocess.run(['docker', 'network', 'create', '--driver', 'overlay', 'web_network'])
+        print("Creating web network.")
+        subprocess.run(['docker', 'network', 'create', '--driver', 'overlay', ' --attachable', 'web_network'])
     subprocess.run(['docker-compose', 'build'])
     subprocess.run(f"export $(grep -v '^#' .env | xargs) && docker stack deploy -c docker-compose.yml {stack_name}", shell=True, check=True, executable='/bin/bash')
 
