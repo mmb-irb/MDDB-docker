@@ -116,16 +116,16 @@ At the end of the execution of the script, you will be asked for the **main path
 
 At the beginning of the execution of the script, you will be asked for the **main path of the storage system**. Inside this path the following **folder structure** will be generated:
 
-* [**certs/**](readme/storage.md#certificates)
-* [**data/**](readme/storage.md#workflow)
-* [**docker/**](readme/storage.md#docker) (generaed in the step before)
-* [**db/**](readme/storage.md#mongodb)
-* [**logs/**](readme/storage.md#logs)
-* [**minio/**](readme/storage.md#minio)
-  * disk1/
-  * disk2/
-  * disk3/
-  * disk4/
+* [**certs/**](readme/storage.md#certificates) (apache SSL/TSL certificates)
+* [**data/**](readme/storage.md#workflow) (workflow output data and loader input data)
+* [**docker/**](readme/storage.md#docker) (docker images, generated in the step before)
+* [**db/**](readme/storage.md#mongodb) (MongoDB data)
+* [**logs/**](readme/storage.md#logs) (VRE lite and cronjobs logs)
+* [**minio/**](readme/storage.md#minio) (MinIO data)
+  * disk1/ (MinIO data distributed in multi-drive configuration)
+  * disk2/ (MinIO data distributed in multi-drive configuration)
+  * disk3/ (MinIO data distributed in multi-drive configuration)
+  * disk4/ (MinIO data distributed in multi-drive configuration)
 
 If the **SSL/TSL** certificates are available, they can be copied into the **certs/** folder during the execution of the **script**. Be sure to have them located in the **same VM** where the script is being executed.
 
