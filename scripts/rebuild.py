@@ -1,4 +1,6 @@
-# docker-compose build --no-cache <service_name>
-# docker service update --force <stack_name>_<service_name>
+# docker-compose build --no-cache vre_lite --no-cache client
+# docker service update --force my_stack_vre_lite
+# docker service update --force my_stack_client
+# ...
 # docker container prune -f
 # docker image prune -f

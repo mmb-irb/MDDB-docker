@@ -8,11 +8,11 @@ def install_docker():
     # Install Docker
     print("Installing Docker.")
     subprocess.run(['sudo', 'apt-get', 'update'])
-    subprocess.run(['sudo', 'apt-get install', 'apt-transport-https', 'ca-certificates', 'curl', 'software-properties-common'])
+    subprocess.run(['sudo', 'apt-get install', 'apt-transport-https', 'ca-certificates', 'curl', 'software-properties-common', '-y'])
     subprocess.run(['curl', '-fsSL', 'https://download.docker.com/linux/ubuntu/gpg', '|', 'sudo', 'gpg', '--dearmor', '-o', '/usr/share/keyrings/docker-archive-keyring.gpg'])
     subprocess.run(['echo', '"deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"', '|', 'sudo', 'tee', '/etc/apt/sources.list.d/docker.list', '>', '/dev/null'])
     subprocess.run(['sudo', 'apt-get', 'update'])
-    subprocess.run(['sudo', 'apt-get', 'install', 'docker-ce', 'docker-ce-cli', 'containerd.io'])
+    subprocess.run(['sudo', 'apt-get', 'install', 'docker-ce', 'docker-ce-cli', 'containerd.io', '-y'])
     print("Docker installed.")
 
     # Add user to docker group
@@ -237,6 +237,7 @@ def deploy_stack(rm):
         env_vars["MINIO_ROOT_PASSWORD"] = input("Enter the MinIO root password (default: secretpassword): ") or "secretpassword"
         env_vars["APACHE_MINIO_OUTER_PORT"] = input("Enter the API MinIO port (default: 9000): ") or "9000"
         env_vars["APACHE_MINIO_INNER_PORT"] = env_vars["APACHE_MINIO_OUTER_PORT"]
+        env_vars["MINIO_URL"] = f"{env_vars['NODE']}.mddbr.eu"
         env_vars["MINIO_BROWSER_REDIRECT_URL"] = f"https://{env_vars['NODE']}.mddbr.eu/minio"
 
         print("Creating .env file.")
@@ -288,7 +289,7 @@ def deploy_stack(rm):
 
 
 def main():
-    parser = argparse.ArgumentParser(description='Storage creation, system setup and Docker Swarm deploying for an MDDB node. If no arguments are provided, the script will run all the actions.')
+    parser = argparse.ArgumentParser(description='Storage creation, system setup and Docker Swarm deploying for an MDDB node.')
     parser.add_argument('-d', '--install-docker', action='store_true', help='Install docker and docker-compose. Sudo permissions are required.')
     parser.add_argument('-s', '--deploy-swarm', action='store_true', help='Deploy Docker Swarm stack. Sudo permissions may be required.')
     parser.add_argument('-r', '--remove-cache', action='store_true', help='Leave the swarm and remove all cache before deploying the stack (only when -s selected as well)')

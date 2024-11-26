@@ -87,6 +87,8 @@ First off, please **clone this repository** into the VM where the services will 
 git clone https://mmb.irbbarcelona.org/gitlab/gbayarri/mddb-docker.git
 ```
 
+cd mddb-docker!!!!
+
 Once the repository has been cloned, there are two ways to deploy it: [**via script**](#via-script) and [**manually, step by step**](#manually-step-by-step).
 
 ### Via script

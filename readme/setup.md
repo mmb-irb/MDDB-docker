@@ -16,7 +16,7 @@ These are the steps to install Docker on **Ubuntu 24.04**. Note that the officia
 
 Install packages that allow **apt** to use repositories over HTTPS:
 
-    sudo apt-get install apt-transport-https ca-certificates curl software-properties-common
+    sudo apt-get install apt-transport-https ca-certificates curl software-properties-common -y
 
 #### Add Docker’s official GPG key
 
@@ -32,7 +32,7 @@ Install packages that allow **apt** to use repositories over HTTPS:
 
 #### Install Docker Engine
 
-    sudo apt-get install docker-ce docker-ce-cli containerd.io
+    sudo apt-get install docker-ce docker-ce-cli containerd.io -y
 
 ### Post-installation steps
 
