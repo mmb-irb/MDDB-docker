@@ -81,23 +81,69 @@ For the sake of performing **automatic operations** such as cleaning or checking
 
 ## Installation
 
+First off, please **clone this repository** into the VM where the services will be deployed:
+
+```sh
+git clone https://mmb.irbbarcelona.org/gitlab/gbayarri/mddb-docker.git
+```
+
+Once the repository has been cloned, there are two ways to deploy it: [**via script**](#via-script) and [**manually, step by step**](#manually-step-by-step).
+
 ### Via script
 
-A **deploy script** is provided for executing the **different steps** of the deploying process in an almost **automatic** way. Please execute the script, located in [**scripts/deploy.py**](./scripts/deploy.py). This script allows three operations:
+A **deploy script** is provided for executing the **different steps** of the deploying process in an almost **automatic** way. Please execute the script, located in [**scripts/deploy.py**](./scripts/deploy.py). This script allows two operations:
 
-* Create storage folders
 * Install docker and docker-compose
 * Deploy Docker Swarm stack
 
-How to execute the script from the root of this repository:
+How to execute the help script from the root of this repository:
 
 ```sh
 python3 scripts/deploy.py -h
 ```
 
-Be aware that you will need **sudo user** for executing the installation of **docker** and **docker-compose** and, depending on the path, for creating the **storage folders**.
+#### Install docker and docker-compose
 
-Besides, a **.env** file must be created taking [**.env.git**](./.env.git) as an example. For more information about all the **environment** variables that must be set in this file, pelase visit the [**configuration section**](./readme/config.md#env-file).
+```sh
+python3 scripts/deploy.py -d
+```
+
+Be aware that you will need **sudo user** for executing the installation of **docker** and **docker-compose**.
+
+At the end of the execution of the script, you will be asked for the **main path of the storage system**. Inside this path a **docker/** folder will be generated. 
+
+#### Deploy Docker Swarm stack
+
+At the beginning of the execution of the script, you will be asked for the **main path of the storage system**. Inside this path the following **folder structure** will be generated:
+
+* [**certs/**](readme/storage.md#certificates)
+* [**data/**](readme/storage.md#workflow)
+* [**docker/**](readme/storage.md#docker) (generaed in the step before)
+* [**db/**](readme/storage.md#mongodb)
+* [**logs/**](readme/storage.md#logs)
+* [**minio/**](readme/storage.md#minio)
+  * disk1/
+  * disk2/
+  * disk3/
+  * disk4/
+
+If the **SSL/TSL** certificates are available, they can be copied into the **certs/** folder during the execution of the **script**. Be sure to have them located in the **same VM** where the script is being executed.
+
+Execute script for deploying Docker Swarm Stack:
+
+```sh
+python3 scripts/deploy.py -s
+```
+
+Or, for a new clean installation (it will **leave the swarm**, **remove it** and **remove all docker cache** before deploying the stack):
+
+```sh
+python3 scripts/deploy.py -s -r
+```
+
+Be aware that you may need **sudo user** for creating the storage folders.
+
+Besides, a `.env` file will be created taking [**.env.git**](./.env.git) as an example. For more information about all the **environment** variables that are set in this file, please visit the [**configuration section**](./readme/config.md#env-file). Take into account that only the main evironment variables will be created interactively. In some cases this `.env` file must be modified manually.
 
 ⚠️ **It's highly recommended to read all the documentation before starting the automatic installation** ⚠️ 
 
