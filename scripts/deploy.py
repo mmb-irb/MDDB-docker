@@ -268,13 +268,16 @@ def deploy_stack(rm):
         subprocess.run(['docker', 'swarm', 'init'])
     if not check_network_exists('data_network'):
         print("Creating data network.")
-        subprocess.run(['docker', 'network', 'create', '--driver', 'overlay', ' --attachable', 'data_network'])
+        # subprocess.run(['docker', 'network', 'create', '--driver', 'overlay', ' --attachable', 'data_network'])
+        subprocess.run("docker network create --driver overlay --attachable data_network", shell=True, check=True)
     if not check_network_exists('minio_network'):
         print("Creating MinIO network.")
-        subprocess.run(['docker', 'network', 'create', '--driver', 'overlay', ' --attachable', 'minio_network'])
+        # subprocess.run(['docker', 'network', 'create', '--driver', 'overlay', ' --attachable', 'minio_network'])
+        subprocess.run("docker network create --driver overlay --attachable minio_network", shell=True, check=True)
     if not check_network_exists('web_network'):
         print("Creating web network.")
-        subprocess.run(['docker', 'network', 'create', '--driver', 'overlay', ' --attachable', 'web_network'])
+        # subprocess.run(['docker', 'network', 'create', '--driver', 'overlay', ' --attachable', 'web_network'])
+        subprocess.run("docker network create --driver overlay --attachable web_network", shell=True, check=True)
     subprocess.run(['docker-compose', 'build'])
     subprocess.run(f"export $(grep -v '^#' .env | xargs) && docker stack deploy -c docker-compose.yml {stack_name}", shell=True, check=True, executable='/bin/bash')
 
