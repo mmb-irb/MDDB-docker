@@ -11,7 +11,8 @@ def run_command(command):
 
 def main():
     parser = argparse.ArgumentParser(description='Rebuild and push one or more services from MDDB node.')
-    parser.add_argument('-s', '--services', nargs='+', help='List of services to build and update')
+    parser.add_argument('-s', '--services', nargs='+', required=True, help='List of services to build and update.')
+    parser.add_argument('-t', '--stack', type=str, required=True, help='Name of the stack where the services are running.')
 
     args = parser.parse_args()
 
@@ -24,7 +25,7 @@ def main():
 
     # Update services
     for service in args.services:
-        update_command = ['docker', 'service', 'update', '--force', service]
+        update_command = ['docker', 'service', 'update', '--force', f'{args.stack}_{service}']
         run_command(update_command)
 
     # Prune containers and images

@@ -30,9 +30,23 @@ Ie when developing and doing changes in git repo.
     docker-compose up -d
     ```
 
-## Rebuild single service
+## Rebuild service(s)
 
-For rebuilding a single service avoiding cache but preserving the rest of services:
+A **rebuild script** is provided for rebuilding **one or more services** in an **automatic** way. Please execute the script, located in [**scripts/rebuild.py**](./scripts/rebuild.py). 
+
+How to execute the help script from the root of this repository:
+
+```sh
+python3 scripts/deploy.py -h
+```
+
+Example: 
+
+```sh
+python3 scripts/deploy.py -s client vre_lite -t my_stack
+```
+
+For performig the same process step by step:
 
 1. **Rebuild the Service Image Without Cache:** Use docker-compose to rebuild the image locally, targeting only the service you want to update:
 
