@@ -37,13 +37,13 @@ A **rebuild script** is provided for rebuilding **one or more services** in an *
 How to execute the help script from the root of this repository:
 
 ```sh
-python3 scripts/deploy.py -h
+python3 scripts/rebuild.py -h
 ```
 
 Example: 
 
 ```sh
-python3 scripts/deploy.py -s client vre_lite -t my_stack
+python3 scripts/rebuild.py -s client vre_lite -t my_stack
 ```
 
 For performig the same process step by step:
