@@ -245,6 +245,7 @@ def deploy_stack(rm):
 
     # Remove all cache before deploying the stack
     if rm:
+        print("Removing all cache.")
         stack_name = get_mandatory_var("stack")
         # Check if the stack name exists
         result = subprocess.run(["docker", "stack", "ls"], capture_output=True, text=True, check=True)
