@@ -99,8 +99,8 @@ Once the repository has been cloned, there are two ways to deploy it: [**via scr
 
 A **deploy script** is provided for executing the **different steps** of the deploying process in an almost **automatic** way. Please execute the script, located in [**scripts/deploy.py**](./scripts/deploy.py). This script allows two operations:
 
-* Install docker and docker-compose
-* Deploy Docker Swarm stack
+* [**Install docker and docker-compose**](#install-docker-and-docker-compose)
+* [**Deploy Docker Swarm stack**](#deploy-docker-swarm-stack)
 
 How to execute the help script from the root of this repository:
 
