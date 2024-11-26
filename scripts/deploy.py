@@ -248,7 +248,7 @@ def deploy_stack(rm):
         # Check if the stack name exists
         result = subprocess.run(["docker", "stack", "ls"], capture_output=True, text=True, check=True)
         if stack_name not in result.stdout:
-            print(f"Stack '{stack_name}' does not exist.")
+            print(f"Stack '{stack_name}' does not exist in this node.")
             return
         print(f"Removing {stack_name} stack and leaving swarm.")
         subprocess.run(['docker', 'stack', 'rm', stack_name])
@@ -270,6 +270,8 @@ def deploy_stack(rm):
         subprocess.run(['docker', 'network', 'create', '--driver', 'overlay', 'data_network'])
     if not check_network_exists('minio_network'):
         subprocess.run(['docker', 'network', 'create', '--driver', 'overlay', 'minio_network'])
+    if not check_network_exists('web_network'):
+        subprocess.run(['docker', 'network', 'create', '--driver', 'overlay', 'web_network'])
     subprocess.run(['docker-compose', 'build'])
     subprocess.run(f"export $(grep -v '^#' .env | xargs) && docker stack deploy -c docker-compose.yml {stack_name}", shell=True, check=True, executable='/bin/bash')
 
