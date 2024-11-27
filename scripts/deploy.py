@@ -224,7 +224,7 @@ def deploy_stack(rm):
                 return
         else:
             subprocess.run(['cp', cert_key, certs_path])
-            env_vars["SSL_CERTIFICATE_KEY"] = os.path.basename(cert_key)
+            env_vars["SSL_CERT_KEY"] = os.path.basename(cert_key)
             print(f"{cert_key} copied into {certs_path}.")
 
         env_vars["NODE"] = get_mandatory_var("node")
