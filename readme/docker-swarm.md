@@ -106,7 +106,13 @@ Note that this run excludes clusters, energies and pockets analyses. Adding the 
 Example of **running** the workflow from data **uploaded via VRE lite**:
 
 ```sh
-docker run --rm -e BUCKET=<BUCKET> --network minio_network -v <WORKFLOW_VOLUME_PATH>:/data --cpus "${WORKFLOW_CPU_LIMIT}" --memory "${WORKFLOW_MEMORY_LIMIT}" --cap-add SYS_ADMIN --device /dev/fuse --security-opt apparmor:unconfined workflow_image mwf run -dir /data/<OUTPUT_FOLDER> -top /mnt/<FOLDER>/<TOPOLOGY> -stru /mnt/<FOLDER>/<TOPOLOGY> -traj ../../mnt/<FOLDER>/<TRAJECTORY> -mdir <REPLICA_FOLDER> -inp /mnt/<FOLDER>/metadata.yaml -filt
+docker-compose run --rm -e BUCKET=<BUCKET> workflow mwf run -dir /data/<OUTPUT_FOLDER> -top /mnt/<FOLDER>/<TOPOLOGY> -stru /mnt/<FOLDER>/<TOPOLOGY> -traj ../../../mnt/<FOLDER>/<TRAJECTORY> -mdir /data/<OUTPUT_FOLDER>/<REPLICA_FOLDER> -inp /mnt/<FOLDER>/metadata.yaml -filt
+```
+
+Or, if the above doesn't work:
+
+```sh
+docker run --rm -e BUCKET=<BUCKET> --network minio_network -v <WORKFLOW_VOLUME_PATH>:/data --cpus "${WORKFLOW_CPU_LIMIT}" --memory "${WORKFLOW_MEMORY_LIMIT}" --cap-add SYS_ADMIN --device /dev/fuse --security-opt apparmor:unconfined workflow_image mwf run -dir /data/<OUTPUT_FOLDER> -top /mnt/<FOLDER>/<TOPOLOGY> -stru /mnt/<FOLDER>/<TOPOLOGY> -traj ../../../mnt/<FOLDER>/<TRAJECTORY> -mdir /data/<OUTPUT_FOLDER>/<REPLICA_FOLDER> -inp /mnt/<FOLDER>/metadata.yaml -filt
 ```
 
 * **BUCKET:** Bucket created in MinIO via **VRE lite**. Given along with the credentials when **uploading** the data via **command line**. In format **YYYYMMDD**.
@@ -115,7 +121,7 @@ docker run --rm -e BUCKET=<BUCKET> --network minio_network -v <WORKFLOW_VOLUME_P
 * **FOLDER:** Folder inside **BUCKET**. Given along with the credentials when **uploading** the data via **command line**.
 * **TOPOLOGY:** **Topology** file name. File uploaded via **VRE lite**.
 * **TRAJECTORY:** **Trajectory** file name. File uploaded via **VRE lite**.
-* **REPLICA_FOLDER:** Replica folder created beforehand **inside <WORKFLOW_VOLUME_PATH>/<OUTPUT_FOLDER>**
+* **REPLICA_FOLDER:** Absolute path to the replica folder created beforehand **inside <WORKFLOW_VOLUME_PATH>/<OUTPUT_FOLDER>**. 
  
 ### Use loader
 
