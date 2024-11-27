@@ -151,6 +151,8 @@ Be aware that you may need **sudo user** for creating the storage folders.
 
 Besides, a `.env` file will be created taking [**.env.git**](./.env.git) as a template. For more information about all the **environment** variables that are set in this file, please visit the [**configuration section**](./readme/config.md#env-file). Take into account that only the main evironment variables will be created interactively. In some cases this `.env` file must be modified manually.
 
+Once the deploy has finished, the services should be up and running and the one-off tasks ready to execute. For checking and/or executing all the services, [**please click here**](readme/docker-swarm.md#execute-services).
+
 ⚠️ **Although all the steps of the installation and deployment are automatic, it's highly recommended to read all the documentation before running this script** ⚠️ 
 
 The different sections of the documentation are:
