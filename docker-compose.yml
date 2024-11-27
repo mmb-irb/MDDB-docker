@@ -71,6 +71,12 @@ services:
         MINIO_ROOT_USER: ${MINIO_ROOT_USER}
         MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
         MINIO_API_PORT: ${MINIO_API_INNER_PORT}
+    cap_add:
+      - SYS_ADMIN
+    devices:
+      - /dev/fuse
+    security_opt:
+      - apparmor:unconfined
     volumes:
       - workflow_volume:/data  # path where the workflow will look for files
     networks:

@@ -106,7 +106,7 @@ Note that this run excludes clusters, energies and pockets analyses. Adding the 
 Example of **running** the workflow from data **uploaded via VRE lite**:
 
 ```sh
-docker run --rm -e BUCKET=<BUCKET> --network minio_network -v <WORKFLOW_VOLUME_PATH>:/data  --cpus "${WORKFLOW_CPU_LIMIT}" --memory "${WORKFLOW_MEMORY_LIMIT}" --cap-add SYS_ADMIN --device /dev/fuse --security-opt apparmor:unconfined workflow_image mwf run -dir /data/<OUTPUT_FOLDER> -top /mnt/<FOLDER>/<TOPOLOGY> -stru /mnt/<FOLDER>/<TOPOLOGY> -traj ../../mnt/<FOLDER>/<TRAJECTORY> -mdir <REPLICA_FOLDER> -inp /mnt/<FOLDER>/metadata.yaml -filt
+docker run --rm -e BUCKET=<BUCKET> --network minio_network -v <WORKFLOW_VOLUME_PATH>:/data --cpus "${WORKFLOW_CPU_LIMIT}" --memory "${WORKFLOW_MEMORY_LIMIT}" --cap-add SYS_ADMIN --device /dev/fuse --security-opt apparmor:unconfined workflow_image mwf run -dir /data/<OUTPUT_FOLDER> -top /mnt/<FOLDER>/<TOPOLOGY> -stru /mnt/<FOLDER>/<TOPOLOGY> -traj ../../mnt/<FOLDER>/<TRAJECTORY> -mdir <REPLICA_FOLDER> -inp /mnt/<FOLDER>/metadata.yaml -filt
 ```
 
 * **BUCKET:** Bucket created in MinIO via **VRE lite**. Given along with the credentials when **uploading** the data via **command line**. In format **YYYYMMDD**.
