@@ -16,6 +16,8 @@ ARG VRE_LITE_INNER_PORT
 ARG MINIO_UI_INNER_PORT
 ARG MINIO_API_INNER_PORT
 ARG SERVER_URL
+ARG SSL_CERTIFICATE
+ARG SSL_CERTIFICATE_KEY
 
 # Perform search and replace using sed
 RUN sed -i "s/APACHE_HTTP_OUTER_PORT/${APACHE_HTTP_OUTER_PORT}/g" /usr/local/apache2/conf/conf.d/custom.conf
@@ -27,6 +29,8 @@ RUN sed -i "s/VRE_LITE_INNER_PORT/${VRE_LITE_INNER_PORT}/g" /usr/local/apache2/c
 RUN sed -i "s/MINIO_UI_INNER_PORT/${MINIO_UI_INNER_PORT}/g" /usr/local/apache2/conf/conf.d/custom.conf
 RUN sed -i "s/MINIO_API_INNER_PORT/${MINIO_API_INNER_PORT}/g" /usr/local/apache2/conf/conf.d/custom.conf
 RUN sed -i "s/SERVER_URL/${SERVER_URL}/g" /usr/local/apache2/conf/conf.d/custom.conf
+RUN sed -i "s/SSL_CERTIFICATE/${SSL_CERTIFICATE}/g" /usr/local/apache2/conf/conf.d/custom.conf
+RUN sed -i "s/SSL_CERTIFICATE_KEY/${SSL_CERTIFICATE_KEY}/g" /usr/local/apache2/conf/conf.d/custom.conf
 
 # Append IncludeOptional directive to the default httpd.conf
 RUN echo "IncludeOptional /usr/local/apache2/conf/conf.d/custom.conf" >> /usr/local/apache2/conf/httpd.conf

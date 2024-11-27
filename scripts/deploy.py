@@ -94,6 +94,9 @@ def save_env_vars_to_file(env_vars, file_path):
     with open(file_path, 'w') as f:
         for key, value in env_vars.items():
             f.write(f"{key}={value}\n")
+    # Give 666 permissions to the .env file
+    if 'SUDO_USER' in os.environ:
+        subprocess.run(['sudo', 'chmod', '664', file_path])
 
 
 def poll_minio(minio_port):
@@ -202,16 +205,8 @@ def deploy_stack(rm):
         print(f"Created certificates volume: {certs_path}.")
         env_vars["APACHE_CERTS_VOLUME_PATH"] = certs_path
 
-        cert_key = input(f"Enter where the private key is located, it will be copied into {certs_path}: ")
-        if not os.path.exists(cert_key):
-            print(f"Warning! The private key {cert_key} does not exist.")
-            cont = input("Do you want to continue? (y/n): ")
-            if not cont.lower() == "y":
-                return
-        else:
-            subprocess.run(['cp', cert_key, certs_path])
-            print(f"{cert_key} copied into {certs_path}.")
-        cert_pem = input(f"Enter where the public certificate is located, it will be copied into {certs_path}: ")
+        # Copy the certificates
+        cert_pem = input(f"Enter where the SSL certificate file is located, it will be copied into {certs_path}: ")
         if not os.path.exists(cert_pem):
             print(f"Warning! The public certificate {cert_pem} does not exist.")
             cont = input("Do you want to continue? (y/n): ")
@@ -219,7 +214,18 @@ def deploy_stack(rm):
                 return
         else:
             subprocess.run(['cp', cert_pem, certs_path])
+            env_vars["SSL_CERTIFICATE"] = os.path.basename(cert_pem)
             print(f"{cert_pem} copied into {certs_path}.")
+        cert_key = input(f"Enter where the private SSL certificate key file is located, it will be copied into {certs_path}: ")
+        if not os.path.exists(cert_key):
+            print(f"Warning! The private key {cert_key} does not exist.")
+            cont = input("Do you want to continue? (y/n): ")
+            if not cont.lower() == "y":
+                return
+        else:
+            subprocess.run(['cp', cert_key, certs_path])
+            env_vars["SSL_CERTIFICATE_KEY"] = os.path.basename(cert_key)
+            print(f"{cert_key} copied into {certs_path}.")
 
         env_vars["NODE"] = get_mandatory_var("node")
         stack_name = input("Enter stack name (default: my_stack): ") or "my_stack"

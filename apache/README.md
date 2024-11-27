@@ -27,6 +27,8 @@ ARG VRE_LITE_INNER_PORT
 ARG MINIO_UI_INNER_PORT
 ARG MINIO_API_INNER_PORT
 ARG SERVER_URL
+ARG SSL_CERTIFICATE
+ARG SSL_CERTIFICATE_KEY
 
 # Perform search and replace using sed
 RUN sed -i "s/APACHE_HTTP_OUTER_PORT/${APACHE_HTTP_OUTER_PORT}/g" /usr/local/apache2/conf/conf.d/custom.conf
@@ -38,16 +40,11 @@ RUN sed -i "s/VRE_LITE_INNER_PORT/${VRE_LITE_INNER_PORT}/g" /usr/local/apache2/c
 RUN sed -i "s/MINIO_UI_INNER_PORT/${MINIO_UI_INNER_PORT}/g" /usr/local/apache2/conf/conf.d/custom.conf
 RUN sed -i "s/MINIO_API_INNER_PORT/${MINIO_API_INNER_PORT}/g" /usr/local/apache2/conf/conf.d/custom.conf
 RUN sed -i "s/SERVER_URL/${SERVER_URL}/g" /usr/local/apache2/conf/conf.d/custom.conf
+RUN sed -i "s/SSL_CERTIFICATE/${SSL_CERTIFICATE}/g" /usr/local/apache2/conf/conf.d/custom.conf
+RUN sed -i "s/SSL_CERTIFICATE_KEY/${SSL_CERTIFICATE_KEY}/g" /usr/local/apache2/conf/conf.d/custom.conf
 
 # Append IncludeOptional directive to the default httpd.conf
 RUN echo "IncludeOptional /usr/local/apache2/conf/conf.d/custom.conf" >> /usr/local/apache2/conf/httpd.conf
-
-# Create the SSL directory
-RUN mkdir -p /usr/local/apache2/conf/ssl
-
-# Copy SSL certs into the container
-COPY www_mddbr_eu_chain.pem /usr/local/apache2/conf/ssl/www_mddbr_eu_chain.pem
-COPY www_mddbr_eu.key /usr/local/apache2/conf/ssl/www_mddbr_eu.key
 
 EXPOSE ${APACHE_HTTP_INNER_PORT} ${APACHE_HTTPS_INNER_PORT} ${APACHE_MINIO_INNER_PORT}
 ```
@@ -69,6 +66,8 @@ LoadModule ssl_module /usr/local/apache2/modules/mod_ssl.so
 </VirtualHost>
 
 <VirtualHost *:APACHE_HTTPS_OUTER_PORT>
+  ServerName SERVER_URL
+
   # MDPosit front end
 	<Location / >
     ProxyPass http://client:CLIENT_INNER_PORT/
@@ -91,6 +90,7 @@ LoadModule ssl_module /usr/local/apache2/modules/mod_ssl.so
   <Location /minio/ >
     ProxyPass http://minio:MINIO_UI_INNER_PORT/
     ProxyPassReverse http://minio:MINIO_UI_INNER_PORT/
+    #Require ip TODO: Add IP range
   </Location>
 
   # Enable mod_rewrite
@@ -101,16 +101,19 @@ LoadModule ssl_module /usr/local/apache2/modules/mod_ssl.so
   RewriteRule /minio/(.*) ws://minio:MINIO_UI_INNER_PORT/$1 [P,L]
 
   SSLEngine on
-  SSLCertificateFile /usr/local/apache2/conf/ssl/www_mddbr_eu_chain.pem
-  SSLCertificateKeyFile /usr/local/apache2/conf/ssl/www_mddbr_eu.key
+  SSLCertificateFile /usr/local/apache2/conf/ssl/SSL_CERTIFICATE
+  SSLCertificateKeyFile /usr/local/apache2/conf/ssl/SSL_CERTIFICATE_KEY
 </VirtualHost>
 
 <VirtualHost *:APACHE_MINIO_OUTER_PORT>
+    ServerName SERVER_URL
+    
     SSLEngine on
-    SSLCertificateFile /usr/local/apache2/conf/ssl/www_mddbr_eu_chain.pem
-    SSLCertificateKeyFile /usr/local/apache2/conf/ssl/www_mddbr_eu.key
+    SSLCertificateFile /usr/local/apache2/conf/ssl/SSL_CERTIFICATE
+    SSLCertificateKeyFile /usr/local/apache2/conf/ssl/SSL_CERTIFICATE_KEY
     SSLProtocol all -SSLv2 -SSLv3 -TLSv1 -TLSv1.1
 
+    ProxyPreserveHost On
     ProxyPass / http://minio:MINIO_API_INNER_PORT/
     ProxyPassReverse / http://minio:MINIO_API_INNER_PORT/
 </VirtualHost>

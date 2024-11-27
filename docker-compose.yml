@@ -16,6 +16,8 @@ services:
         MINIO_UI_INNER_PORT: ${MINIO_UI_INNER_PORT}
         MINIO_API_INNER_PORT: ${MINIO_API_INNER_PORT}
         SERVER_URL: ${MINIO_URL}
+        SSL_CERTIFICATE: ${SSL_CERTIFICATE}
+        SSL_CERTIFICATE_KEY: ${SSL_CERTIFICATE_KEY}
     volumes:
       - certs_volume:/usr/local/apache2/conf/ssl   # path to SSL certificates
     ports:

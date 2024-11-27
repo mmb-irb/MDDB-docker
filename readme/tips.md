@@ -40,13 +40,13 @@ How to execute the help script from the root of this repository:
 python3 scripts/rebuild.py -h
 ```
 
-Example: 
+Example for rebuilding the **client** and **vre_lite** services from the **my_stack** stack: 
 
 ```sh
 python3 scripts/rebuild.py -s client vre_lite -t my_stack
 ```
 
-For performig the same process step by step:
+For performing the same process step by step:
 
 1. **Rebuild the Service Image Without Cache:** Use docker-compose to rebuild the image locally, targeting only the service you want to update:
 
