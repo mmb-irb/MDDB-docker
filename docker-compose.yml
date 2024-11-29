@@ -163,7 +163,7 @@ services:
     ports:
       - "${DB_OUTER_PORT}:${DB_INNER_PORT}"
     volumes:
-      - ${DB_VOLUME_PATH}:/data/db  # path where the database will be stored (outside the container, in the host machine)
+      - db_volume:/data/db  # path where the database will be stored (outside the container, in the host machine)
       - ./mongodb/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro # path to the template initialization script
     networks:
       - data_network
@@ -292,6 +292,12 @@ services:
 
 
 volumes:
+  db_volume:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${DB_VOLUME_PATH}   # bind the volume to DB_VOLUME_PATH on the host
   certs_volume:
     driver: local
     driver_opts:

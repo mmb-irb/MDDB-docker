@@ -147,23 +147,23 @@ This file is used for **initializing mongoDB** in docker-compose. It contains a 
 
 ```js
 // Switch to the desired database
-db = db.getSiblingDB('{{DB_NAME}}'); // Replace 'mddb_db' with your database name
+db = db.getSiblingDB(process.env.MONGO_INITDB_DATABASE);
 
-// Create a user with readWrite permissions on 'mddb_db' database. This user will be used for the loader
+// Create a user with readWrite permissions on <MONGO_INITDB_DATABASE> database. This user will be used for the loader
 db.createUser({
-  user: '{{LOADER_DB_LOGIN}}',
-  pwd: '{{LOADER_DB_PASSWORD}}',
+  user: process.env.LOADER_DB_LOGIN,
+  pwd: process.env.LOADER_DB_PASSWORD,
   roles: [
-    { role: 'readWrite', db: '{{DB_NAME}}' }
+    { role: 'readWrite', db: process.env.MONGO_INITDB_DATABASE }
   ]
 });
 
-// Create a user with read permissions on 'mddb_db' database. This user will be used for the REST API
+// Create a user with read permissions on <MONGO_INITDB_DATABASE> database. This user will be used for the REST API
 db.createUser({
-  user: '{{REST_DB_LOGIN}}',
-  pwd: '{{REST_DB_PASSWORD}}',
+  user: process.env.REST_DB_LOGIN,
+  pwd: process.env.REST_DB_PASSWORD,
   roles: [
-    { role: 'read', db: '{{DB_NAME}}' }
+    { role: 'read', db: process.env.MONGO_INITDB_DATABASE }
   ]
 });
 ```
@@ -195,6 +195,8 @@ services:
         MINIO_UI_INNER_PORT: ${MINIO_UI_INNER_PORT}
         MINIO_API_INNER_PORT: ${MINIO_API_INNER_PORT}
         SERVER_URL: ${MINIO_URL}
+        SSL_CERTIFICATE: ${SSL_CERTIFICATE}
+        SSL_CERT_KEY: ${SSL_CERT_KEY}
     volumes:
       - certs_volume:/usr/local/apache2/conf/ssl   # path to SSL certificates
     ports:
@@ -248,12 +250,16 @@ services:
         MINIO_ROOT_USER: ${MINIO_ROOT_USER}
         MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
         MINIO_API_PORT: ${MINIO_API_INNER_PORT}
+    cap_add:
+      - SYS_ADMIN
+    devices:
+      - /dev/fuse
+    security_opt:
+      - apparmor:unconfined
     volumes:
       - workflow_volume:/data  # path where the workflow will look for files
     networks:
       - minio_network
-    depends_on:
-      - minio
     deploy:
       replicas: ${WORKFLOW_REPLICAS}  # Ensure this service is not deployed by default as it is a one-time task
       resources:
@@ -327,19 +333,17 @@ services:
     environment:
       MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME}
       MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD}
+      MONGO_PORT: ${DB_OUTER_PORT}
+      MONGO_INITDB_DATABASE: ${DB_NAME}
+      LOADER_DB_LOGIN: ${LOADER_DB_LOGIN}
+      LOADER_DB_PASSWORD: ${LOADER_DB_PASSWORD}
+      REST_DB_LOGIN: ${REST_DB_LOGIN}
+      REST_DB_PASSWORD: ${REST_DB_PASSWORD}
     ports:
       - "${DB_OUTER_PORT}:${DB_INNER_PORT}"
     volumes:
-      - ${DB_VOLUME_PATH}:/data/db  # path where the database will be stored (outside the container, in the host machine)
-      - ./mongodb/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init-template.js:ro # path to the template initialization script
-    # before init mongo, replace the template with the actual values
-    entrypoint: >
-      sh -c "sed 's/\DB_NAME/'${DB_NAME}'/' /docker-entrypoint-initdb.d/mongo-init-template.js | 
-      sed 's/\LOADER_DB_LOGIN/'${LOADER_DB_LOGIN}'/' | 
-      sed 's/\LOADER_DB_PASSWORD/'${LOADER_DB_PASSWORD}'/' | 
-      sed 's/\REST_DB_LOGIN/'${REST_DB_LOGIN}'/' | 
-      sed 's/\REST_DB_PASSWORD/'${REST_DB_PASSWORD}'/' > /docker-entrypoint-initdb.d/mongo-init.js &&
-      mongod --port ${DB_INNER_PORT} --bind_ip_all --auth"
+      - db_volume:/data/db  # path where the database will be stored (outside the container, in the host machine)
+      - ./mongodb/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro # path to the template initialization script
     networks:
       - data_network
     deploy:
@@ -467,6 +471,12 @@ services:
 
 
 volumes:
+  db_volume:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${DB_VOLUME_PATH}   # bind the volume to DB_VOLUME_PATH on the host
   certs_volume:
     driver: local
     driver_opts:
@@ -522,6 +532,5 @@ networks:
   minio_network: 
     external: true   # Use an external network
   web_network:
-    name: web_network
-    driver: overlay   # Use an overlay network
+    external: true   # Use an external network
 ```
