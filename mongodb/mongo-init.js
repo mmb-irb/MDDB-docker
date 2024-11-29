@@ -3,8 +3,8 @@ db = db.getSiblingDB('DB_NAME');
 
 // Create a user with dbOwner permissions on 'DB_NAME' database.
 db.createUser({
-  user: process.env.MONGO_INITDB_ROOT_USERNAME,
-  pwd: process.env.MONGO_INITDB_ROOT_PASSWORD,
+  user: 'root',
+  pwd: 'root',
   roles: [
     { role: 'dbOwner', db: 'DB_NAME' }]
 });
