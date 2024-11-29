@@ -152,9 +152,9 @@ services:
   mongodb:
     image: mongo:6
     environment:
-      MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME}
-      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD}
-      MONGO_PORT: ${DB_OUTER_PORT}
+      #MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME}
+      #MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD}
+      #MONGO_PORT: ${DB_OUTER_PORT}
       MONGO_INITDB_DATABASE: ${DB_NAME}
     ports:
       - "${DB_OUTER_PORT}:${DB_INNER_PORT}"
@@ -164,8 +164,8 @@ services:
     # before init mongo, replace the template with the actual values
     entrypoint: >
       sh -c "sed 's/\DB_NAME/'${DB_NAME}'/' /docker-entrypoint-initdb.d/mongo-init-template.js | 
-      sed 's/\ROOT_DB_LOGIN/'${MONGO_INITDB_ROOT_USERNAME}'/' | 
-      sed 's/\ROOT_DB_PASSWORD/'${MONGO_INITDB_ROOT_PASSWORD}'/' | 
+      sed 's/\MONGO_INITDB_ROOT_USERNAME/'${MONGO_INITDB_ROOT_USERNAME}'/' | 
+      sed 's/\MONGO_INITDB_ROOT_PASSWORD/'${MONGO_INITDB_ROOT_PASSWORD}'/' | 
       sed 's/\LOADER_DB_LOGIN/'${LOADER_DB_LOGIN}'/' | 
       sed 's/\LOADER_DB_PASSWORD/'${LOADER_DB_PASSWORD}'/' | 
       sed 's/\REST_DB_LOGIN/'${REST_DB_LOGIN}'/' | 
