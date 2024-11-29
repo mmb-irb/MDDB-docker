@@ -121,7 +121,7 @@ docker run --rm -e BUCKET=<BUCKET> --network minio_network -v <WORKFLOW_VOLUME_P
 * **FOLDER:** Folder inside **BUCKET**. Given along with the credentials when **uploading** the data via **command line**.
 * **TOPOLOGY:** **Topology** file name. File uploaded via **VRE lite**.
 * **TRAJECTORY:** **Trajectory** file name. File uploaded via **VRE lite**.
-* **REPLICA_FOLDER:** Absolute path to the replica folder created beforehand **inside <WORKFLOW_VOLUME_PATH>/<OUTPUT_FOLDER>**. 
+* **REPLICA_FOLDER:** Name of the folder created beforehand **inside <WORKFLOW_VOLUME_PATH>/<OUTPUT_FOLDER>**. 
  
 ### Use loader
 

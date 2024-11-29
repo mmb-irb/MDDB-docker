@@ -48,7 +48,7 @@ def main(json_file_path, time_difference, mc_usr, mc_pwd, minio_host):
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Process MDDB VRElite log.')
+    parser = argparse.ArgumentParser(description='Process MDDB VRE lite log.')
     parser.add_argument('json_file_path', type=str, help='Path to the log JSON file')
     parser.add_argument('time_difference', type=int, help='Time difference in days')
     parser.add_argument('mc_usr', type=str, help='MinIO Admin User')

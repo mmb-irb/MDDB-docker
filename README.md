@@ -81,6 +81,45 @@ For the sake of performing **automatic operations** such as cleaning or checking
 
 ## Installation
 
+### Before the installation
+
+There are a **few checks** to do in the **VM** where the services will be installed:
+
+#### Check ports
+
+Check that the **external access** for the **443** and **9000** ports is opened:
+
+```sh
+nc -zv vm_ip 443
+nc -zv vm_ip 9000
+```
+
+If some of the ports has not opened the external access, contact the **VM admin**.
+
+Note that **9000** is the **MinIO** port by default, but in some implementations **this port may vary**, it will depend on the specifications of each node.
+
+#### Check date 
+
+For the sake of connecting **safely** to the **MinIO API** via **AWS Signature Version 4**, the date of the VM must be properly configured. If it's not correct, try:
+
+```sh
+ntpdate pool.ntp.org
+```
+
+Or, in some configurations:
+
+```sh
+ntpdate gateway_ip
+```
+
+If none of the above works, contact the **VM admin**.
+
+#### Transfer the SSL/TSL certificates
+
+If the **SSL/TSL** certificates are available, copy them into the **same VM** where the script is being executed. Then, when running the [**deployment script**](#via-script), teh user will be prompted to copy them to the storage system.
+
+### Clone repository
+
 First off, please **clone this repository** into the VM where the services will be deployed:
 
 ```sh
@@ -116,24 +155,9 @@ python3 scripts/deploy.py -d
 
 Be aware that you will need **sudo user** for executing the installation of **docker** and **docker-compose**.
 
-At the end of the execution of the script, you will be asked for the **main path of the storage system**. Inside this path a **docker/** folder will be generated. 
+At the end of the execution of the script, you will be asked for the **main path of the storage system**. Inside this path a **docker/** folder will be generated. All the **Docker images and data** will be stored inside this volume.
 
 #### Deploy Docker Swarm stack
-
-At the beginning of the execution of the script, you will be asked for the **main path of the storage system**. Inside this path the following **folder structure** will be generated:
-
-* [**certs/**](readme/storage.md#certificates) (apache SSL/TSL certificates)
-* [**data/**](readme/storage.md#workflow) (workflow output data and loader input data)
-* [**docker/**](readme/storage.md#docker) (docker images, generated in the step before)
-* [**db/**](readme/storage.md#mongodb) (MongoDB data)
-* [**logs/**](readme/storage.md#logs) (VRE lite and cronjobs logs)
-* [**minio/**](readme/storage.md#minio) (MinIO data)
-  * disk1/ (MinIO data distributed in multi-drive configuration)
-  * disk2/ (MinIO data distributed in multi-drive configuration)
-  * disk3/ (MinIO data distributed in multi-drive configuration)
-  * disk4/ (MinIO data distributed in multi-drive configuration)
-
-If the **SSL/TSL** certificates are available, they can be copied into the **certs/** folder during the execution of the **script**. Be sure to have them located in the **same VM** where the script is being executed.
 
 Execute script for deploying Docker Swarm Stack:
 
@@ -150,6 +174,35 @@ python3 scripts/deploy.py -s -r
 Be aware that you may need **sudo user** for creating the storage folders.
 
 Besides, a `.env` file will be created taking [**.env.git**](./.env.git) as a template. For more information about all the **environment** variables that are set in this file, please visit the [**configuration section**](./readme/config.md#env-file). Take into account that only the main evironment variables will be created interactively. In some cases this `.env` file must be modified manually.
+
+When executing the **deploy script**, the user will be prompted to answer some questions for filling some of the **variables** in the `.env` file:
+
+* **Main path for the storage system:** At the beginning of the execution of the script, you will be asked for the **main path of the storage system**. Inside this path the following **folder structure** will be generated:
+
+  * [**certs/**](readme/storage.md#certificates) (apache **SSL/TSL** certificates)
+  * [**data/**](readme/storage.md#workflow) (**workflow** output data and **loader** input data)
+  * [**docker/**](readme/storage.md#docker) (**docker images**, generated in the [**step before**](#install-docker-and-docker-compose))
+  * [**db/**](readme/storage.md#mongodb) (**MongoDB** data)
+  * [**logs/**](readme/storage.md#logs) (**VRE lite** and cronjobs logs)
+  * [**minio/**](readme/storage.md#minio) (**MinIO** data)
+    * disk1/ (**MinIO** data distributed in multi-drive configuration)
+    * disk2/ (**MinIO** data distributed in multi-drive configuration)
+    * disk3/ (**MinIO** data distributed in multi-drive configuration)
+    * disk4/ (**MinIO** data distributed in multi-drive configuration)
+
+* **SSL/TSL certificates:** If the **SSL/TSL** certificates are available, they can be copied into the **certs/** folder during the execution of the **script**. Be sure to have them located in the **same VM** where the script is being executed.
+* **Node:** Node identifier, mandatory. 
+* **Stack name:** Docker Swarm stack name. Default value: **my_stack**.
+* **Database name:** MongoDB database name. Default value: **mddb_db**.
+* **Root database user:** MongoDB root database user. Default value: **root**.
+* **Root database password:** MongoDB root database password. Default value: **root**.
+* **R/W database user:** Read / Write database user for the loader service. Default value: **user_rw**.
+* **R/W database password:** Read / Write database password for the loader service. Default value: **pwd_rw**.
+* **R database user:** Read database user for the REST API service. Default value: **user_r**.
+* **R database password:** Read database password for the REST API service. Default value: **pwd_r**.
+* **MinIO root user:** MinIO root user. Default value: **admin**.
+* **MinIO root password:** MinIO root password. Default value: **secretpassword**.
+* **API MinIO port:** Port for the MinIO API. Default value: **9000**.
 
 Once the deploy has finished, the services should be up and running and the one-off tasks ready to execute. For checking and/or executing all the services, [**please click here**](readme/docker-swarm.md#execute-services).
 
