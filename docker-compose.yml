@@ -164,17 +164,7 @@ services:
       - "${DB_OUTER_PORT}:${DB_INNER_PORT}"
     volumes:
       - ${DB_VOLUME_PATH}:/data/db  # path where the database will be stored (outside the container, in the host machine)
-      - ./mongodb/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init-template.js:ro # path to the template initialization script
-    # before init mongo, replace the template with the actual values
-    #entrypoint: >
-    #  sh -c "sed 's/\DB_NAME/'${DB_NAME}'/' /docker-entrypoint-initdb.d/mongo-init-template.js | 
-    #  sed 's/\MONGO_INITDB_ROOT_USERNAME/'${MONGO_INITDB_ROOT_USERNAME}'/' | 
-    #  sed 's/\MONGO_INITDB_ROOT_PASSWORD/'${MONGO_INITDB_ROOT_PASSWORD}'/' | 
-    #  sed 's/\LOADER_DB_LOGIN/'${LOADER_DB_LOGIN}'/' | 
-    #  sed 's/\LOADER_DB_PASSWORD/'${LOADER_DB_PASSWORD}'/' | 
-    #  sed 's/\REST_DB_LOGIN/'${REST_DB_LOGIN}'/' | 
-    #  sed 's/\REST_DB_PASSWORD/'${REST_DB_PASSWORD}'/' > /docker-entrypoint-initdb.d/mongo-init.js &&
-    #  mongod --port ${DB_INNER_PORT} --bind_ip_all --auth"
+      - ./mongodb/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro # path to the template initialization script
     networks:
       - data_network
     deploy:
