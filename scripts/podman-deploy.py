@@ -164,13 +164,13 @@ def deploy_stack(rm):
     # Remove all cache before deploying the stack
     if rm:
         print("Stopping and removing all containers.")
-        subprocess.run(['podman', 'stop', '$(podman ps -aq)'])
-        subprocess.run(['podman', 'rm', ' -f', '$(podman ps -aq)'])
+        subprocess.run("podman stop $(podman ps -aq)", shell=True, check=True)
+        subprocess.run("podman rm  -f $(podman ps -aq)", shell=True, check=True)
         print("Removing all images.")
-        subprocess.run(['podman', 'rmi', '-f', '$(podman images -q)'])
+        subprocess.run("podman rmi -f $(podman images -q)", shell=True, check=True)
         print("Removing all cache.")
-        subprocess.run(['podman', 'system', 'prune', '-a', '-f'])
-        subprocess.run(['podman', 'system', 'prune', '-volumes', '-f'])
+        subprocess.run("podman system prune -a -f", shell=True, check=True)
+        subprocess.run("podman system prune -volumes -f", shell=True, check=True)
 
     # Load variables from .env file
     subprocess.run("set -a && source .env && set +a", shell=True, executable='/bin/bash')
