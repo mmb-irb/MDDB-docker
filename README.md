@@ -136,7 +136,7 @@ Once the repository has been cloned, there are two ways to deploy it: [**via scr
 
 ### Via script
 
-A **deploy script** is provided for executing the **different steps** of the deploying process in an almost **automatic** way. Please execute the script, located in [**scripts/deploy.py**](./scripts/deploy.py). This script allows two operations:
+A **deploy script** is provided for executing the **different steps** of the deploying process in an almost **automatic** way. Please execute the script, located in [**scripts/docker-deploy.py**](./scripts/docker-deploy.py). This script allows two operations:
 
 * [**Install docker and docker-compose**](#install-docker-and-docker-compose)
 * [**Deploy Docker Swarm stack**](#deploy-docker-swarm-stack)
@@ -144,13 +144,13 @@ A **deploy script** is provided for executing the **different steps** of the dep
 How to execute the help script from the root of this repository:
 
 ```sh
-python3 scripts/deploy.py -h
+python3 scripts/docker-deploy.py -h
 ```
 
 #### Install docker and docker-compose
 
 ```sh
-python3 scripts/deploy.py -d
+python3 scripts/docker-deploy.py -d
 ```
 
 Be aware that you will need **sudo user** for executing the installation of **docker** and **docker-compose**.
@@ -162,18 +162,18 @@ At the end of the execution of the script, you will be asked for the **main path
 Execute script for deploying Docker Swarm Stack:
 
 ```sh
-python3 scripts/deploy.py -s
+python3 scripts/docker-deploy.py -s
 ```
 
 Or, for a new clean installation (it will **leave the swarm**, **remove it** and **remove all docker cache** before deploying the stack):
 
 ```sh
-python3 scripts/deploy.py -s -r
+python3 scripts/docker-deploy.py -s -r
 ```
 
 Be aware that you may need **sudo user** for creating the storage folders.
 
-Besides, a `.env` file will be created taking [**.env.git**](./.env.git) as a template. For more information about all the **environment** variables that are set in this file, please visit the [**configuration section**](./readme/config.md#env-file). Take into account that only the main evironment variables will be created interactively. In some cases this `.env` file must be modified manually.
+Besides, a `.env` file will be created taking [**.env.docker.git**](./.env.docker.git) as a template. For more information about all the **environment** variables that are set in this file, please visit the [**configuration section**](./readme/config.md#env-file). Take into account that only the main evironment variables will be created interactively. In some cases this `.env` file must be modified manually.
 
 When executing the **deploy script**, the user will be prompted to answer some questions for filling some of the **variables** in the `.env` file:
 

@@ -8,7 +8,7 @@
 
 ⚠️ No sensible default value is provided for any of these fields, they **need to be defined** ⚠️
 
-An `.env` file must be created in the **root** of the project. The file [**.env.git**](../.env.git) can be taken as an example. The file must contain the following environment variables:
+An `.env` file must be created in the **root** of the project. The file [**.env.docker.git**](../.env.docker.git) can be taken as an example. The file must contain the following environment variables:
 
 | key              | value   | description                                     |
 | ---------------- | ------- | ----------------------------------------------- |

@@ -173,7 +173,7 @@ Open a browser and type:
 http://localhost:8081
 ```
 
-Or modify the port 8081 by the one defined as **REST_OUTER_PORT** in the [**.env**](../.env.git) file. 
+Or modify the port 8081 by the one defined as **REST_OUTER_PORT** in the [**.env**](../.env.docker.git) file. 
 
 If services are already online, go to:
 
@@ -187,7 +187,7 @@ Open a browser and type:
 http://localhost:8080
 ```
 
-Or modify the port 8080 by the one defined as **CLIENT_OUTER_PORT** in the [**.env**](../.env.git) file. 
+Or modify the port 8080 by the one defined as **CLIENT_OUTER_PORT** in the [**.env**](../.env.docker.git) file. 
 
 If services are already online, go to:
 
@@ -205,7 +205,7 @@ Open a browser and type:
 http://localhost:9001
 ```
 
-Or modify the port 9001 by the one defined as **MINIO_UI_OUTER_PORT** in the [**.env**](../.env.git) file. 
+Or modify the port 9001 by the one defined as **MINIO_UI_OUTER_PORT** in the [**.env**](../.env.docker.git) file. 
 
 If services are already online, go to:
 
@@ -219,7 +219,7 @@ In terminal, do:
 curl -f http://localhost:9000/minio/health/live
 ```
 
-Or modify the port 9000 by the one defined as **MINIO_API_OUTER_PORT** in the [**.env**](../.env.git) file. 
+Or modify the port 9000 by the one defined as **MINIO_API_OUTER_PORT** in the [**.env**](../.env.docker.git) file. 
 
 If services are already online, do:
 
@@ -235,7 +235,7 @@ Open a browser and type:
 http://localhost:8082
 ```
 
-Or modify the port 8082 by the one defined as **VRE_LITE_OUTER_PORT** in the [**.env**](../.env.git) file. 
+Or modify the port 8082 by the one defined as **VRE_LITE_OUTER_PORT** in the [**.env**](../.env.docker.git) file. 
 
 If services are already online, go to:
 

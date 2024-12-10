@@ -204,7 +204,7 @@ Note the following ports:
 * **9001** is the output port for the **MinIO WebUI**, not recommended for using in production
 * **9000** is the output port for the **MinIO API**
 
-These ports can be changed, but in this case, please change them as well in the [**.env**](../.env.git) file.
+These ports can be changed, but in this case, please change them as well in the [**.env**](../.env.docker.git) file.
 
 Finally, all that remains is restarting the Apache server:
 

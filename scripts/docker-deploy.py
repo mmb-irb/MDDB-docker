@@ -159,7 +159,7 @@ def deploy_stack(rm):
     if 'SUDO_USER' not in os.environ:
         ask_sudo = input("The script was executed without sudo, in some cases you may need sudo permissions for create new folders in the storage system, do you want to continue? (y/n): ")
         if not ask_sudo.lower() == "y":
-            print("Please run the script with sudo: sudo python3 scripts/deploy.py -s")
+            print("Please run the script with sudo: sudo python3 scripts/docker-deploy.py -s")
             return
 
     if not check_file_exists('docker-compose.yml', warning=True):
@@ -167,7 +167,7 @@ def deploy_stack(rm):
 
     if not check_file_exists('.env'):
         print("The file .env does not exist, creating it.")
-        env_vars = read_env_file('.env.git')
+        env_vars = read_env_file('.env.docker.git')
         main_path = set_main_path()
         if not main_path:
             return
