@@ -1,5 +1,5 @@
 # Base docker with miniconda
-FROM continuumio/miniconda3
+FROM docker.io/continuumio/miniconda3:latest
 
 # Define working dir
 WORKDIR /app

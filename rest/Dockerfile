@@ -1,5 +1,5 @@
 # Stage 1: Build the NodeJS REST API
-FROM alpine:latest AS build
+FROM docker.io/library/nginx:alpine AS build
 
 # Install necessary packages
 RUN apk --no-cache add nodejs npm git
@@ -46,7 +46,7 @@ RUN npm install
 RUN npm run build
 
 # Stage 2: Serve the REST API app with pm2
-FROM alpine:latest
+FROM docker.io/library/nginx:alpine
 
 # Install necessary packages
 RUN apk --no-cache add nodejs npm curl

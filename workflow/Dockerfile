@@ -1,5 +1,4 @@
 # Base docker with miniconda
-#FROM continuumio/miniconda3
 FROM docker.io/continuumio/miniconda3:latest
 
 # Define working dir
@@ -21,18 +20,12 @@ RUN git clone https://mmb.irbbarcelona.org/gitlab/d.beltran.anadon/MoDEL-workflo
 RUN conda config --set solver libmamba
 
 # Create new environment
-#RUN conda env create -f /app/MoDEL-workflow/environment.yml && conda clean -afy
 RUN conda env create --file=/app/MoDEL-workflow/environment.yml && conda clean -afy
 
-# Make RUN commands use the new environment:
-#SHELL ["conda", "run", "-n", "mwf_env", "/bin/bash", "-c"]
-
 # Re-install sqlite SW
-#RUN conda install sqlite --force-reinstall
 RUN conda run -n mwf_env conda install sqlite --force-reinstall
 
 # Install mwf SW
-#RUN python /app/MoDEL-workflow/setup.py develop
 RUN conda run -n mwf_env python /app/MoDEL-workflow/setup.py develop
 
 # Export python path
@@ -49,7 +42,6 @@ ENV MINIO_ROOT_PASSWORD=$MINIO_ROOT_PASSWORD
 ENV MINIO_API_PORT=$MINIO_API_PORT
 
 # Code to run when container is started
-#ENTRYPOINT ["conda", "run", "--no-capture-output", "-n", "mwf_env"]
 RUN echo '#!/bin/sh' > entrypoint.sh && \
     echo 'if [ -n "$BUCKET" ]; then' >> entrypoint.sh && \
     echo '  export AWS_ACCESS_KEY_ID=$MINIO_ROOT_USER' >> entrypoint.sh && \

@@ -40,7 +40,7 @@ RUN npm install
 RUN npm run build:production
 
 # Stage 2: Serve the Nuxt app with pm2
-FROM alpine:latest
+FROM docker.io/library/nginx:alpine
 
 # Install necessary packages
 RUN apk --no-cache add nodejs npm curl

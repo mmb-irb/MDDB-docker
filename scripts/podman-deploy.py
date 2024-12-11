@@ -173,7 +173,8 @@ def deploy_stack(rm):
         subprocess.run("podman system prune --volumes -f", shell=True, check=True)
 
     # Load variables from .env file
-    subprocess.run("set -a && source .env && set +a", shell=True, executable='/bin/bash')
+    # subprocess.run("set -a && source .env && set +a", shell=True, executable='/bin/bash')
+    subprocess.run("export $(grep -v '^#' .env | xargs)", shell=True, check=True, executable='/bin/bash')
 
     # Network create
     if not check_network_exists('data_network'):
