@@ -24,8 +24,9 @@ RUN git clone https://mmb.irbbarcelona.org/gitlab/gbayarri/mddb-vre.git
 ARG VRE_LITE_BASE_URL_DEVELOPMENT
 ARG VRE_LITE_BASE_URL_STAGING
 ARG VRE_LITE_BASE_URL_PRODUCTION
-ARG VRE_LITE_DATA_PATH
+ARG VRE_LITE_LOG_PATH
 ARG VRE_LITE_MAX_FILE_SIZE
+ARG VRE_LITE_TIME_DIFF
 ARG MINIO_PROTOCOL
 ARG MINIO_URL
 ARG MINIO_PORT
@@ -34,8 +35,9 @@ ARG NODE_NAME
 RUN echo "BASE_URL_DEVELOPMENT=${VRE_LITE_BASE_URL_DEVELOPMENT}" > /app/mddb-vre/.env && \
     echo "BASE_URL_STAGING=${VRE_LITE_BASE_URL_STAGING}" >> /app/mddb-vre/.env && \
     echo "BASE_URL_PRODUCTION=${VRE_LITE_BASE_URL_PRODUCTION}" >> /app/mddb-vre/.env && \
-    echo "DATA_PATH=${VRE_LITE_DATA_PATH}" >> /app/mddb-vre/.env && \
+    echo "LOG_PATH=${VRE_LITE_LOG_PATH}" >> /app/mddb-vre/.env && \
     echo "MAX_FILE_SIZE=${VRE_LITE_MAX_FILE_SIZE}" >> /app/mddb-vre/.env && \
+    echo "TIME_DIFF=${VRE_LITE_TIME_DIFF}" >> /app/mddb-vre/.env && \
     echo "MINIO_PROTOCOL=${MINIO_PROTOCOL}" >> /app/mddb-vre/.env && \
     echo "MINIO_URL=${MINIO_URL}" >> /app/mddb-vre/.env && \
     echo "MINIO_PORT=${MINIO_PORT}" >> /app/mddb-vre/.env && \
@@ -51,7 +53,7 @@ RUN npm install
 RUN npm run build:production
 
 # Stage 2: Serve the Nuxt app with pm2
-FROM alpine:latest
+FROM docker.io/library/nginx:alpine
 
 # Install necessary packages
 RUN apk --no-cache add nodejs npm curl

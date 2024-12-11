@@ -12,7 +12,7 @@ This Dockerfile is used taking as a starting point the **build** of the client. 
 
 ```Dockerfile
 # Use nginx Alpine Linux as base image
-FROM nginx:alpine
+FROM docker.io/library/nginx:alpine
 
 # Define the build arguments
 ARG NODE_ID

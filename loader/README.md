@@ -12,7 +12,7 @@ This Dockerfile is used taking as a starting point the **repository** of the loa
 
 ```Dockerfile
 # Base docker with miniconda
-FROM continuumio/miniconda3
+FROM docker.io/continuumio/miniconda3:latest
 
 # Define working dir
 WORKDIR /app
