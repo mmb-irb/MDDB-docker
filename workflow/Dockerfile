@@ -1,5 +1,6 @@
 # Base docker with miniconda
-FROM continuumio/miniconda3
+#FROM continuumio/miniconda3
+FROM docker.io/continuumio/miniconda3:latest
 
 # Define working dir
 WORKDIR /app
@@ -16,17 +17,23 @@ RUN chmod +x goofys
 # Clone repo
 RUN git clone https://mmb.irbbarcelona.org/gitlab/d.beltran.anadon/MoDEL-workflow.git
 
+# Enable libmamba as solver
+RUN conda config --set solver libmamba
+
 # Create new environment
-RUN conda env create -f /app/MoDEL-workflow/environment.yml && conda clean -afy
+#RUN conda env create -f /app/MoDEL-workflow/environment.yml && conda clean -afy
+RUN conda env create --file=/app/MoDEL-workflow/environment.yml && conda clean -afy
 
 # Make RUN commands use the new environment:
-SHELL ["conda", "run", "-n", "mwf_env", "/bin/bash", "-c"]
+#SHELL ["conda", "run", "-n", "mwf_env", "/bin/bash", "-c"]
 
 # Re-install sqlite SW
-RUN conda install sqlite --force-reinstall
+#RUN conda install sqlite --force-reinstall
+RUN conda run -n mwf_env conda install sqlite --force-reinstall
 
 # Install mwf SW
-RUN python /app/MoDEL-workflow/setup.py develop
+#RUN python /app/MoDEL-workflow/setup.py develop
+RUN conda run -n mwf_env python /app/MoDEL-workflow/setup.py develop
 
 # Export python path
 ENV PYTHONPATH="${PYTHONPATH}:/app/MoDEL-workflow"
