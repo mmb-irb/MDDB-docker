@@ -4,7 +4,7 @@ In computing, **Podman** (pod manager) is an open source **Open Container Initia
 
 **Podman** lets containers run **without root privileges** (rootless), meaning they can be **created**, **run**, and **managed** by regular users **without administrator rights**.
 
-## Before building
+## Before building
 
 ### Load environment variables
 
@@ -28,7 +28,7 @@ podman network create minio_network
 
 Below there are all the instructions needed for **building** all the **services**:
 
-### REST API
+### REST API
 
 ```sh
 podman build -t rest_image --build-arg DB_SERVER=${DB_SERVER} --build-arg DB_PORT=${DB_OUTER_PORT} --build-arg DB_NAME=${DB_NAME} --build-arg DB_AUTH_USER=${REST_DB_LOGIN} --build-arg DB_AUTH_PASSWORD=${REST_DB_PASSWORD} --build-arg DB_AUTHSOURCE=${DB_AUTHSOURCE} --build-arg REST_INNER_PORT=${REST_INNER_PORT} ./rest
@@ -58,7 +58,7 @@ podman build -t apache_image --build-arg APACHE_HTTP_INNER_PORT=${APACHE_HTTP_IN
 podman build -t cronjobs_image --build-arg VRE_LITE_LOG_PATH=${VRE_LITE_LOG_PATH} --build-arg VRE_LITE_TIME_DIFF=${CRONJOB_VRE_LITE_TIME_DIFF} --build-arg CJ_VRE_LITE_LOG_PATH=${CJ_VRE_LITE_LOG_PATH} --build-arg MINIO_ROOT_USER=${MINIO_ROOT_USER} --build-arg MINIO_ROOT_PASSWORD=${VRE_LITE_LOG_PATH} --build-arg MINIO_PORT=${MINIO_API_INNER_PORT} ./cronjobs
 ```
 
-### Workflow
+### Workflow
 
 ```sh
 podman build -t workflow_image --build-arg MINIO_ROOT_USER=${MINIO_ROOT_USER} --build-arg MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD} --build-arg MINIO_API_PORT=${MINIO_API_INNER_PORT} ./workflow
@@ -80,7 +80,7 @@ In this section there are the instructions needed for running the **long-running
 podman run -d --name mongodb -e MONGO_INITDB_ROOT_USERNAME=${MONGO_INITDB_ROOT_USERNAME} -e MONGO_INITDB_ROOT_PASSWORD=${MONGO_INITDB_ROOT_PASSWORD} -e MONGO_PORT=${DB_OUTER_PORT} -e MONGO_INITDB_DATABASE=${DB_NAME} -e LOADER_DB_LOGIN=${LOADER_DB_LOGIN} -e LOADER_DB_PASSWORD=${LOADER_DB_PASSWORD} -e REST_DB_LOGIN=${REST_DB_LOGIN} -e REST_DB_PASSWORD=${REST_DB_PASSWORD} -p ${DB_OUTER_PORT}:${DB_OUTER_PORT} -v ${DB_VOLUME_PATH}:/data/db:Z -v $(pwd)/mongodb/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro --cpus "${DB_CPU_LIMIT}" --memory "${DB_MEMORY_LIMIT}" --network data_network --security-opt label=disable docker.io/library/mongo:6
 ```
 
-### REST API
+### REST API
 
 ```sh
 podman run -d --name rest -p ${REST_OUTER_PORT}:${REST_INNER_PORT} --cpus "${REST_CPU_LIMIT}" --memory "${REST_MEMORY_LIMIT}" --network data_network --network web_network rest_image

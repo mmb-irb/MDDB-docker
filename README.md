@@ -114,7 +114,7 @@ If none of the above works, contact the **VM admin**.
 
 ### Transfer the SSL/TSL certificates
 
-If the **SSL/TSL** certificates are available, copy them into the **same VM** where the script is being executed. Then, when running the [**deployment script**](#via-script), teh user will be prompted to copy them to the storage system.
+If the **SSL/TSL** certificates are available, copy them into the **same VM** where the script is being executed. Then, when running the [**deployment script**](#via-script), the user will be prompted to copy them to the storage system.
 
 ## Installation via Docker
 
