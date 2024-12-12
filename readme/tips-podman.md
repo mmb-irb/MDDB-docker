@@ -23,7 +23,7 @@ podman system prune -a
 podman system prune --volumes -f
 ```
 
-## Remove unused images
+## Remove unused images
 
 ```sh
 podman image prune
