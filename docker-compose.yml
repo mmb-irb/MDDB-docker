@@ -191,7 +191,7 @@ services:
       - minio_volume2:/mnt/disk2
       - minio_volume3:/mnt/disk3
       - minio_volume4:/mnt/disk4
-      - ./minio/init-mc.sh:/usr/local/bin/init-mc.sh # Mount the initialization script
+      - ./minio/init-mc.sh:/entrypoint.sh # Mount the initialization script
     ports:
       - "${MINIO_API_OUTER_PORT}:${MINIO_API_INNER_PORT}"
       - "${MINIO_UI_INNER_PORT}:${MINIO_UI_INNER_PORT}"   # port for the minio webUI (only for development)
@@ -212,7 +212,8 @@ services:
       restart_policy:
         condition: on-failure   # Restart only on failure
     hostname: minio
-    command: ["/bin/sh", "-c", "minio server --address ':${MINIO_API_INNER_PORT}' --console-address ':${MINIO_UI_INNER_PORT}' http://minio/mnt/disk{1...4} & sleep 5 && /usr/local/bin/init-mc.sh && wait"]
+    entrypoint: ["/entrypoint.sh"]
+    # command: ["/bin/sh", "-c", "minio server --address ':${MINIO_API_INNER_PORT}' --console-address ':${MINIO_UI_INNER_PORT}' http://minio/mnt/disk{1...4} & sleep 5 && /usr/local/bin/init-mc.sh && wait"]
     # command: server --address ":${MINIO_API_INNER_PORT}" --console-address ":${MINIO_UI_INNER_PORT}" http://minio/mnt/disk{1...4}    # Remove the console-address flag for production
     # command: >
     #   sh -c "
