@@ -5,6 +5,8 @@ echo "Initializing MinIO client..."
 # Start MinIO server in the background
 minio server --address ":${MINIO_API_INNER_PORT}" --console-address ":${MINIO_UI_INNER_PORT}" http://minio/mnt/disk{1...4} &
 
+# minio server --address ":${MINIO_API_INNER_PORT}" --console-address ":${MINIO_UI_INNER_PORT}" http://minio{1...3}/mnt/disk{1...4}    # For multiple nodes (ie 3 nodes)
+
 # Health check for the MinIO service
 echo "Waiting for MinIO to be healthy..."
 while ! curl -f "http://localhost:${MINIO_API_INNER_PORT}/minio/health/live"; do
