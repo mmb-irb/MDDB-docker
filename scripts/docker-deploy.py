@@ -4,7 +4,16 @@ import subprocess
 import time
 
 
-def install_docker():
+def get_os_info():
+    os_info = {}
+    with open('/etc/os-release') as f:
+        for line in f:
+            key, value = line.strip().split('=', 1)
+            os_info[key] = value.strip('"')
+    return os_info
+
+
+def install_docker_ubuntu():
     # Install Docker
     print("Installing Docker.")
     subprocess.run(['sudo', 'apt-get', 'update'])
@@ -49,6 +58,59 @@ def install_docker():
     subprocess.run(['sudo', 'ln', '-s', docker_path, '/var/lib/docker'])
     subprocess.run(['sudo', 'systemctl', 'start', 'docker'])
     subprocess.run(['sudo', 'docker', 'info', '|', 'grep', '"Docker Root Dir"'])
+
+
+def install_docker_rocky():
+    # Install Docker
+    print("Installing Docker.")
+    subprocess.run(['sudo', 'dnf', 'check-update'])
+    subprocess.run(['sudo', 'dnf', 'config-manager', '--add-repo', 'https://download.docker.com/linux/centos/docker-ce.repo'])
+    subprocess.run(['sudo', 'dnf', 'install', 'docker-ce', 'docker-ce-cli', 'containerd.io', 'docker-compose-plugin', '-y'])
+    subprocess.run(['sudo', 'systemctl', 'start', 'docker'])
+    subprocess.run(['sudo', 'systemctl', 'enable', 'docker'])
+    print("Docker installed.")
+
+    # Add user to docker group
+    print("Add your user to the docker group")
+    subprocess.run(['sudo', 'groupadd', 'docker'])
+    subprocess.run(['sudo', 'usermod', '-aG', 'docker', '$USER'])
+    subprocess.run(['newgrp', 'docker'])
+    subprocess.run(['sudo', 'systemctl', 'restart', 'docker'])
+    print("User added to docker group.")
+
+    # Ask for main path
+    main_path = input("Enter the main path for the storage system. This script will create a /docker folder where all the docker images will be stored: ")
+    if not main_path:
+        print("Error: No path provided.")
+        return
+    if not os.path.exists(main_path):
+        print(f"Error: The path {main_path} does not exist.")
+        return
+
+    docker_path = os.path.join(main_path, 'docker')
+    subprocess.run(['sudo', 'mkdir', docker_path])
+
+    print("Changing Docker Root Dir.")
+    subprocess.run(['sudo', 'systemctl', 'stop', 'docker'])
+    subprocess.run(['sudo', 'mv', '/var/lib/docker', docker_path])
+    subprocess.run(['sudo', 'ln', '-s', docker_path, '/var/lib/docker'])
+    subprocess.run(['sudo', 'systemctl', 'start', 'docker'])
+    subprocess.run(['sudo', 'docker', 'info', '|', 'grep', '"Docker Root Dir"'])
+
+
+def install_docker():
+    os_info = get_os_info()
+    os_name = os_info.get('NAME', '')
+
+    if 'Ubuntu' in os_name:
+        print("Running on Ubuntu")
+        install_docker_ubuntu()
+    elif 'Rocky' in os_name:
+        print("Running on Rocky Linux")
+        install_docker_rocky()
+    else:
+        print(f"Running on an unsupported OS: {os_name}")
+        return
 
 
 def check_file_exists(fname, warning=False):
