@@ -1,7 +1,5 @@
 #!/bin/sh
 
-#!/bin/sh
-
 # Start MinIO server in the background
 minio server --address ":${MINIO_API_INNER_PORT}" --console-address ":${MINIO_UI_INNER_PORT}" http://minio/mnt/disk{1...4}
 
