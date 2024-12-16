@@ -3,19 +3,19 @@
 echo "Initializing MinIO client..."
 
 # Start MinIO server in the background
-minio server --address ":${MINIO_API_INNER_PORT}" --console-address ":${MINIO_UI_INNER_PORT}" http://minio/mnt/disk{1...4}
+minio server --address ":${MINIO_API_INNER_PORT}" --console-address ":${MINIO_UI_INNER_PORT}" http://minio/mnt/disk{1...4} &
 
 # Wait for MinIO to initialize
-echo "Waiting for MinIO to be healthy..."
-sleep 35
+# echo "Waiting for MinIO to be healthy..."
+# sleep 35
 
 # Health check for the MinIO service
-# echo "Waiting for MinIO to be healthy..."
-# while ! curl -f "http://localhost:${MINIO_API_INNER_PORT}/minio/health/live"; do
-#   echo "MinIO is not healthy yet. Waiting..."
-#   sleep 5
-# done
-# echo "MinIO is healthy."
+echo "Waiting for MinIO to be healthy..."
+while ! curl -f "http://localhost:${MINIO_API_INNER_PORT}/minio/health/live"; do
+  echo "MinIO is not healthy yet. Waiting..."
+  sleep 5
+done
+echo "MinIO is healthy."
 
 # Set up MinIO client alias
 mc alias set myminio http://localhost:${MINIO_API_INNER_PORT} ${MINIO_ROOT_USER} ${MINIO_ROOT_PASSWORD}
