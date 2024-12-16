@@ -212,7 +212,8 @@ services:
       restart_policy:
         condition: on-failure   # Restart only on failure
     hostname: minio
-    command: server --address ":${MINIO_API_INNER_PORT}" --console-address ":${MINIO_UI_INNER_PORT}" http://minio/mnt/disk{1...4}    # Remove the console-address flag for production
+    command: ["/bin/sh", "-c", "minio server --address ':${MINIO_API_INNER_PORT}' --console-address ':${MINIO_UI_INNER_PORT}' http://minio/mnt/disk{1...4} & sleep 5 && /usr/local/bin/init-mc.sh && wait"]
+    # command: server --address ":${MINIO_API_INNER_PORT}" --console-address ":${MINIO_UI_INNER_PORT}" http://minio/mnt/disk{1...4}    # Remove the console-address flag for production
     # command: >
     #   sh -c "
     #   /usr/local/bin/minio server --address ':${MINIO_API_INNER_PORT}' --console-address ':${MINIO_UI_INNER_PORT}' http://minio/mnt/disk{1...4} & 
