@@ -1,6 +1,5 @@
 .DS_Store
 /db
-/minio
 .env
 *.old
 /apache/certs
