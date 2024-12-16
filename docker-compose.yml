@@ -185,6 +185,10 @@ services:
       - MINIO_ROOT_USER=${MINIO_ROOT_USER}
       - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD}
       - MINIO_BROWSER_REDIRECT_URL=${MINIO_BROWSER_REDIRECT_URL}  # Set the base URL for the Minio console
+      - MINIO_API_INNER_PORT=${MINIO_API_INNER_PORT}
+      - MINIO_UI_INNER_PORT=${MINIO_UI_INNER_PORT}
+      - MINIO_USER=${MINIO_USER}
+      - MINIO_PASSWORD=${MINIO_PASSWORD}
     volumes:
       # paths where minio will store the data in object storage format (outside the container, in the host machine)
       - minio_volume1:/mnt/disk1   

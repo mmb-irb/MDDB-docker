@@ -1,8 +1,6 @@
 #!/bin/sh
 
 echo "Initializing MinIO client..."
-echo "Root user: ${MINIO_ROOT_USER}"
-echo "Root password: ${MINIO_ROOT_PASSWORD}"
 
 # Start MinIO server in the background
 minio server --address ":${MINIO_API_INNER_PORT}" --console-address ":${MINIO_UI_INNER_PORT}" http://minio/mnt/disk{1...4}
