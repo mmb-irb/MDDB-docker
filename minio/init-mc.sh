@@ -1,6 +1,6 @@
 #!/bin/sh
 
-echo "Initializing MinIO client..."
+#echo "Initializing MinIO client..."
 # echo "Root user: ${MINIO_ROOT_USER}"
 # echo "Root password: ${MINIO_ROOT_PASSWORD}"
 
