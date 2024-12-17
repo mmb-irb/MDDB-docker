@@ -81,7 +81,7 @@ RUN echo '#!/bin/sh' > entrypoint.sh && \
     echo '  echo "Waiting for minio to be healthy..."' >> entrypoint.sh && \
     echo '  sleep 5' >> entrypoint.sh && \
     echo 'done' >> entrypoint.sh && \
-    echo 'mc alias set myminio http://minio:$MINIO_API_PORT $MINIO_PASSWORD $MINIO_PASSWORD' >> entrypoint.sh && \
+    echo 'mc alias set myminio http://minio:$MINIO_API_PORT $MINIO_USER $MINIO_PASSWORD' >> entrypoint.sh && \
     echo 'exec pm2-runtime start ecosystem.config.cjs --name mddb-vre' >> entrypoint.sh && \
     chmod +x entrypoint.sh
 
