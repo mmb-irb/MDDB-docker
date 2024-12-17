@@ -68,8 +68,8 @@ services:
     build:
       context: ./workflow   # folder to search Dockerfile for this image
       args:
-        MINIO_ROOT_USER: ${MINIO_ROOT_USER}
-        MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+        MINIO_USER: ${MINIO_USER}
+        MINIO_PASSWORD: ${MINIO_PASSWORD}
         MINIO_API_PORT: ${MINIO_API_INNER_PORT}
     cap_add:
       - SYS_ADMIN
@@ -228,8 +228,6 @@ services:
     build:
       context: ./vre_lite
       args:
-        MINIO_ROOT_USER: ${MINIO_ROOT_USER}
-        MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
         MINIO_API_PORT: ${MINIO_API_INNER_PORT}
         VRE_LITE_INNER_PORT: ${VRE_LITE_INNER_PORT}
         VRE_LITE_BASE_URL_DEVELOPMENT: ${VRE_LITE_BASE_URL_DEVELOPMENT}
@@ -241,6 +239,8 @@ services:
         MINIO_PROTOCOL: ${MINIO_PROTOCOL}
         MINIO_URL: ${MINIO_URL}
         MINIO_PORT: ${APACHE_MINIO_OUTER_PORT}
+        MINIO_USER: ${MINIO_USER}
+        MINIO_PASSWORD: ${MINIO_PASSWORD}
         NODE_NAME: ${NODE}
     volumes:
       - vre_lite_log_volume:/vre_lite
@@ -265,34 +265,34 @@ services:
       update_config:
         order: start-first  # Priority over other services
 
-  cronjobs:
-    image: cronjobs_image 
-    build:
-      context: ./cronjobs
-      args:
-        VRE_LITE_LOG_PATH: ${VRE_LITE_LOG_PATH}
-        VRE_LITE_TIME_DIFF: ${CRONJOB_VRE_LITE_TIME_DIFF}
-        CJ_VRE_LITE_LOG_PATH: ${CJ_VRE_LITE_LOG_PATH}
-        MINIO_ROOT_USER: ${MINIO_ROOT_USER}
-        MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
-        MINIO_PORT: ${MINIO_API_INNER_PORT}
-    volumes:
-      - vre_lite_log_volume:/vre_lite
-    networks:
-      - minio_network
-    depends_on:
-      - minio
-    deploy:
-      replicas: ${CRONJOBS_REPLICAS}   # Specify the number of replicas for Docker Swarm
-      resources:
-        limits:
-          cpus: ${CRONJOBS_CPU_LIMIT}   # Specify the limit number of CPUs
-          memory: ${CRONJOBS_MEMORY_LIMIT}   # Specify the limit memory
-        reservations:
-          cpus: ${CRONJOBS_CPU_RESERVATION}   # Specify the reserved number of CPUs
-          memory: ${CRONJOBS_MEMORY_RESERVATION}   # Specify the reserved memory
-      restart_policy:
-        condition: on-failure   # Restart only on failure
+  # cronjobs:
+  #   image: cronjobs_image 
+  #   build:
+  #     context: ./cronjobs
+  #     args:
+  #       VRE_LITE_LOG_PATH: ${VRE_LITE_LOG_PATH}
+  #       VRE_LITE_TIME_DIFF: ${CRONJOB_VRE_LITE_TIME_DIFF}
+  #       CJ_VRE_LITE_LOG_PATH: ${CJ_VRE_LITE_LOG_PATH}
+  #       MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+  #       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+  #       MINIO_PORT: ${MINIO_API_INNER_PORT}
+  #   volumes:
+  #     - vre_lite_log_volume:/vre_lite
+  #   networks:
+  #     - minio_network
+  #   depends_on:
+  #     - minio
+  #   deploy:
+  #     replicas: ${CRONJOBS_REPLICAS}   # Specify the number of replicas for Docker Swarm
+  #     resources:
+  #       limits:
+  #         cpus: ${CRONJOBS_CPU_LIMIT}   # Specify the limit number of CPUs
+  #         memory: ${CRONJOBS_MEMORY_LIMIT}   # Specify the limit memory
+  #       reservations:
+  #         cpus: ${CRONJOBS_CPU_RESERVATION}   # Specify the reserved number of CPUs
+  #         memory: ${CRONJOBS_MEMORY_RESERVATION}   # Specify the reserved memory
+  #     restart_policy:
+  #       condition: on-failure   # Restart only on failure
 
 
 volumes:

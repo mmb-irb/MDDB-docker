@@ -32,20 +32,20 @@ RUN conda run -n mwf_env python /app/MoDEL-workflow/setup.py develop
 ENV PYTHONPATH="${PYTHONPATH}:/app/MoDEL-workflow"
 
 # Define arguments passed from docker-compose
-ARG MINIO_ROOT_USER
-ARG MINIO_ROOT_PASSWORD
+ARG MINIO_USER
+ARG MINIO_PASSWORD
 ARG MINIO_API_PORT
 
 # Set the environment variables
-ENV MINIO_ROOT_USER=$MINIO_ROOT_USER
-ENV MINIO_ROOT_PASSWORD=$MINIO_ROOT_PASSWORD
+ENV MINIO_USER=$MINIO_USER
+ENV MINIO_PASSWORD=$MINIO_PASSWORD
 ENV MINIO_API_PORT=$MINIO_API_PORT
 
 # Code to run when container is started
 RUN echo '#!/bin/sh' > entrypoint.sh && \
     echo 'if [ -n "$BUCKET" ]; then' >> entrypoint.sh && \
-    echo '  export AWS_ACCESS_KEY_ID=$MINIO_ROOT_USER' >> entrypoint.sh && \
-    echo '  export AWS_SECRET_ACCESS_KEY=$MINIO_ROOT_PASSWORD' >> entrypoint.sh && \
+    echo '  export AWS_ACCESS_KEY_ID=$MINIO_USER' >> entrypoint.sh && \
+    echo '  export AWS_SECRET_ACCESS_KEY=$MINIO_PASSWORD' >> entrypoint.sh && \
     echo '  /app/goofys --endpoint http://minio:$MINIO_API_PORT $BUCKET /mnt' >> entrypoint.sh && \
     echo 'fi' >> entrypoint.sh && \
     echo 'conda run --no-capture-output -n mwf_env "$@"' >> entrypoint.sh && \

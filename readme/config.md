@@ -116,8 +116,10 @@ An `.env` file must be created in the **root** of the project. The file [**.env.
 | MONGO_INITDB_ROOT_USERNAME      | string  | root user for the DB                         |
 | MONGO_INITDB_ROOT_PASSWORD      | string  | root password for the DB                       |
 | &nbsp;
-| MINIO_ROOT_USER      | string  | MinIO user                         |
-| MINIO_ROOT_PASSWORD      | string  | MinIO password                      |
+| MINIO_ROOT_USER      | string  | MinIO root user                         |
+| MINIO_ROOT_PASSWORD      | string  | MinIO root password                      |
+| MINIO_USER      | string  | MinIO user with permissions for creating access keys                        |
+| MINIO_PASSWORD      | string  | MinIO password with permissions for creating access keys                     |
 | MINIO_BROWSER_REDIRECT_URL      | `<url>`  | MinIO base URL (full URI, ie http(s)://your-domain.com/minio)                      |
 
 **Important:** the formats of **cpus** and **memory** must be in string format between single quotes, while **replicas** must be in integer format. Example:
