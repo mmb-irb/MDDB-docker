@@ -216,13 +216,24 @@ def check_network_exists(network_name):
         return False
 
 
+def create_directory(minio_path, use_sudo):
+    if use_sudo:
+        subprocess.run(['sudo', 'mkdir', '-p', minio_path], check=True)
+    else:
+        subprocess.run(['mkdir', '-p', minio_path], check=True)
+
+
 def deploy_stack(rm):
     # Check if script was executed with sudo
     if 'SUDO_USER' not in os.environ:
+        sudo = True
         ask_sudo = input("The script was executed without sudo, in some cases you may need sudo permissions for create new folders in the storage system, do you want to continue? (y/n): ")
         if not ask_sudo.lower() == "y":
             print("Please run the script with sudo: sudo python3 scripts/docker-deploy.py -s")
             return
+        else:
+            print("Continuing without sudo permissions.")
+            sudo = False
 
     if not check_file_exists('docker-compose.yml', warning=True):
         return
@@ -235,11 +246,11 @@ def deploy_stack(rm):
             return
 
         minio_path = os.path.join(main_path, 'minio')
-        subprocess.run(['sudo', 'mkdir', minio_path])
-        subprocess.run(['sudo', 'mkdir', os.path.join(minio_path, 'disk1')])
-        subprocess.run(['sudo', 'mkdir', os.path.join(minio_path, 'disk2')])
-        subprocess.run(['sudo', 'mkdir', os.path.join(minio_path, 'disk3')])
-        subprocess.run(['sudo', 'mkdir', os.path.join(minio_path, 'disk4')])
+        create_directory(minio_path, sudo)
+        create_directory(os.path.join(minio_path, 'disk1'), sudo)
+        create_directory(os.path.join(minio_path, 'disk2'), sudo)
+        create_directory(os.path.join(minio_path, 'disk3'), sudo)
+        create_directory(os.path.join(minio_path, 'disk4'), sudo)
         print(f"Created MinIO volumes: {minio_path}/disk1, {minio_path}/disk2, {minio_path}/disk3, {minio_path}/disk4.")
         env_vars["MINIO_VOLUME_PATH1"] = os.path.join(minio_path, 'disk1')
         env_vars["MINIO_VOLUME_PATH2"] = os.path.join(minio_path, 'disk2')
@@ -247,23 +258,23 @@ def deploy_stack(rm):
         env_vars["MINIO_VOLUME_PATH4"] = os.path.join(minio_path, 'disk4')
 
         db_path = os.path.join(main_path, 'db')
-        subprocess.run(['sudo', 'mkdir', db_path])
+        create_directory(db_path, sudo)
         print(f"Created MongoDB volume: {db_path}.")
         env_vars["DB_VOLUME_PATH"] = db_path
 
         data_path = os.path.join(main_path, 'data')
-        subprocess.run(['sudo', 'mkdir', data_path])
+        create_directory(data_path, sudo)
         print(f"Created data volume: {data_path}.")
         env_vars["LOADER_VOLUME_PATH"] = data_path
         env_vars["WORKFLOW_VOLUME_PATH"] = data_path
 
         logs_path = os.path.join(main_path, 'logs')
-        subprocess.run(['sudo', 'mkdir', logs_path])
+        create_directory(logs_path, sudo)
         print(f"Created logs volume: {logs_path}.")
         env_vars["VRE_LITE_VOLUME_PATH"] = logs_path
 
         certs_path = os.path.join(main_path, 'certs')
-        subprocess.run(['sudo', 'mkdir', certs_path])
+        create_directory(certs_path, sudo)
         print(f"Created certificates volume: {certs_path}.")
         env_vars["APACHE_CERTS_VOLUME_PATH"] = certs_path
 
