@@ -10,7 +10,8 @@ RUN apt-get update && \
     apt-get install -y fuse
 
 # Download goofys and make it executable
-RUN wget https://github.com/kahing/goofys/releases/latest/download/goofys
+# RUN wget https://github.com/kahing/goofys/releases/latest/download/goofys
+COPY goofys .
 RUN chmod +x goofys 
 
 # Clone repo
