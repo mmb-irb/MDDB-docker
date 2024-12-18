@@ -317,6 +317,7 @@ def deploy_stack(rm):
         env_vars["MINIO_USER"] = input("Enter the MinIO user (default: minio_usr): ") or "minio_usr"
         env_vars["MINIO_PASSWORD"] = input("Enter the MinIO password (default: minio_pwd): ") or "minio_pwd"
         env_vars["APACHE_MINIO_OUTER_PORT"] = input("Enter the API MinIO port (default: 9000): ") or "9000"
+        env_vars["VRE_LITE_TIME_DIFF"] = input("Enter the expiration date in days for the Access Keys (default: 3): ") or "3"
         env_vars["APACHE_MINIO_INNER_PORT"] = env_vars["APACHE_MINIO_OUTER_PORT"]
         env_vars["MINIO_URL"] = f"{env_vars['NODE']}.mddbr.eu"
         env_vars["MINIO_BROWSER_REDIRECT_URL"] = f"https://{env_vars['NODE']}.mddbr.eu/minio"

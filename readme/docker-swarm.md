@@ -48,7 +48,6 @@ $ docker stack services my_stack
 ID             NAME                MODE         REPLICAS               IMAGE                   PORTS
 <ID>           my_stack_apache     replicated   1/1                    apache_image:latest     *:80->80/tcp, *:443->443/tcp, *:7000->7000/tcp
 <ID>           my_stack_client     replicated   2/2                    client_image:latest     *:8080->80/tcp
-<ID>           my_stack_cronjobs   replicated   1/1                    cronjobs_image:latest 
 <ID>           my_stack_loader     replicated   0/0                    loader_image:latest     
 <ID>           my_stack_minio      replicated   1/1 (max 1 per node)   minio/minio:latest      *:9000-9001->9000-9001/tcp
 <ID>           my_stack_mongodb    replicated   1/1                    mongo:6                 *:27017->27017/tcp
@@ -264,7 +263,6 @@ Check that at least the mongo, rest and client containers are up & running:
 ```sh
 $ docker ps -a
 CONTAINER ID   IMAGE                   COMMAND                  CREATED        STATUS                  PORTS                       NAMES
-<ID>           cronjobs_image:latest   "sh -c 'crond && tai…"   17 hours ago   Up 17 hours                                         my_stack_cronjobs.1.<ID>
 <ID>           rest_image:latest       "pm2-runtime start i…"   17 hours ago   Up 17 hours             3000/tcp                    my_stack_rest.2.<ID>
 <ID>           rest_image:latest       "pm2-runtime start i…"   17 hours ago   Up 17 hours             3000/tcp                    my_stack_rest.1.<ID>
 <ID>           rest_image:latest       "pm2-runtime start i…"   17 hours ago   Up 17 hours             3000/tcp                    my_stack_rest.3.<ID>
@@ -384,7 +382,6 @@ CONTAINER ID   NAME                                           CPU %     MEM USAG
 <ID>           my_stack_rest.1.<ID>                           0.19%     69.7MiB / 10GiB     0.68%     5.63MB / 1.81MB   0B / 24.6kB   22
 <ID>           my_stack_rest.3.<ID>                           0.18%     69.14MiB / 10GiB    0.68%     5.5MB / 2.17MB    0B / 24.6kB   22
 <ID>           my_stack_rest.4.<ID>                           0.25%     68.77MiB / 10GiB    0.67%     5.9MB / 2.63MB    0B / 24.6kB   22
-<ID>           my_stack_cronjobs.1.<ID>                       0.01%     524KiB / 512MiB     0.10%     1.19kB / 0B       0B / 4.1kB     2
 <ID>           my_stack_mongodb.1.<ID>                        0.61%     75.12MiB / 8GiB     0.92%     6.69MB / 22.3MB   0B / 93.5MB   44
 <ID>           my_stack_client.2.<ID>                         0.00%     12.7MiB / 8GiB      0.16%     90.5kB / 886kB    0B / 12.3kB   17
 <ID>           my_stack_client.1.<ID>                         0.00%     12.87MiB / 8GiB     0.16%     86.1kB / 4.12MB   0B / 12.3kB   17

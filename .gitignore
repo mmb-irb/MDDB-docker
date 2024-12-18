@@ -5,3 +5,4 @@
 /apache/certs
 client/mdposit_client
 client/build
+/cronjobs

@@ -43,7 +43,7 @@ podman build -t client_image --build-arg NODE_ID=${NODE} --build-arg CLIENT_INNE
 ### VRE lite
 
 ```sh
-podman build -t vre_lite_image --build-arg MINIO_ROOT_USER=${MINIO_ROOT_USER} --build-arg MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD} --build-arg MINIO_API_PORT=${MINIO_API_INNER_PORT} --build-arg VRE_LITE_INNER_PORT=${VRE_LITE_INNER_PORT} --build-arg VRE_LITE_BASE_URL_DEVELOPMENT=${VRE_LITE_BASE_URL_DEVELOPMENT} --build-arg VRE_LITE_BASE_URL_STAGING=${VRE_LITE_BASE_URL_STAGING} --build-arg VRE_LITE_BASE_URL_PRODUCTION=${VRE_LITE_BASE_URL_PRODUCTION} --build-arg VRE_LITE_LOG_PATH=${VRE_LITE_LOG_PATH} --build-arg VRE_LITE_MAX_FILE_SIZE=${VRE_LITE_MAX_FILE_SIZE} --build-arg VRE_LITE_TIME_DIFF=${CRONJOB_VRE_LITE_TIME_DIFF} --build-arg MINIO_PROTOCOL=${MINIO_PROTOCOL} --build-arg MINIO_URL=${MINIO_URL} --build-arg MINIO_PORT=${APACHE_MINIO_OUTER_PORT} --build-arg NODE_NAME=${NODE} ./vre_lite
+podman build -t vre_lite_image --build-arg MINIO_USER=${MINIO_USER} --build-arg MINIO_PASSWORD=${MINIO_PASSWORD} --build-arg MINIO_API_PORT=${MINIO_API_INNER_PORT} --build-arg VRE_LITE_INNER_PORT=${VRE_LITE_INNER_PORT} --build-arg VRE_LITE_BASE_URL_DEVELOPMENT=${VRE_LITE_BASE_URL_DEVELOPMENT} --build-arg VRE_LITE_BASE_URL_STAGING=${VRE_LITE_BASE_URL_STAGING} --build-arg VRE_LITE_BASE_URL_PRODUCTION=${VRE_LITE_BASE_URL_PRODUCTION} --build-arg VRE_LITE_LOG_PATH=${VRE_LITE_LOG_PATH} --build-arg VRE_LITE_MAX_FILE_SIZE=${VRE_LITE_MAX_FILE_SIZE} --build-arg VRE_LITE_TIME_DIFF=${VRE_LITE_TIME_DIFF} --build-arg MINIO_PROTOCOL=${MINIO_PROTOCOL} --build-arg MINIO_URL=${MINIO_URL} --build-arg MINIO_PORT=${APACHE_MINIO_OUTER_PORT} --build-arg NODE_NAME=${NODE} ./vre_lite
 ```
 
 ### Apache
@@ -52,16 +52,10 @@ podman build -t vre_lite_image --build-arg MINIO_ROOT_USER=${MINIO_ROOT_USER} --
 podman build -t apache_image --build-arg APACHE_HTTP_INNER_PORT=${APACHE_HTTP_INNER_PORT} --build-arg APACHE_HTTPS_INNER_PORT=${APACHE_HTTPS_INNER_PORT} --build-arg APACHE_HTTP_OUTER_PORT=${APACHE_HTTP_OUTER_PORT} --build-arg APACHE_HTTPS_OUTER_PORT=${APACHE_HTTPS_OUTER_PORT} --build-arg APACHE_MINIO_OUTER_PORT=${APACHE_MINIO_OUTER_PORT} --build-arg APACHE_MINIO_INNER_PORT=${APACHE_MINIO_INNER_PORT} --build-arg CLIENT_INNER_PORT=${CLIENT_INNER_PORT} --build-arg REST_INNER_PORT=${REST_INNER_PORT} --build-arg VRE_LITE_INNER_PORT=${VRE_LITE_INNER_PORT} --build-arg MINIO_UI_INNER_PORT=${MINIO_UI_INNER_PORT} --build-arg MINIO_API_INNER_PORT=${MINIO_API_INNER_PORT} --build-arg SERVER_URL=${MINIO_URL} --build-arg SSL_CERTIFICATE=${SSL_CERTIFICATE} --build-arg SSL_CERT_KEY=${SSL_CERT_KEY} ./apache
 ```
 
-### Cronjobs
-
-```sh
-podman build -t cronjobs_image --build-arg VRE_LITE_LOG_PATH=${VRE_LITE_LOG_PATH} --build-arg VRE_LITE_TIME_DIFF=${CRONJOB_VRE_LITE_TIME_DIFF} --build-arg CJ_VRE_LITE_LOG_PATH=${CJ_VRE_LITE_LOG_PATH} --build-arg MINIO_ROOT_USER=${MINIO_ROOT_USER} --build-arg MINIO_ROOT_PASSWORD=${VRE_LITE_LOG_PATH} --build-arg MINIO_PORT=${MINIO_API_INNER_PORT} ./cronjobs
-```
-
 ### Workflow
 
 ```sh
-podman build -t workflow_image --build-arg MINIO_ROOT_USER=${MINIO_ROOT_USER} --build-arg MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD} --build-arg MINIO_API_PORT=${MINIO_API_INNER_PORT} ./workflow
+podman build -t workflow_image --build-arg MINIO_USER=${MINIO_USER} --build-arg MINIO_PASSWORD=${MINIO_PASSWORD} --build-arg MINIO_API_PORT=${MINIO_API_INNER_PORT} ./workflow
 ```
 
 ### Loader
@@ -95,7 +89,7 @@ podman run -d --name client -p ${CLIENT_OUTER_PORT}:${CLIENT_INNER_PORT} --cpus 
 ### Minio
 
 ```sh
-podman run -d --name minio -e MINIO_ROOT_USER=${MINIO_ROOT_USER} -e MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD} -e MINIO_BROWSER_REDIRECT_URL=${MINIO_BROWSER_REDIRECT_URL} -p ${MINIO_API_OUTER_PORT}:${MINIO_API_INNER_PORT} -p ${MINIO_UI_INNER_PORT}:${MINIO_UI_INNER_PORT} -v ${MINIO_VOLUME_PATH1}:/mnt/disk1:Z -v ${MINIO_VOLUME_PATH2}:/mnt/disk2:Z -v ${MINIO_VOLUME_PATH3}:/mnt/disk3:Z -v ${MINIO_VOLUME_PATH4}:/mnt/disk4:Z --cpus "${MINIO_CPU_LIMIT}" --memory "${MINIO_MEMORY_LIMIT}" --network minio_network --network web_network --hostname minio --healthcheck-command "curl -f http://localhost:${MINIO_API_INNER_PORT}/minio/health/live" --healthcheck-interval 30s --healthcheck-timeout 10s --healthcheck-retries 5 docker.io/minio/minio:latest server --address ":${MINIO_API_INNER_PORT}" --console-address ":${MINIO_UI_INNER_PORT}" http://minio/mnt/disk{1...4}
+podman run -d --name minio -e MINIO_ROOT_USER=${MINIO_ROOT_USER} -e MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD} -e MINIO_BROWSER_REDIRECT_URL=${MINIO_BROWSER_REDIRECT_URL} -e MINIO_API_INNER_PORT=${MINIO_API_INNER_PORT} -e MINIO_UI_INNER_PORT=${MINIO_UI_INNER_PORT} -e MINIO_USER=${MINIO_USER} -e MINIO_PASSWORD=${MINIO_PASSWORD} -p ${MINIO_API_OUTER_PORT}:${MINIO_API_INNER_PORT} -p ${MINIO_UI_INNER_PORT}:${MINIO_UI_INNER_PORT} -v ${MINIO_VOLUME_PATH1}:/mnt/disk1:Z -v ${MINIO_VOLUME_PATH2}:/mnt/disk2:Z -v ${MINIO_VOLUME_PATH3}:/mnt/disk3:Z -v ${MINIO_VOLUME_PATH4}:/mnt/disk4:Z -v $(pwd)/minio/init-minio.sh:/entrypoint.sh --cpus "${MINIO_CPU_LIMIT}" --memory "${MINIO_MEMORY_LIMIT}" --network minio_network --network web_network --hostname minio --entrypoint /entrypoint.sh --healthcheck-command "curl -f http://localhost:${MINIO_API_INNER_PORT}/minio/health/live" --healthcheck-interval 10s --healthcheck-timeout 2s --healthcheck-retries 5 docker.io/minio/minio:latest
 ```
 
 ### VRE lite
@@ -108,12 +102,6 @@ podman run -d --name vre_lite -p ${VRE_LITE_OUTER_PORT}:${VRE_LITE_INNER_PORT} -
 
 ```sh
 podman run -d --name apache -p ${APACHE_HTTP_OUTER_PORT}:${APACHE_HTTP_INNER_PORT} -p ${APACHE_HTTPS_OUTER_PORT}:${APACHE_HTTPS_INNER_PORT} -p ${APACHE_MINIO_OUTER_PORT}:${APACHE_MINIO_INNER_PORT} -v ${APACHE_CERTS_VOLUME_PATH}:/usr/local/apache2/conf/ssl:Z --cpus "${APACHE_CPU_LIMIT}" --memory "${APACHE_MEMORY_LIMIT}" --network web_network apache_image
-```
-
-### Cronjobs
-
-```sh
-podman run -d --name cronjobs -v ${VRE_LITE_VOLUME_PATH}:/vre_lite:Z --cpus "${CRONJOBS_CPU_LIMIT}" --memory "${CRONJOBS_MEMORY_LIMIT}" --network minio_network cronjobs_image
 ```
 
 ## Execute services
@@ -269,7 +257,6 @@ CONTAINER ID  IMAGE                            COMMAND               CREATED    
 <ID>          docker.io/minio/minio:latest     server --address ...  7 hours ago  Up 7 hours (healthy)  0.0.0.0:9001-9002->9001-9002/tcp                                  minio
 <ID>          localhost/vre_lite_image:latest                        7 hours ago  Up 7 hours            0.0.0.0:8082->3001/tcp                                            vre_lite
 <ID>          localhost/apache_image:latest    httpd-foreground      7 hours ago  Up 7 hours            0.0.0.0:80->80/tcp, 0.0.0.0:443->443/tcp, 0.0.0.0:9000->9000/tcp  apache
-<ID>          localhost/cronjobs_image:latest  /usr/local/bin/in...  7 hours ago  Up 7 hours                                                                              cronjobs
 ```
 
 ### Podman Stats
@@ -285,5 +272,4 @@ ID            NAME        CPU %       MEM USAGE / LIMIT  MEM %       NET IO     
 <ID>          minio       0.30%       183.4MB / 4.295GB  4.27%       965.7MB / 1.961GB  0B / 0B     47          1m20.610548s   0.30%
 <ID>          vre_lite    3.61%       349.3MB / 4.295GB  8.13%       89.38kB / 3.219MB  0B / 0B     187         15m58.668698s  3.61%
 <ID>          apache      0.03%       53.3MB / 1.074GB   4.96%       47.18MB / 964.3MB  0B / 0B     109         8.204261s      0.03%
-<ID>          cronjobs    0.00%       159.7kB / 536.9MB  0.03%       9.834kB / 1.678kB  0B / 0B     3           880.567ms      0.00%
 ```

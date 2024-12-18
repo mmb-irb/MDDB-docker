@@ -75,10 +75,6 @@ In order to provide the users a way to **transfer big files** that can't be uplo
 
 https://hub.docker.com/r/minio/minio
 
-### Cronjobs
-
-For the sake of performing **automatic operations** such as cleaning or checking, there is a **cron jobs service**.
-
 ## Before the installation
 
 There are a **few checks** to do in the **VM** where the services will be installed:
@@ -187,7 +183,7 @@ When executing the **deploy script**, the user will be prompted to answer some q
   * [**data/**](readme/storage.md#workflow) (**workflow** output data and **loader** input data)
   * [**docker/**](readme/storage.md#docker) (**docker images**, generated in the [**step before**](#install-docker-and-docker-compose))
   * [**db/**](readme/storage.md#mongodb) (**MongoDB** data)
-  * [**logs/**](readme/storage.md#logs) (**VRE lite** and cronjobs logs)
+  * [**logs/**](readme/storage.md#logs) (**VRE lite** logs)
   * [**minio/**](readme/storage.md#minio) (**MinIO** data)
     * disk1/ (**MinIO** data distributed in multi-drive configuration)
     * disk2/ (**MinIO** data distributed in multi-drive configuration)
@@ -308,7 +304,7 @@ When executing the **deploy script**, the user will be prompted to answer some q
   * [**certs/**](readme/storage.md#certificates) (apache **SSL/TSL** certificates)
   * [**data/**](readme/storage.md#workflow) (**workflow** output data and **loader** input data)
   * [**db/**](readme/storage.md#mongodb) (**MongoDB** data)
-  * [**logs/**](readme/storage.md#logs) (**VRE lite** and cronjobs logs)
+  * [**logs/**](readme/storage.md#logs) (**VRE lite** logs)
   * [**minio/**](readme/storage.md#minio) (**MinIO** data)
     * disk1/ (**MinIO** data distributed in multi-drive configuration)
     * disk2/ (**MinIO** data distributed in multi-drive configuration)

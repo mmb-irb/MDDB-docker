@@ -69,4 +69,4 @@ In the **volume** where the data is stored, create the following **/logs folder*
 
 > /path/to/volume/logs
 
-In this folder will be stored the **logs** of the **VRE lite** and the **Cronjobs** docker.
+In this folder will be stored the **logs** of the **VRE lite** docker.

@@ -105,14 +105,6 @@ An `.env` file must be created in the **root** of the project. The file [**.env.
 | VRE_LITE_MAX_FILE_SIZE      | number  | maximum size for all the trajectory files in bytes                      |
 | VRE_LITE_TIME_DIFF      | number  | number of days to be subtracted from now to run the cleaning jobs for the VRE lite          |
 | &nbsp;
-| CJ_VRE_LITE_LOG_PATH      | string  | Path to the cronjobs log (relative to the VRE lite docker)                                    |
-| CRONJOB_VRE_LITE_TIME_DIFF      | number  | number of days that the VRE lite credentials will last                                    |
-| CRONJOB_REPLICAS      | number  | number of replicas to deploy                                    |
-| CRONJOB_CPU_LIMIT      | string  | Cronjobs limit number of CPUs                                    |
-| CRONJOB_MEMORY_LIMIT          | string | Cronjobs limit memory                           |
-| CRONJOB_CPU_RESERVATION          | string  | Cronjobs reserved number of CPUs                           |
-| CRONJOB_MEMORY_RESERVATION      | string  | Cronjobs reserved memory                         |
-| &nbsp;
 | MONGO_INITDB_ROOT_USERNAME      | string  | root user for the DB                         |
 | MONGO_INITDB_ROOT_PASSWORD      | string  | root password for the DB                       |
 | &nbsp;
@@ -249,8 +241,8 @@ services:
     build:
       context: ./workflow   # folder to search Dockerfile for this image
       args:
-        MINIO_ROOT_USER: ${MINIO_ROOT_USER}
-        MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+        MINIO_USER: ${MINIO_USER}
+        MINIO_PASSWORD: ${MINIO_PASSWORD}
         MINIO_API_PORT: ${MINIO_API_INNER_PORT}
     cap_add:
       - SYS_ADMIN
@@ -366,12 +358,17 @@ services:
       - MINIO_ROOT_USER=${MINIO_ROOT_USER}
       - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD}
       - MINIO_BROWSER_REDIRECT_URL=${MINIO_BROWSER_REDIRECT_URL}  # Set the base URL for the Minio console
+      - MINIO_API_INNER_PORT=${MINIO_API_INNER_PORT}
+      - MINIO_UI_INNER_PORT=${MINIO_UI_INNER_PORT}
+      - MINIO_USER=${MINIO_USER}
+      - MINIO_PASSWORD=${MINIO_PASSWORD}
     volumes:
       # paths where minio will store the data in object storage format (outside the container, in the host machine)
       - minio_volume1:/mnt/disk1   
       - minio_volume2:/mnt/disk2
       - minio_volume3:/mnt/disk3
       - minio_volume4:/mnt/disk4
+      - ./minio/init-minio.sh:/entrypoint.sh # Mount the initialization script
     ports:
       - "${MINIO_API_OUTER_PORT}:${MINIO_API_INNER_PORT}"
       - "${MINIO_UI_INNER_PORT}:${MINIO_UI_INNER_PORT}"   # port for the minio webUI (only for development)
@@ -392,12 +389,11 @@ services:
       restart_policy:
         condition: on-failure   # Restart only on failure
     hostname: minio
-    command: server --address ":${MINIO_API_INNER_PORT}" --console-address ":${MINIO_UI_INNER_PORT}" http://minio/mnt/disk{1...4}    # Remove the console-address flag for production
-    # command: server --address ":${MINIO_API_INNER_PORT}" --console-address ":${MINIO_UI_INNER_PORT}" http://minio{1...3}/mnt/disk{1...4}    # For multiple nodes (ie 3 nodes)
+    entrypoint: ["/entrypoint.sh"]   # Run the initialization script
     healthcheck:  # Health check for the minio service
       test: ["CMD", "curl", "-f", "http://localhost:${MINIO_API_INNER_PORT}/minio/health/live"]
-      interval: 30s
-      timeout: 10s
+      interval: 10s
+      timeout: 2s
       retries: 5
 
   vre_lite:
@@ -405,8 +401,6 @@ services:
     build:
       context: ./vre_lite
       args:
-        MINIO_ROOT_USER: ${MINIO_ROOT_USER}
-        MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
         MINIO_API_PORT: ${MINIO_API_INNER_PORT}
         VRE_LITE_INNER_PORT: ${VRE_LITE_INNER_PORT}
         VRE_LITE_BASE_URL_DEVELOPMENT: ${VRE_LITE_BASE_URL_DEVELOPMENT}
@@ -414,10 +408,12 @@ services:
         VRE_LITE_BASE_URL_PRODUCTION: ${VRE_LITE_BASE_URL_PRODUCTION}
         VRE_LITE_LOG_PATH: ${VRE_LITE_LOG_PATH}
         VRE_LITE_MAX_FILE_SIZE: ${VRE_LITE_MAX_FILE_SIZE}
-        VRE_LITE_TIME_DIFF: ${CRONJOB_VRE_LITE_TIME_DIFF}
+        VRE_LITE_TIME_DIFF: ${VRE_LITE_TIME_DIFF}
         MINIO_PROTOCOL: ${MINIO_PROTOCOL}
         MINIO_URL: ${MINIO_URL}
         MINIO_PORT: ${APACHE_MINIO_OUTER_PORT}
+        MINIO_USER: ${MINIO_USER}
+        MINIO_PASSWORD: ${MINIO_PASSWORD}
         NODE_NAME: ${NODE}
     volumes:
       - vre_lite_log_volume:/vre_lite
@@ -441,36 +437,6 @@ services:
         condition: any   # Restart always
       update_config:
         order: start-first  # Priority over other services
-
-  cronjobs:
-    image: cronjobs_image 
-    build:
-      context: ./cronjobs
-      args:
-        VRE_LITE_LOG_PATH: ${VRE_LITE_LOG_PATH}
-        VRE_LITE_TIME_DIFF: ${CRONJOB_VRE_LITE_TIME_DIFF}
-        CJ_VRE_LITE_LOG_PATH: ${CJ_VRE_LITE_LOG_PATH}
-        MINIO_ROOT_USER: ${MINIO_ROOT_USER}
-        MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
-        MINIO_PORT: ${MINIO_API_INNER_PORT}
-    volumes:
-      - vre_lite_log_volume:/vre_lite
-    networks:
-      - minio_network
-    depends_on:
-      - minio
-    deploy:
-      replicas: ${CRONJOBS_REPLICAS}   # Specify the number of replicas for Docker Swarm
-      resources:
-        limits:
-          cpus: ${CRONJOBS_CPU_LIMIT}   # Specify the limit number of CPUs
-          memory: ${CRONJOBS_MEMORY_LIMIT}   # Specify the limit memory
-        reservations:
-          cpus: ${CRONJOBS_CPU_RESERVATION}   # Specify the reserved number of CPUs
-          memory: ${CRONJOBS_MEMORY_RESERVATION}   # Specify the reserved memory
-      restart_policy:
-        condition: on-failure   # Restart only on failure
-
 
 volumes:
   db_volume:
