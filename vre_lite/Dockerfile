@@ -36,7 +36,7 @@ RUN echo "BASE_URL_DEVELOPMENT=${VRE_LITE_BASE_URL_DEVELOPMENT}" > /app/mddb-vre
 WORKDIR /app/mddb-vre
 
 # Install dependencies
-RUN npm install
+RUN npm install --legacy-peer-deps
 
 # Build website in production
 RUN npm run build:production
