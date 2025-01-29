@@ -59,9 +59,6 @@ COPY nginx.conf /etc/nginx/nginx.conf
 # Copy the built application from the build stage
 COPY --from=build /app/mddb-vre/.output/ /usr/share/nginx/html
 
-# Copy the Node.js application
-COPY --from=build /app/mddb-vre/.output/server/index.mjs /app/index.mjs
-
 # Copy the pm2 configuration file
 # COPY ecosystem.config.cjs .
 
@@ -89,7 +86,7 @@ RUN echo '#!/bin/sh' > entrypoint.sh && \
     echo 'done' >> entrypoint.sh && \
     echo 'mc alias set myminio http://minio:$MINIO_API_PORT $MINIO_USER $MINIO_PASSWORD' >> entrypoint.sh && \
     # echo 'exec pm2-runtime start ecosystem.config.cjs --name mddb-vre' >> entrypoint.sh && \
-    echo 'node /app/index.mjs &' >> /entrypoint.sh && \
+    echo 'node /usr/share/nginx/html/server/index.mjs &' >> /entrypoint.sh && \
     echo 'nginx -g "daemon off;"' >> entrypoint.sh && \
     chmod +x entrypoint.sh
 
