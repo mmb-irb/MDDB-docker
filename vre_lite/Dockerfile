@@ -54,8 +54,10 @@ RUN apk --no-cache add nodejs npm curl
 WORKDIR /app
 
 # Copy the built Nuxt app from the previous stage
-# COPY --from=build /app/mddb-vre/.output /app/.output
-COPY --from=build /app/mddb-vre/.output/* /usr/share/nginx/html
+COPY --from=build /app/mddb-vre/.output /app/.output
+
+# Copy the built nuxt app to nginx
+RUN cp -r /app/.output/* /usr/share/nginx/html
 
 # Copy the pm2 configuration file
 # COPY ecosystem.config.cjs .
