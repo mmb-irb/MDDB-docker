@@ -48,16 +48,17 @@ FROM docker.io/library/nginx:alpine
 RUN apk --no-cache add nodejs npm curl
 
 # Install pm2
-RUN npm install pm2 -g
+# RUN npm install pm2 -g
 
 # Set working directory
 WORKDIR /app
 
 # Copy the built Nuxt app from the previous stage
-COPY --from=build /app/mddb-vre/.output /app/.output
+# COPY --from=build /app/mddb-vre/.output /app/.output
+COPY --from=build /app/mddb-vre/.output/* /usr/share/nginx/html
 
 # Copy the pm2 configuration file
-COPY ecosystem.config.cjs .
+# COPY ecosystem.config.cjs .
 
 # Install minio client
 RUN curl -O https://dl.min.io/client/mc/release/linux-amd64/mc && \
@@ -82,7 +83,8 @@ RUN echo '#!/bin/sh' > entrypoint.sh && \
     echo '  sleep 5' >> entrypoint.sh && \
     echo 'done' >> entrypoint.sh && \
     echo 'mc alias set myminio http://minio:$MINIO_API_PORT $MINIO_USER $MINIO_PASSWORD' >> entrypoint.sh && \
-    echo 'exec pm2-runtime start ecosystem.config.cjs --name mddb-vre' >> entrypoint.sh && \
+    # echo 'exec pm2-runtime start ecosystem.config.cjs --name mddb-vre' >> entrypoint.sh && \
+    echo 'nginx -g "daemon off;"' >> entrypoint.sh && \
     chmod +x entrypoint.sh
 
 # Expose the port the app runs on
