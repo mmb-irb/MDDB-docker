@@ -71,4 +71,5 @@ ARG REST_INNER_PORT
 EXPOSE ${REST_INNER_PORT}
 
 # Serve the app
-CMD ["pm2-runtime", "start", "index.js", "-n", "MDposit_API", "--node-args=", "\"--experimental-worker\""]
+# CMD ["pm2-runtime", "start", "index.js", "-n", "MDposit_API", "--node-args=", "\"--experimental-worker\""]
+CMD ["pm2-runtime", "start", "index.js", "-i", "4", "-n", "MDposit_API", "--node-args=", "\"--experimental-worker\""]
