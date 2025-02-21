@@ -2,6 +2,7 @@ import argparse
 import os
 import subprocess
 import time
+import sys
 
 
 def get_os_info():
@@ -223,6 +224,16 @@ def create_directory(minio_path, use_sudo):
         subprocess.run(['mkdir', '-p', minio_path], check=True)
 
 
+def command_exists(cmd):
+    try:
+        subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True)
+        return True
+    except subprocess.CalledProcessError:
+        return False
+    except FileNotFoundError:
+        return False
+
+
 def deploy_stack(rm):
     # Check if script was executed with sudo
     sudo = True
@@ -359,7 +370,15 @@ def deploy_stack(rm):
     if not check_network_exists('web_network'):
         print("Creating web network.")
         subprocess.run("docker network create --driver overlay --attachable web_network", shell=True, check=True)
-    subprocess.run(['docker-compose', 'build'])
+
+    if command_exists(['docker-compose', 'version']):
+        subprocess.run(['docker-compose', 'build'])
+    elif command_exists(['docker', 'compose', 'version']):
+        subprocess.run(['docker', 'compose', 'build'])
+    else:
+        print("Error: Neither 'docker-compose' nor 'docker compose' commands are available.")
+        sys.exit(1)
+
     subprocess.run(f"export $(grep -v '^#' .env | xargs) && docker stack deploy -c docker-compose.yml {stack_name}", shell=True, check=True, executable='/bin/bash')
 
     # Poll until MinIO is up and running
