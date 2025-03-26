@@ -205,7 +205,7 @@ def deploy_stack(rm):
 
     # Run containers
     print("Running containers.")
-    subprocess.run("podman run -d --name mongodb -e MONGO_INITDB_ROOT_USERNAME=${MONGO_INITDB_ROOT_USERNAME} -e MONGO_INITDB_ROOT_PASSWORD=${MONGO_INITDB_ROOT_PASSWORD} -e MONGO_PORT=${DB_OUTER_PORT} -e MONGO_INITDB_DATABASE=${DB_NAME} -e LOADER_DB_LOGIN=${LOADER_DB_LOGIN} -e LOADER_DB_PASSWORD=${LOADER_DB_PASSWORD} -e REST_DB_LOGIN=${REST_DB_LOGIN} -e REST_DB_PASSWORD=${REST_DB_PASSWORD} -p ${DB_OUTER_PORT}:${DB_OUTER_PORT} -v ${DB_VOLUME_PATH}:/data/db:Z -v $(pwd)/mongodb/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro --cpus \"${DB_CPU_LIMIT}\" --memory \"${DB_MEMORY_LIMIT}\" --network data_network --security-opt label=disable docker.io/library/mongo:6", shell=True, check=True)
+    subprocess.run("podman run -d --name mongodb -e MONGO_INITDB_ROOT_USERNAME=${MONGO_INITDB_ROOT_USERNAME} -e MONGO_INITDB_ROOT_PASSWORD=${MONGO_INITDB_ROOT_PASSWORD} -e MONGO_PORT=${DB_OUTER_PORT} -e MONGO_INITDB_DATABASE=${DB_NAME} -e LOADER_DB_LOGIN=${LOADER_DB_LOGIN} -e LOADER_DB_PASSWORD=${LOADER_DB_PASSWORD} -e REST_DB_LOGIN=${REST_DB_LOGIN} -e REST_DB_PASSWORD=${REST_DB_PASSWORD} -p ${DB_OUTER_PORT}:${DB_OUTER_PORT} -v ${DB_VOLUME_PATH}:/data:Z -v $(pwd)/mongodb/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro --cpus \"${DB_CPU_LIMIT}\" --memory \"${DB_MEMORY_LIMIT}\" --network data_network --security-opt label=disable docker.io/library/mongo:6", shell=True, check=True)
 
     subprocess.run("podman run -d --name rest -p ${REST_OUTER_PORT}:${REST_INNER_PORT} --cpus \"${REST_CPU_LIMIT}\" --memory \"${REST_MEMORY_LIMIT}\" --network data_network --network web_network rest_image", shell=True, check=True)
 
