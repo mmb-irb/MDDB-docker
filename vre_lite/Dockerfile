@@ -5,7 +5,9 @@ FROM node:18.19.0 AS build
 WORKDIR /app
 
 # Clone mddb-vre repo
-RUN git clone https://mmb.irbbarcelona.org/gitlab/gbayarri/mddb-vre.git
+ARG VERSION
+RUN git clone --branch ${VERSION} --depth 1 https://mmb.irbbarcelona.org/gitlab/gbayarri/mddb-vre.git
+#RUN git clone https://mmb.irbbarcelona.org/gitlab/gbayarri/mddb-vre.git
 
 # Define the build arguments
 ARG VRE_LITE_BASE_URL_DEVELOPMENT

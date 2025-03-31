@@ -228,6 +228,7 @@ services:
     build:
       context: ./vre_lite
       args:
+        VERSION: ${VRE_LITE_VERSION}
         MINIO_API_PORT: ${MINIO_API_INNER_PORT}
         VRE_LITE_INNER_PORT: ${VRE_LITE_INNER_PORT}
         VRE_LITE_BASE_URL_DEVELOPMENT: ${VRE_LITE_BASE_URL_DEVELOPMENT}
