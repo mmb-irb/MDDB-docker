@@ -27,6 +27,8 @@ def main():
 
     args = parser.parse_args()
 
+    subprocess.run("export $(grep -v '^#' .env | xargs)", shell=True, check=True, executable='/bin/bash')
+
     # Build services with --no-cache
     build_command = []
     if command_exists(['docker-compose', 'version']):
