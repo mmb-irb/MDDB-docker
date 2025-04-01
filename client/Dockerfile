@@ -9,7 +9,7 @@ ARG CLIENT_INNER_PORT
 WORKDIR /app
 
 # Download and unzip mdposit-client-build repo
-RUN wget https://mmb.irbbarcelona.org/gitlab/gbayarri/mdposit-client-build/-/raw/main/${NODE_ID}/build.zip
+RUN wget https://github.com/mmb-irb/MDposit-client-build/raw/refs/heads/main/${NODE_ID}/build.zip
 RUN unzip build.zip
 
 # Copy the built React app to nginx

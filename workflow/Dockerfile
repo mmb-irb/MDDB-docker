@@ -15,13 +15,12 @@ COPY goofys .
 RUN chmod +x goofys 
 
 # Clone repo
-RUN git clone https://mmb.irbbarcelona.org/gitlab/d.beltran.anadon/MoDEL-workflow.git
+RUN git clone https://github.com/mmb-irb/MoDEL-workflow.git
 
 # Enable libmamba as solver
 RUN conda config --set solver libmamba
 
 # Create new environment
-# RUN conda env create --file=/app/MoDEL-workflow/environment.yml && conda clean -afy
 RUN conda env create --file=/app/MoDEL-workflow/envs/environment.yml && conda clean -afy
 
 # Re-install sqlite SW

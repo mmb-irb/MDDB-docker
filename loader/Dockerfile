@@ -11,7 +11,7 @@ RUN apt-get update && \
     apt-get install -y nodejs
 
 # Clone loader repo
-RUN git clone https://mmb.irbbarcelona.org/gitlab/aluciani/MoDEL-CNS_DB_loader.git
+RUN git clone https://github.com/mmb-irb/MoDEL-CNS-DB-loader.git
 
 # Define environment variables
 ARG DB_SERVER

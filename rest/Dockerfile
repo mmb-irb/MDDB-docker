@@ -16,7 +16,7 @@ RUN git clone https://github.com/d-beltran/chemfiles --depth 1 && cd chemfiles &
 RUN node --version && npm --version && git --version
 
 # Clone MoDEL-CNS_REST_API repo
-RUN git clone https://mmb.irbbarcelona.org/gitlab/aluciani/MoDEL-CNS_REST_API
+RUN git clone https://github.com/mmb-irb/MoDEL-CNS-REST-API.git
 
 # Define environment variables
 ARG DB_SERVER
@@ -71,5 +71,4 @@ ARG REST_INNER_PORT
 EXPOSE ${REST_INNER_PORT}
 
 # Serve the app
-# CMD ["pm2-runtime", "start", "index.js", "-n", "MDposit_API", "--node-args=", "\"--experimental-worker\""]
 CMD ["pm2-runtime", "start", "index.js", "-i", "4", "-n", "MDposit_API", "--node-args=", "\"--experimental-worker\""]

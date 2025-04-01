@@ -4,7 +4,7 @@ The aim for this tool is to **process raw MD data** and obtain standard **struct
 
 For this project, the following repo has been used:
 
-https://mmb.irbbarcelona.org/gitlab/d.beltran.anadon/MoDEL-workflow
+https://github.com/mmb-irb/MoDEL-workflow/
 
 ## How to use
 
@@ -96,7 +96,7 @@ If you want to run only a few specific analyses or exclude some analyses you can
 To see additional arguments and how to use them you can request help by just running `mwf run -h`
 
 Once you are done with this process is time to load your files to the database.<br />
-To do so, you must head to the [loader](https://mmb.irbbarcelona.org/gitlab/aluciani/MoDEL-CNS_DB_loader).
+To do so, you must head to the [loader](https://github.com/mmb-irb/MoDEL-CNS-DB-loader/).
 
 ### Tests and other checking processes
 

@@ -4,7 +4,7 @@ The **website client** is a **React App**.
 
 For this project, the following repo has been used:
 
-https://mmb.irbbarcelona.org/gitlab/gbayarri/mdposit-client-build
+https://github.com/mmb-irb/mdposit-client-build/
 
 ## Dockerfile
 
@@ -22,7 +22,7 @@ ARG CLIENT_INNER_PORT
 WORKDIR /app
 
 # Download and unzip mdposit-client-build repo
-RUN wget https://mmb.irbbarcelona.org/gitlab/gbayarri/mdposit-client-build/-/raw/main/${NODE_ID}/build.zip
+RUN wget https://github.com/mmb-irb/MDposit-client-build/raw/refs/heads/main/${NODE_ID}/build.zip
 RUN unzip build.zip
 
 # Copy the built React app to nginx

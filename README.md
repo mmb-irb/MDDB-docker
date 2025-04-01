@@ -27,7 +27,7 @@ The **REST API** is a **NodeJS + Express** application.
 
 For this project, the following repo has been used:
 
-https://mmb.irbbarcelona.org/gitlab/aluciani/MoDEL-CNS_REST_API
+https://github.com/mmb-irb/MoDEL-CNS-REST-API/
 
 ### Website client
 
@@ -35,7 +35,7 @@ The **website client** is a **React App**.
 
 For this project, the following repo has been used:
 
-https://mmb.irbbarcelona.org/gitlab/gbayarri/mdposit-client-build
+https://github.com/mmb-irb/mdposit-client-build/
 
 ### Data loader
 
@@ -43,7 +43,7 @@ The **data loader** is a  **node JS script** made for load, list and remove data
 
 For this project, the following repo has been used:
 
-https://mmb.irbbarcelona.org/gitlab/aluciani/MoDEL-CNS_DB_loader
+https://github.com/mmb-irb/MoDEL-CNS-DB-loader/
 
 ### Workflow
 
@@ -51,7 +51,7 @@ The aim for this tool is to **process raw MD data** and obtain standard **struct
 
 For this project, the following repo has been used:
 
-https://mmb.irbbarcelona.org/gitlab/d.beltran.anadon/MoDEL-workflow
+https://github.com/mmb-irb/MoDEL-workflow/
 
 ### VRE lite
 
@@ -59,7 +59,7 @@ The **VRE lite** is a **Nuxt** application.
 
 For this project, the following repo has been used:
 
-https://mmb.irbbarcelona.org/gitlab/gbayarri/mddb-vre
+https://github.com/mmb-irb/mddb-vre/
 
 ### Database
 
@@ -123,7 +123,7 @@ If the **SSL/TSL** certificates are available, copy them into the **same VM** wh
 First off, please **clone this repository** into the VM where the services will be deployed:
 
 ```sh
-git clone https://mmb.irbbarcelona.org/gitlab/gbayarri/mddb-docker.git
+git clone https://github.com/mmb-irb/MDDB-docker.git
 ```
 
 Then, enter the new folder:
@@ -260,7 +260,7 @@ A list of **useful tips** for **developing** and **debugging** has been defined 
 First off, please **clone this repository** into the VM where the services will be deployed:
 
 ```sh
-git clone https://mmb.irbbarcelona.org/gitlab/gbayarri/mddb-docker.git
+git clone https://github.com/mmb-irb/MDDB-docker.git
 ```
 
 Then, enter the new folder:

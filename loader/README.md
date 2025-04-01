@@ -4,7 +4,7 @@ The **data loader** is a  **node JS script** made for load, list and remove data
 
 For this project, the following repo has been used:
 
-https://mmb.irbbarcelona.org/gitlab/aluciani/MoDEL-CNS_DB_loader
+https://github.com/mmb-irb/MoDEL-CNS-DB-loader/
 
 ## Dockerfile
 
@@ -24,7 +24,7 @@ RUN apt-get update && \
     apt-get install -y nodejs
 
 # Clone loader repo
-RUN git clone https://mmb.irbbarcelona.org/gitlab/aluciani/MoDEL-CNS_DB_loader.git
+RUN git clone https://github.com/mmb-irb/MoDEL-CNS-DB-loader.git
 
 # Define environment variables
 ARG DB_SERVER

@@ -4,7 +4,7 @@ The **VRE** is a **Nuxt** application.
 
 For this project, the following repo has been used:
 
-https://mmb.irbbarcelona.org/gitlab/gbayarri/mddb-vre
+https://github.com/mmb-irb/mddb-vre/
 
 ## Dockerfile
 
@@ -18,7 +18,8 @@ FROM node:18.19.0 AS build
 WORKDIR /app
 
 # Clone mddb-vre repo
-RUN git clone https://mmb.irbbarcelona.org/gitlab/gbayarri/mddb-vre.git
+ARG VERSION
+RUN git clone --branch ${VERSION} --depth 1 https://github.com/mmb-irb/MDDB-VRE.git
 
 # Define the build arguments
 ARG VRE_LITE_BASE_URL_DEVELOPMENT
@@ -94,7 +95,7 @@ RUN echo '#!/bin/sh' > entrypoint.sh && \
     echo '  echo "Waiting for minio to be healthy..."' >> entrypoint.sh && \
     echo '  sleep 5' >> entrypoint.sh && \
     echo 'done' >> entrypoint.sh && \
-    echo 'mc alias set myminio http://minio:$MINIO_API_PORT $MINIO_PASSWORD $MINIO_PASSWORD' >> entrypoint.sh && \
+    echo 'mc alias set myminio http://minio:$MINIO_API_PORT $MINIO_USER $MINIO_PASSWORD' >> entrypoint.sh && \
     echo 'exec pm2-runtime start ecosystem.config.cjs --name mddb-vre' >> entrypoint.sh && \
     chmod +x entrypoint.sh
 
