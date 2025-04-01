@@ -15,7 +15,7 @@ RUN git clone https://github.com/d-beltran/chemfiles --depth 1 && cd chemfiles &
 # Verify installation
 RUN node --version && npm --version && git --version
 
-# Clone MoDEL-CNS_REST_API repo
+# Clone MoDEL-CNS-REST-API repo
 RUN git clone https://github.com/mmb-irb/MoDEL-CNS-REST-API.git
 
 # Define environment variables
@@ -28,16 +28,16 @@ ARG DB_AUTH_PASSWORD
 ARG REST_INNER_PORT
 
 # Create .env file with environment variables
-RUN echo "DB_SERVER=${DB_SERVER}" > /app/MoDEL-CNS_REST_API/.env && \
-    echo "DB_PORT=${DB_PORT}" >> /app/MoDEL-CNS_REST_API/.env && \
-    echo "DB_NAME=${DB_NAME}" >> /app/MoDEL-CNS_REST_API/.env && \
-    echo "DB_AUTHSOURCE=${DB_AUTHSOURCE}" >> /app/MoDEL-CNS_REST_API/.env && \
-    echo "DB_AUTH_USER=${DB_AUTH_USER}" >> /app/MoDEL-CNS_REST_API/.env && \
-    echo "DB_AUTH_PASSWORD=${DB_AUTH_PASSWORD}" >> /app/MoDEL-CNS_REST_API/.env && \
-    echo "LISTEN_PORT=${REST_INNER_PORT}" >> /app/MoDEL-CNS_REST_API/.env
+RUN echo "DB_SERVER=${DB_SERVER}" > /app/MoDEL-CNS-REST-API/.env && \
+    echo "DB_PORT=${DB_PORT}" >> /app/MoDEL-CNS-REST-API/.env && \
+    echo "DB_NAME=${DB_NAME}" >> /app/MoDEL-CNS-REST-API/.env && \
+    echo "DB_AUTHSOURCE=${DB_AUTHSOURCE}" >> /app/MoDEL-CNS-REST-API/.env && \
+    echo "DB_AUTH_USER=${DB_AUTH_USER}" >> /app/MoDEL-CNS-REST-API/.env && \
+    echo "DB_AUTH_PASSWORD=${DB_AUTH_PASSWORD}" >> /app/MoDEL-CNS-REST-API/.env && \
+    echo "LISTEN_PORT=${REST_INNER_PORT}" >> /app/MoDEL-CNS-REST-API/.env
 
-# Change working directory to /app/MoDEL-CNS_REST_API
-WORKDIR /app/MoDEL-CNS_REST_API
+# Change working directory to /app/MoDEL-CNS-REST-API
+WORKDIR /app/MoDEL-CNS-REST-API
 
 # Install packages
 RUN npm install
@@ -58,11 +58,11 @@ RUN npm install pm2 -g
 WORKDIR /app
 
 # Copy from the previous stage
-COPY --from=build /app/MoDEL-CNS_REST_API /app/MoDEL-CNS_REST_API
+COPY --from=build /app/MoDEL-CNS-REST-API /app/MoDEL-CNS-REST-API
 COPY --from=build /app/chemfiles /app/chemfiles
 
-# Change working directory to /app/MoDEL-CNS_REST_API
-WORKDIR /app/MoDEL-CNS_REST_API
+# Change working directory to /app/MoDEL-CNS-REST-API
+WORKDIR /app/MoDEL-CNS-REST-API
 
 # Define environment variable
 ARG REST_INNER_PORT

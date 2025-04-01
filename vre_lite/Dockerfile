@@ -6,7 +6,7 @@ WORKDIR /app
 
 # Clone mddb-vre repo
 ARG VERSION
-RUN git clone --branch ${VERSION} --depth 1 https://github.com/mmb-irb/MDDB-VRE.git
+RUN git clone --branch ${VERSION} --depth 1 https://github.com/mmb-irb/mddb-vre.git
 
 # Define the build arguments
 ARG VRE_LITE_BASE_URL_DEVELOPMENT
