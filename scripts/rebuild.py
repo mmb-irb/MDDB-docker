@@ -83,12 +83,12 @@ def main():
     elif (args.mode == 'p'):
 
         for service in args.services:
+            subprocess.run(f"podman stop {service} && podman rm {service}", shell=True, check=True, executable='/bin/bash')
             b = get_podman_script('build', service)
             run_command_p(b)
 
         for service in args.services:
             r = get_podman_script('run', service)
-            print(r)
             run_command_p(r)
 
 

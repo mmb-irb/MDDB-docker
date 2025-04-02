@@ -2,6 +2,7 @@ import os
 
 
 def get_podman_script(type, service):
+    cmd = ''
     if service == 'rest':
         if type == 'build':
             cmd = "podman build -t rest_image --no-cache --build-arg DB_SERVER=${DB_SERVER} --build-arg DB_PORT=${DB_OUTER_PORT} --build-arg DB_NAME=${DB_NAME} --build-arg DB_AUTH_USER=${REST_DB_LOGIN} --build-arg DB_AUTH_PASSWORD=${REST_DB_PASSWORD} --build-arg DB_AUTHSOURCE=${DB_AUTHSOURCE} --build-arg REST_INNER_PORT=${REST_INNER_PORT} ./rest"
@@ -13,12 +14,11 @@ def get_podman_script(type, service):
         if type == 'build':
             cmd = "podman build -t client_image --no-cache --build-arg NODE_ID=${NODE} --build-arg CLIENT_INNER_PORT=${CLIENT_INNER_PORT} ./client"
             # return cmd.split(" ")
-            return cmd
+            # return cmd
         elif type == 'run':
-            cmd = "podman run -d --name client -p ${CLIENT_OUTER_PORT}:${CLIENT_INNER_PORT} --cpus ${CLIENT_CPU_LIMIT} --memory ${CLIENT_MEMORY_LIMIT} --network web_network client_image"
+            cmd = "podman run -d --name client -p ${CLIENT_OUTER_PORT}:${CLIENT_INNER_PORT} --cpus \"${CLIENT_CPU_LIMIT}\" --memory \"${CLIENT_MEMORY_LIMIT}\" --network web_network client_image"
             # return cmd.split(" ")
-            cmd = os.path.expandvars(cmd)
-            return cmd
+            # return cmd
     elif service == 'vre_lite':
         if type == 'build':
             cmd = "podman build -t vre_lite_image --no-cache --build-arg MINIO_USER=${MINIO_USER} --build-arg MINIO_PASSWORD=${MINIO_PASSWORD} --build-arg MINIO_API_PORT=${MINIO_API_INNER_PORT} --build-arg VRE_LITE_INNER_PORT=${VRE_LITE_INNER_PORT} --build-arg VRE_LITE_BASE_URL_DEVELOPMENT=${VRE_LITE_BASE_URL_DEVELOPMENT} --build-arg VRE_LITE_BASE_URL_STAGING=${VRE_LITE_BASE_URL_STAGING} --build-arg VRE_LITE_BASE_URL_PRODUCTION=${VRE_LITE_BASE_URL_PRODUCTION} --build-arg VRE_LITE_LOG_PATH=${VRE_LITE_LOG_PATH} --build-arg VRE_LITE_MAX_FILE_SIZE=${VRE_LITE_MAX_FILE_SIZE} --build-arg VRE_LITE_TIME_DIFF=${VRE_LITE_TIME_DIFF} --build-arg MINIO_PROTOCOL=${MINIO_PROTOCOL} --build-arg MINIO_URL=${MINIO_URL} --build-arg MINIO_PORT=${APACHE_MINIO_OUTER_PORT} --build-arg NODE_NAME=${NODE} ./vre_lite"
@@ -61,3 +61,6 @@ def get_podman_script(type, service):
         elif type == 'run':
             cmd = "echo Please, run MongoDB manually"
             return cmd.split(" ")
+
+    cmd = os.path.expandvars(cmd)
+    return cmd
