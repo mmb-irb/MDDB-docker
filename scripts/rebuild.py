@@ -40,15 +40,15 @@ def main():
     args = parser.parse_args()
 
     # Parse .env file and update os.environ
-    with open('.env') as f:
-        for line in f:
-            line = line.strip()
-            if line and not line.startswith('#'):
-                key, value = line.split('=', 1)
-                os.environ[key] = value
+    # with open('.env') as f:
+    #     for line in f:
+    #         line = line.strip()
+    #         if line and not line.startswith('#'):
+    #             key, value = line.split('=', 1)
+    #             os.environ[key] = value
 
     # check if works in runtime
-    # subprocess.run("export $(grep -v '^#' .env | xargs)", shell=True, check=True, executable='/bin/bash')
+    subprocess.run("export $(grep -v '^#' .env | xargs)", shell=True, check=True, executable='/bin/bash')
 
     if args.mode == 'd':
 
