@@ -12,6 +12,13 @@ def run_command(command):
         print(f"Command '{' '.join(command)}' failed with return code {e.returncode}")
 
 
+def run_command_p(command):
+    try:
+        subprocess.run(command, shell=True, check=True, executable='/bin/bash')
+    except subprocess.CalledProcessError as e:
+        print(f"Command '{command}' failed with return code {e.returncode}")
+
+
 def command_exists(cmd):
     try:
         subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True)
@@ -77,11 +84,11 @@ def main():
 
         for service in args.services:
             b = get_podman_script('build', service)
-            run_command(b)
+            run_command_p(b)
 
         for service in args.services:
             r = get_podman_script('run', service)
-            run_command(r)
+            run_command_p(r)
 
 
 if __name__ == '__main__':
