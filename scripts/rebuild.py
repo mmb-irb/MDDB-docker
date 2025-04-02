@@ -88,6 +88,7 @@ def main():
 
         for service in args.services:
             r = get_podman_script('run', service)
+            print(r)
             run_command_p(r)
 
 
