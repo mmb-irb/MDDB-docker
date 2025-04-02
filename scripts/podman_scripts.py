@@ -1,3 +1,6 @@
+import os
+
+
 def get_podman_script(type, service):
     if service == 'rest':
         if type == 'build':
@@ -13,8 +16,8 @@ def get_podman_script(type, service):
             return cmd
         elif type == 'run':
             cmd = "podman run -d --name client -p ${CLIENT_OUTER_PORT}:${CLIENT_INNER_PORT} --cpus ${CLIENT_CPU_LIMIT} --memory ${CLIENT_MEMORY_LIMIT} --network web_network client_image"
-            cmd = cmd.replace("'", "\"")
             # return cmd.split(" ")
+            cmd = os.path.expandvars(cmd)
             return cmd
     elif service == 'vre_lite':
         if type == 'build':
