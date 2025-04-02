@@ -50,7 +50,7 @@ def main():
     # check if works in runtime
     # subprocess.run("export $(grep -v '^#' .env | xargs)", shell=True, check=True, executable='/bin/bash')
 
-    if (args.mode == 'd'):
+    if args.mode == 'd':
 
         if not args.stack:
             print("Error: Stack name is required when using Docker mode.")
@@ -80,10 +80,11 @@ def main():
         run_command(['docker', 'container', 'prune', '-f'])
         run_command(['docker', 'image', 'prune', '-f'])
 
-    elif (args.mode == 'p'):
+    elif args.mode == 'p':
 
         for service in args.services:
-            subprocess.run(f"podman stop {service} || true && podman rm {service} || true", shell=True, check=True, executable='/bin/bash')
+            if service != 'mongodb':
+                subprocess.run(f"podman stop {service} || true && podman rm {service} || true", shell=True, check=True, executable='/bin/bash')
             b = get_podman_script('build', service)
             run_command_p(b)
 
