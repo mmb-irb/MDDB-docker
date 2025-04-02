@@ -32,7 +32,7 @@ Ie when developing and doing changes in git repo.
 
 ## Rebuild service(s)
 
-A **rebuild script** is provided for rebuilding **one or more services** in an **automatic** way. Please execute the script, located in [**scripts/rebuild.py**](./scripts/rebuild.py). 
+A **rebuild script** is provided for rebuilding **one or more services** in an **automatic** way. Please execute the script, located in [**scripts/rebuild.py**](../scripts/rebuild.py). 
 
 How to execute the help script from the root of this repository:
 
