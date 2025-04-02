@@ -12,7 +12,7 @@ def get_podman_script(type, service):
             # return cmd.split(" ")
             return cmd
         elif type == 'run':
-            cmd = 'podman run -d --name client -p ${CLIENT_OUTER_PORT}:${CLIENT_INNER_PORT} --cpus "${CLIENT_CPU_LIMIT}" --memory "${CLIENT_MEMORY_LIMIT}" --network web_network client_image'
+            cmd = "podman run -d --name client -p ${CLIENT_OUTER_PORT}:${CLIENT_INNER_PORT} --cpus ${CLIENT_CPU_LIMIT} --memory ${CLIENT_MEMORY_LIMIT} --network web_network client_image"
             # return cmd.split(" ")
             return cmd
     elif service == 'vre_lite':
