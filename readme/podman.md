@@ -70,16 +70,24 @@ In this section there are the instructions needed for running the **long-running
 
 ### MongoDB service
 
+Typical execution:
+
 ```sh
-podman run -d --name mongodb -e MONGO_INITDB_ROOT_USERNAME=${MONGO_INITDB_ROOT_USERNAME} -e MONGO_INITDB_ROOT_PASSWORD=${MONGO_INITDB_ROOT_PASSWORD} -e MONGO_PORT=${DB_OUTER_PORT} -e MONGO_INITDB_DATABASE=${DB_NAME} -e LOADER_DB_LOGIN=${LOADER_DB_LOGIN} -e LOADER_DB_PASSWORD=${LOADER_DB_PASSWORD} -e REST_DB_LOGIN=${REST_DB_LOGIN} -e REST_DB_PASSWORD=${REST_DB_PASSWORD} -p ${DB_OUTER_PORT}:${DB_OUTER_PORT} -v ${DB_VOLUME_PATH}:/data:Z -v $(pwd)/mongodb/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro --cpus "${DB_CPU_LIMIT}" --memory "${DB_MEMORY_LIMIT}" --network data_network --security-opt label=disable docker.io/library/mongo:6
+podman run -d --name mongodb -e MONGO_INITDB_ROOT_USERNAME=${MONGO_INITDB_ROOT_USERNAME} -e MONGO_INITDB_ROOT_PASSWORD=${MONGO_INITDB_ROOT_PASSWORD} -e MONGO_PORT=${DB_OUTER_PORT} -e MONGO_INITDB_DATABASE=${DB_NAME} -e LOADER_DB_LOGIN=${LOADER_DB_LOGIN} -e LOADER_DB_PASSWORD=${LOADER_DB_PASSWORD} -e REST_DB_LOGIN=${REST_DB_LOGIN} -e REST_DB_PASSWORD=${REST_DB_PASSWORD} -p ${DB_OUTER_PORT}:${DB_OUTER_PORT} -v ${DB_VOLUME_PATH}:/data/db:Z -v $(pwd)/mongodb/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro --cpus "${DB_CPU_LIMIT}" --memory "${DB_MEMORY_LIMIT}" --network data_network --security-opt label=disable docker.io/library/mongo:6
+```
+
+Sometimes, podman gives **problems with permissions**. Typically, these problems arise from using **NFS file systems** and **non-root permissions** in podman. Therefore, to avoid these problems, an alternative execution can be performed, using a [**mongo-nonroot.sh**](../mongodb/mongo-nonroot.sh) bash script for intialising the **mongodb** docker:
+
+```sh
+podman run -d --name mongodb -e MONGO_INITDB_ROOT_USERNAME=${MONGO_INITDB_ROOT_USERNAME} -e MONGO_INITDB_ROOT_PASSWORD=${MONGO_INITDB_ROOT_PASSWORD} -e MONGO_PORT=${DB_OUTER_PORT} -e MONGO_INITDB_DATABASE=${DB_NAME} -e LOADER_DB_LOGIN=${LOADER_DB_LOGIN} -e LOADER_DB_PASSWORD=${LOADER_DB_PASSWORD} -e REST_DB_LOGIN=${REST_DB_LOGIN} -e REST_DB_PASSWORD=${REST_DB_PASSWORD} -e DB_OUTER_PORT=${DB_OUTER_PORT} -p ${DB_OUTER_PORT}:${DB_OUTER_PORT} -v ${DB_VOLUME_PATH}:/data/db:Z -v $(pwd)/mongodb/mongo-nonroot.sh:/entrypoint.sh:Z --entrypoint /entrypoint.sh -v $(pwd)/mongodb/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro --cpus "${DB_CPU_LIMIT}" --memory "${DB_MEMORY_LIMIT}" --network data_network --security-opt label=disable docker.io/library/mongo:6
 ```
 
 **IMPORTANT**
 
-In some podman implementations, the REST API gave some problems connecting to the mongo DB, so, in order to fix that, the DB_SERVER must be the mongodb service IP. So, for fixing this IP, the --ip flag can be added:
+In some podman implementations, the REST API gave some problems connecting to the mongo DB via service name. Therefore, in order to fix that, the **DB_SERVER** must be the **mongodb service IP**. So, for **fixing** this IP, the **--ip flag** can be added:
 
 ```sh
-podman run -d --name mongodb -e MONGO_INITDB_ROOT_USERNAME=${MONGO_INITDB_ROOT_USERNAME} -e MONGO_INITDB_ROOT_PASSWORD=${MONGO_INITDB_ROOT_PASSWORD} -e MONGO_PORT=${DB_OUTER_PORT} -e MONGO_INITDB_DATABASE=${DB_NAME} -e LOADER_DB_LOGIN=${LOADER_DB_LOGIN} -e LOADER_DB_PASSWORD=${LOADER_DB_PASSWORD} -e REST_DB_LOGIN=${REST_DB_LOGIN} -e REST_DB_PASSWORD=${REST_DB_PASSWORD} -p ${DB_OUTER_PORT}:${DB_OUTER_PORT} -v ${DB_VOLUME_PATH}:/data:Z -v $(pwd)/mongodb/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro --cpus "${DB_CPU_LIMIT}" --memory "${DB_MEMORY_LIMIT}" --network data_network --ip <IP ADDRESS> --security-opt label=disable docker.io/library/mongo:6
+podman run -d --name mongodb -e MONGO_INITDB_ROOT_USERNAME=${MONGO_INITDB_ROOT_USERNAME} -e MONGO_INITDB_ROOT_PASSWORD=${MONGO_INITDB_ROOT_PASSWORD} -e MONGO_PORT=${DB_OUTER_PORT} -e MONGO_INITDB_DATABASE=${DB_NAME} -e LOADER_DB_LOGIN=${LOADER_DB_LOGIN} -e LOADER_DB_PASSWORD=${LOADER_DB_PASSWORD} -e REST_DB_LOGIN=${REST_DB_LOGIN} -e REST_DB_PASSWORD=${REST_DB_PASSWORD} -e DB_OUTER_PORT=${DB_OUTER_PORT} -p ${DB_OUTER_PORT}:${DB_OUTER_PORT} -v ${DB_VOLUME_PATH}:/data/db:Z -v $(pwd)/mongodb/mongo-nonroot.sh:/entrypoint.sh:Z --entrypoint /entrypoint.sh -v $(pwd)/mongodb/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro --cpus "${DB_CPU_LIMIT}" --memory "${DB_MEMORY_LIMIT}" --network data_network --ip <IP ADDRESS> --security-opt label=disable docker.io/library/mongo:6
 ```
 
 ### REST API
@@ -133,7 +141,7 @@ Please read carefully the [**workflow help**](../workflow) as it has an extensiv
 Example of **running** the workflow downloading an **already loaded** trajectory and saving the results into an **OUTPUT_FOLDER** that must be already created inside **WORKFLOW_VOLUME_PATH** defined in [**global .env**](config.md#env-file).
 
 ```sh
-podman run --rm --name workflow -v <WORKFLOW_VOLUME_PATH>:/data --cpus "${WORKFLOW_CPU_LIMIT}" --memory "${WORKFLOW_MEMORY_LIMIT}" workflow_image mwf run -proj <ACCESSION ID> -smp -e clusters energies pockets -dir /data/<OUTPUT_FOLDER>
+podman run --rm --name workflow -v ${WORKFLOW_VOLUME_PATH}:/data --cpus "${WORKFLOW_CPU_LIMIT}" --memory "${WORKFLOW_MEMORY_LIMIT}" workflow_image mwf run -proj <ACCESSION ID> -smp -e clusters energies pockets -dir /data/<OUTPUT_FOLDER>
 ```
 
 Note that this run excludes clusters, energies and pockets analyses. Adding the -smp flag it downloads only 10 frames of the trajectory. As this instruction is a test, this will save a lot of computational time.
@@ -143,7 +151,7 @@ Note that this run excludes clusters, energies and pockets analyses. Adding the 
 Example of **running** the workflow from data **uploaded via VRE lite**:
 
 ```sh
-podman run --rm -e BUCKET=<BUCKET> --network minio_network -v <WORKFLOW_VOLUME_PATH>:/data:Z --cpus "${WORKFLOW_CPU_LIMIT}" --memory "${WORKFLOW_MEMORY_LIMIT}" --cap-add SYS_ADMIN --device /dev/fuse --security-opt apparmor:unconfined workflow_image mwf run -dir /data/<OUTPUT_FOLDER> -md /data/<OUTPUT_FOLDER>/<REPLICA_FOLDER> /mnt/<FOLDER>/<TOPOLOGY> /mnt/<FOLDER>/<TRAJECTORY> -top /mnt/<FOLDER>/<TOPOLOGY> -inp /mnt/<FOLDER>/inputs.yaml -filt -ns
+podman run --rm -e BUCKET=<BUCKET> --network minio_network -v ${WORKFLOW_VOLUME_PATH}:/data:Z --cpus "${WORKFLOW_CPU_LIMIT}" --memory "${WORKFLOW_MEMORY_LIMIT}" --cap-add SYS_ADMIN --device /dev/fuse --security-opt apparmor:unconfined workflow_image mwf run -dir /data/<OUTPUT_FOLDER> -md /data/<OUTPUT_FOLDER>/<REPLICA_FOLDER> /mnt/<FOLDER>/<TOPOLOGY> /mnt/<FOLDER>/<TRAJECTORY> -top /mnt/<FOLDER>/<TOPOLOGY> -inp /mnt/<FOLDER>/inputs.yaml -filt -ns
 ```
 
 * **BUCKET:** Bucket created in MinIO via **VRE lite**. Given along with the credentials by the **VRE lite** for **uploading** the data via **command line**. In format **YYYYMMDD**.
@@ -167,7 +175,7 @@ podman run --rm --name loader --cpus "${LOADER_CPU_LIMIT}" --memory "${LOADER_ME
 **Load** documents to database:
 
 ```sh
-podman run --rm --network data_network -v <WORKFLOW_VOLUME_PATH>:/data:Z --cpus "${LOADER_CPU_LIMIT}" --memory "${LOADER_MEMORY_LIMIT}" loader_image load /data/<OUTPUT_FOLDER>
+podman run --rm --network data_network -v ${WORKFLOW_VOLUME_PATH}:/data:Z --cpus "${LOADER_CPU_LIMIT}" --memory "${LOADER_MEMORY_LIMIT}" loader_image load /data/<OUTPUT_FOLDER>
 ```
 
 Take into account that **OUTPUT_FOLDER** must be inside **WORKFLOW_VOLUME_PATH**, defined in [**global .env**](config.md#env-file).
