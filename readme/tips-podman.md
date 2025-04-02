@@ -29,13 +29,13 @@ python3 scripts/rebuild.py -p -s client vre_lite
 For performing the same process step by step:
 
 ```sh
-podman build -t <image_name> --no-cache --build-arg NODE_ID=${NODE} --build-arg CLIENT_INNER_PORT=${CLIENT_INNER_PORT} ./client
+podman build -t client_image --no-cache --build-arg CLIENT_INNER_PORT=${CLIENT_INNER_PORT} ./client
 ```
 
 An then, run the service as usual:
 
 ```sh
-podman run -d --name client -p ${CLIENT_OUTER_PORT}:${CLIENT_INNER_PORT} --cpus "${CLIENT_CPU_LIMIT}" --memory "${CLIENT_MEMORY_LIMIT}" --network web_network <image_name>
+podman run -d --name client -p ${CLIENT_OUTER_PORT}:${CLIENT_INNER_PORT} --cpus "${CLIENT_CPU_LIMIT}" --memory "${CLIENT_MEMORY_LIMIT}" --network web_network client_image
 ```
 
 ## Remove all containers and images

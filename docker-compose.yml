@@ -96,7 +96,6 @@ services:
     build:
       context: ./client  # folder to search Dockerfile for this image
       args:
-        NODE_ID: ${NODE}  # Pass here the build argument with the node id
         CLIENT_INNER_PORT: ${CLIENT_INNER_PORT}
     ports:
       - "${CLIENT_OUTER_PORT}:${CLIENT_INNER_PORT}"  # port mapping

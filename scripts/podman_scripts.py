@@ -10,7 +10,7 @@ def get_podman_script(type, service):
             cmd = "podman run -d --name rest -p ${REST_OUTER_PORT}:${REST_INNER_PORT} --cpus ${REST_CPU_LIMIT} --memory ${REST_MEMORY_LIMIT} --network data_network --network web_network rest_image"
     elif service == 'client':
         if type == 'build':
-            cmd = "podman build -t client_image --no-cache --build-arg NODE_ID=${NODE} --build-arg CLIENT_INNER_PORT=${CLIENT_INNER_PORT} ./client"
+            cmd = "podman build -t client_image --no-cache --build-arg CLIENT_INNER_PORT=${CLIENT_INNER_PORT} ./client"
         elif type == 'run':
             cmd = "podman run -d --name client -p ${CLIENT_OUTER_PORT}:${CLIENT_INNER_PORT} --cpus ${CLIENT_CPU_LIMIT} --memory ${CLIENT_MEMORY_LIMIT} --network web_network client_image"
     elif service == 'vre_lite':

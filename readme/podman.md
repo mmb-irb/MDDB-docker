@@ -37,7 +37,7 @@ podman build -t rest_image --build-arg DB_SERVER=${DB_SERVER} --build-arg DB_POR
 ### client
 
 ```sh
-podman build -t client_image --build-arg NODE_ID=${NODE} --build-arg CLIENT_INNER_PORT=${CLIENT_INNER_PORT} ./client
+podman build -t client_image --build-arg CLIENT_INNER_PORT=${CLIENT_INNER_PORT} ./client
 ```
 
 ### VRE lite

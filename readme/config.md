@@ -269,7 +269,6 @@ services:
     build:
       context: ./client  # folder to search Dockerfile for this image
       args:
-        NODE_ID: ${NODE}  # Pass here the build argument with the node id
         CLIENT_INNER_PORT: ${CLIENT_INNER_PORT}
     ports:
       - "${CLIENT_OUTER_PORT}:${CLIENT_INNER_PORT}"  # port mapping
@@ -401,6 +400,7 @@ services:
     build:
       context: ./vre_lite
       args:
+        VERSION: ${VRE_LITE_VERSION}
         MINIO_API_PORT: ${MINIO_API_INNER_PORT}
         VRE_LITE_INNER_PORT: ${VRE_LITE_INNER_PORT}
         VRE_LITE_BASE_URL_DEVELOPMENT: ${VRE_LITE_BASE_URL_DEVELOPMENT}

@@ -2,14 +2,13 @@
 FROM docker.io/library/nginx:alpine
 
 # Define the build arguments
-ARG NODE_ID
 ARG CLIENT_INNER_PORT
 
 # Define working dir
 WORKDIR /app
 
 # Download and unzip mdposit-client-build repo
-RUN wget https://github.com/mmb-irb/MDposit-client-build/raw/refs/heads/main/${NODE_ID}/build.zip
+RUN wget https://github.com/mmb-irb/MDposit-client-build/raw/refs/heads/main/build.zip
 RUN unzip build.zip
 
 # Copy the built React app to nginx
