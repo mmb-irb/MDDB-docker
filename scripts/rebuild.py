@@ -39,22 +39,13 @@ def main():
 
     args = parser.parse_args()
 
-    # Parse .env file and update os.environ
-    # with open('.env') as f:
-    #     for line in f:
-    #         line = line.strip()
-    #         if line and not line.startswith('#'):
-    #             key, value = line.split('=', 1)
-    #             os.environ[key] = value
-
-    # check if works in runtime
-    subprocess.run("export $(grep -v '^#' .env | xargs)", shell=True, check=True, executable='/bin/bash')
-
     if args.mode == 'd':
 
         if not args.stack:
             print("Error: Stack name is required when using Docker mode.")
             sys.exit(1)
+
+        subprocess.run("export $(grep -v '^#' .env | xargs)", shell=True, check=True, executable='/bin/bash')
 
         # Build services with --no-cache
         build_command = []
@@ -81,6 +72,14 @@ def main():
         run_command(['docker', 'image', 'prune', '-f'])
 
     elif args.mode == 'p':
+
+        # Parse .env file and update os.environ
+        with open('.env') as f:
+            for line in f:
+                line = line.strip()
+                if line and not line.startswith('#'):
+                    key, value = line.split('=', 1)
+                    os.environ[key] = value
 
         for service in args.services:
             if service != 'mongodb':
