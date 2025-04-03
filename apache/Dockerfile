@@ -1,4 +1,4 @@
-# Base docker with apache
+# Base docker with apache 2.4
 FROM docker.io/library/httpd:2.4
 
 # Copy the custom Apache configuration file
