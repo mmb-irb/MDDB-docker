@@ -23,9 +23,6 @@ RUN conda config --set solver libmamba
 # Create new environment
 RUN conda env create --file=/app/MoDEL-workflow/envs/environment.yml && conda clean -afy
 
-# Re-install sqlite SW
-RUN conda run -n mwf_env conda install sqlite --force-reinstall
-
 # Install mwf SW
 RUN conda run -n mwf_env python /app/MoDEL-workflow/setup.py develop
 

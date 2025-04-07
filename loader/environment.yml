@@ -1,5 +1,6 @@
 name: mwf_env
 channels:
   - conda-forge
+  - nodefaults
 dependencies:
   - gromacs
