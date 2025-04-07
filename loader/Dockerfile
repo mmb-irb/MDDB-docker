@@ -1,4 +1,4 @@
-# Base docker with miniconda
+# Base docker with miniconda3
 FROM docker.io/continuumio/miniconda3:latest
 
 # Define working dir
