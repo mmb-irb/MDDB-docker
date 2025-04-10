@@ -11,7 +11,7 @@ RUN apt-get update && \
     apt-get install -y nodejs
 
 # Clone loader repo
-RUN git clone https://github.com/mmb-irb/MoDEL-CNS-DB-loader.git
+RUN git clone https://github.com/mmb-irb/MDDB-loader.git
 
 # Define environment variables
 ARG DB_SERVER
@@ -22,12 +22,12 @@ ARG DB_AUTH_USER
 ARG DB_AUTH_PASSWORD
 
 # Create .env file with environment variables
-RUN echo "DB_SERVER=${DB_SERVER}" > /app/MoDEL-CNS-DB-loader/.env && \
-    echo "DB_PORT=${DB_PORT}" >> /app/MoDEL-CNS-DB-loader/.env && \
-    echo "DB_NAME=${DB_NAME}" >> /app/MoDEL-CNS-DB-loader/.env && \
-    echo "DB_AUTHSOURCE=${DB_AUTHSOURCE}" >> /app/MoDEL-CNS-DB-loader/.env && \
-    echo "DB_AUTH_USER=${DB_AUTH_USER}" >> /app/MoDEL-CNS-DB-loader/.env && \
-    echo "DB_AUTH_PASSWORD=${DB_AUTH_PASSWORD}" >> /app/MoDEL-CNS-DB-loader/.env
+RUN echo "DB_SERVER=${DB_SERVER}" > /app/MDDB-loader/.env && \
+    echo "DB_PORT=${DB_PORT}" >> /app/MDDB-loader/.env && \
+    echo "DB_NAME=${DB_NAME}" >> /app/MDDB-loader/.env && \
+    echo "DB_AUTHSOURCE=${DB_AUTHSOURCE}" >> /app/MDDB-loader/.env && \
+    echo "DB_AUTH_USER=${DB_AUTH_USER}" >> /app/MDDB-loader/.env && \
+    echo "DB_AUTH_PASSWORD=${DB_AUTH_PASSWORD}" >> /app/MDDB-loader/.env
 
 # Copy the environment.yml file into the Docker image
 COPY environment.yml /app
@@ -35,8 +35,8 @@ COPY environment.yml /app
 # Create new environment
 RUN conda env create -f /app/environment.yml && conda clean -afy
 
-# Change working directory to /app/MoDEL-CNS-DB-loader
-WORKDIR /app/MoDEL-CNS-DB-loader
+# Change working directory to /app/MDDB-loader
+WORKDIR /app/MDDB-loader
 
 # Install loader
 RUN npm install
@@ -47,7 +47,7 @@ WORKDIR /app
 # Create the entrypoint script
 RUN echo '#!/bin/bash' > entrypoint.sh && \
     echo 'source activate mwf_env' >> entrypoint.sh && \
-    echo 'node /app/MoDEL-CNS-DB-loader/index.js "$@"' >> entrypoint.sh && \
+    echo 'node /app/MDDB-loader/index.js "$@"' >> entrypoint.sh && \
     chmod +x entrypoint.sh
 
 # Set the entrypoint script as the entrypoint

@@ -15,19 +15,19 @@ COPY goofys .
 RUN chmod +x goofys 
 
 # Clone repo
-RUN git clone https://github.com/mmb-irb/MoDEL-workflow.git
+RUN git clone https://github.com/mmb-irb/MDDB-workflow.git
 
 # Enable libmamba as solver
 RUN conda config --set solver libmamba
 
 # Create new environment
-RUN conda env create --file=/app/MoDEL-workflow/envs/environment.yml && conda clean -afy
+RUN conda env create --file=/app/MDDB-workflow/envs/environment.yml && conda clean -afy
 
 # Install mwf SW
-RUN conda run -n mwf_env python /app/MoDEL-workflow/setup.py develop
+RUN conda run -n mwf_env python /app/MDDB-workflow/setup.py develop
 
 # Export python path
-ENV PYTHONPATH="${PYTHONPATH}:/app/MoDEL-workflow"
+ENV PYTHONPATH="${PYTHONPATH}:/app/MDDB-workflow"
 
 # Define arguments passed from docker-compose
 ARG MINIO_USER

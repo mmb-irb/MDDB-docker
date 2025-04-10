@@ -27,7 +27,7 @@ The **REST API** is a **NodeJS + Express** application.
 
 For this project, the following repo has been used:
 
-https://github.com/mmb-irb/MoDEL-CNS-REST-API/
+https://github.com/mmb-irb/MDDB-REST-API/
 
 ### Website client
 
@@ -43,7 +43,7 @@ The **data loader** is a  **node JS script** made for load, list and remove data
 
 For this project, the following repo has been used:
 
-https://github.com/mmb-irb/MoDEL-CNS-DB-loader/
+https://github.com/mmb-irb/MDDB-loader/
 
 ### Workflow
 
@@ -51,7 +51,7 @@ The aim for this tool is to **process raw MD data** and obtain standard **struct
 
 For this project, the following repo has been used:
 
-https://github.com/mmb-irb/MoDEL-workflow/
+https://github.com/mmb-irb/MDDB-workflow/
 
 ### VRE lite
 
