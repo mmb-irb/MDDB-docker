@@ -386,7 +386,7 @@ A list of **useful tips** for **developing** and **debugging** has been defined 
 
 ## Credits
 
-Daniel Beltran, Genís Bayarri, Adam Hospital.
+Daniel Beltran, Genís Bayarri, Adam Hospital, Rubén Chaves.
 
 ## Copyright & licensing
 

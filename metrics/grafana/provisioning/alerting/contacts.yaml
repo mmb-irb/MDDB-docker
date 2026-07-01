@@ -1,0 +1,11 @@
+apiVersion: 1
+contactPoints:
+    - orgId: 1
+      name: Rubén
+      receivers:
+        - uid: cfjnbd4rqyakge
+          type: email
+          settings:
+            addresses: ruben.chaves@irbbarcelona.org
+            singleEmail: false
+          disableResolveMessage: false

@@ -1,0 +1,19 @@
+receivers:
+  otlp:
+    protocols:
+      http: # Receives from REST API
+        endpoint: "0.0.0.0:4318"
+
+processors:
+  batch: # Efficiently bundles logs before sending
+
+exporters:
+  otlphttp:
+    endpoint: "http://loki:3100/otlp"
+
+service:
+  pipelines:
+    logs:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [otlphttp]

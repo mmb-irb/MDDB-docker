@@ -1,0 +1,58 @@
+global:
+  scrape_interval: 5m
+
+scrape_configs:
+  # Scrape the state of the central Prometheus itself
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['127.0.0.1:9090']
+
+  # Scrape Loki metrics (local monitoring stack health)
+  - job_name: 'loki'
+    static_configs:
+      - targets: ['loki:3100']
+
+  # Scrape local node-exporter for central monitoring stack host metrics
+  - job_name: 'node'
+    static_configs:
+      - targets: ['host.docker.internal:9100']
+        labels:
+          node: 'central'
+          owner: 'monitoring'
+
+  # Scrape local cAdvisor for central container metrics
+  - job_name: 'cadvisor'
+    static_configs:
+      - targets: ['cadvisor:8080']
+        labels:
+          node: 'central'
+
+  # Scrape the Blackbox Exporter for HTTP health checks
+  - job_name: 'blackbox_http_check'
+    scrape_interval: 1m
+    metrics_path: /probe
+    params:
+      module: [http_2xx] # Matches the module in blackbox.yml
+    static_configs:
+      - targets:
+        - https://irb.mddbr.eu
+        - https://irb-dev.mddbr.eu
+        - https://cineca.mddbr.eu
+        - https://inria.mddbr.eu
+        - https://rpbs.mddbr.eu
+        - https://jsc.mddbr.eu
+        - https://devmddb.rc.ufl.edu
+        - https://bsc.mddbr.eu
+    relabel_configs:
+      # The Blackbox Exporter needs the target address as a 'target' parameter
+      - source_labels: [__address__]
+        target_label: __param_target
+      # Prometheus needs to point to the actual Blackbox Exporter instance
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: blackbox-exporter:9115 # The address of your Blackbox Exporter
+
+# IMPORTANT: All application node metrics arrive via remote_write from each node's Prometheus
+# into this central Prometheus (remote write receiver enabled in docker-compose).
+# The 'node' and 'owner' labels added by each node's Prometheus config let you filter per machine.

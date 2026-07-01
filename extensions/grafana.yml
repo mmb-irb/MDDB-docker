@@ -1,0 +1,83 @@
+# Grafana extension — deploy this on the grafana monitoring machine only.
+# Run from the repo root, e.g.:
+#   docker compose -f docker-compose.yml -f extensions/grafana.yml up -d
+# Loki receives logs from all nodes; Grafana reads from it.
+
+networks:
+  metrics_network:
+    external: true   # Shared network for the monitoring stack and API telemetry
+
+volumes:
+  loki_data: {}
+  grafana_data: {}
+
+services:
+  # Core services attach to the metrics network so the API can be scraped/telemetered
+  apache:
+    networks:
+      - metrics_network
+  rest:
+    networks:
+      - metrics_network
+
+  # Collects logs from the API and forwards to Loki
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:latest
+    container_name: otel-collector
+    restart: unless-stopped
+    volumes:
+      - ./metrics/grafana/otel.yaml:/etc/otelcol/otel.yaml:ro
+    command: ["--config=/etc/otelcol/otel.yaml"]
+    ports:
+      - "4318:4318"   # OTLP HTTP
+    networks:
+      - metrics_network
+    depends_on:
+      - loki
+
+  # Stores logs and serves them to Grafana
+  loki:
+    image: grafana/loki
+    container_name: loki
+    restart: unless-stopped
+    volumes:
+      - loki_data:/loki
+      - ./metrics/grafana/loki-config.yaml:/etc/loki/config.yaml:ro
+    command:
+      -validation.allow-structured-metadata
+      -config.file=/etc/loki/config.yaml
+    ports:
+      - "3100:3100"
+    networks:
+      - metrics_network
+
+  # Visualizes logs from Loki
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    restart: unless-stopped
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./metrics/grafana/grafana.ini:/etc/grafana/grafana.ini:ro
+      - ./metrics/grafana/provisioning:/etc/grafana/provisioning  # auto-provisions the data source
+      - ./metrics/grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards  # mount dashboards
+    environment:
+      - GF_SERVER_ROOT_URL=https://irb-dev.mddbr.eu/grafana
+      - GF_SERVER_SERVE_FROM_SUB_PATH=true
+      - GF_AUTH_GOOGLE_ENABLED=${GF_AUTH_GOOGLE_ENABLED:-false}
+      - GF_AUTH_GOOGLE_CLIENT_ID=${GF_AUTH_GOOGLE_CLIENT_ID:-}
+      - GF_AUTH_GOOGLE_CLIENT_SECRET=${GF_AUTH_GOOGLE_CLIENT_SECRET:-}
+      - GF_AUTH_GOOGLE_ALLOWED_DOMAINS=${GF_AUTH_GOOGLE_ALLOWED_DOMAINS:-}
+      - GF_ADMIN_MAIL=${GF_ADMIN_MAIL:-}
+      - GF_SMTP_ENABLED=${GF_SMTP_ENABLED:-false}
+      - GF_SMTP_HOST=${GF_SMTP_HOST:-}
+      - GF_SMTP_USER=${GF_SMTP_USER:-}
+      - GF_SMTP_PASSWORD=${GF_SMTP_PASSWORD:-}
+      - GF_SMTP_FROM_ADDRESS=${GF_SMTP_FROM_ADDRESS:-}
+      - GF_SMTP_FROM_NAME=${GF_SMTP_FROM_NAME:-}
+    ports:
+      - "3000:3000"
+    networks:
+      - metrics_network
+    depends_on:
+      - loki

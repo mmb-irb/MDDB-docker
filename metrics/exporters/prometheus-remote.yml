@@ -1,0 +1,36 @@
+# Prometheus agent config for each application node
+# Copy this to each node and customize the node name, owner, and central_prometheus_url
+# Place in: /path/to/node/prometheus/prometheus.yml
+
+global:
+  scrape_interval: 5m
+  external_labels:
+    node: '${NODE}'  # taken from the root .env NODE variable (expanded by Prometheus)
+
+scrape_configs:
+  # Scrape node-exporter for host hardware metrics
+  - job_name: 'node-exporter'
+    static_configs:
+      - targets: ['localhost:9100']
+
+  # Scrape cAdvisor for container metrics
+  - job_name: 'cadvisor'
+    static_configs:
+      - targets: ['localhost:8080']
+
+remote_write:
+  # Send all metrics to central Prometheus
+  - url: http://monitoring-central:9090/api/v1/write  # <- CHANGE: IP or hostname of central monitoring machine
+    write_relabel_configs:
+      # Optionally relabel or drop metrics before sending
+      - source_labels: [__name__]
+        regex: 'go_.*|process_.*'
+        action: drop
+    queue_config:
+      capacity: 10000
+      max_shards: 200
+      min_shards: 1
+      max_samples_per_send: 1000
+      batch_send_wait: 5s
+      min_backoff: 30ms
+      max_backoff: 100ms

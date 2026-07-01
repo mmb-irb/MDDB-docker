@@ -1,0 +1,114 @@
+# Prometheus stack to scrape metrics.
+# Run from the repo root, e.g.:
+#   docker compose -f docker-compose.yml -f extensions/metrics.yml up -d
+# Set PROMETHEUS_MODE=local or PROMETHEUS_MODE=remote before starting.
+
+networks:
+  metrics_network:
+    external: true
+
+volumes:
+  prometheus_data: {}
+
+services:
+  # Host metrics
+  node-exporter:
+    image: prom/node-exporter:latest
+    container_name: node-exporter
+    restart: unless-stopped
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro,rslave
+    command:
+      - '--path.procfs=/host/proc' # Mapping host proc to container /host/proc
+      - '--path.sysfs=/host/sys'   # Mapping host sys to container /host/sys
+      - '--path.rootfs=/rootfs'    # Mapping host root to container /rootfs
+      - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
+      # Disable default collectors and enable only a few
+      - '--collector.disable-defaults'
+      - '--collector.cpu'
+      - '--collector.filesystem'
+      - '--collector.meminfo'
+    pid: host
+    network_mode: host
+  
+  # Container metrics
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:latest
+    container_name: cadvisor
+    restart: unless-stopped
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+      - /dev/disk/:/dev/disk:ro
+    command:
+      # https://github.com/google/cadvisor/blob/master/docs/runtime_options.md
+      - '--enable_metrics=cpu,disk,memory'
+      - '--housekeeping_interval=10s'
+      - '--docker_only'
+      - '--store_container_labels=false'
+    networks:
+      - metrics_network
+
+  # Prometheus mode is selected at runtime with PROMETHEUS_MODE.
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    restart: unless-stopped
+    volumes:
+      - ./metrics/exporters/prometheus-local.yml:/etc/prometheus/prometheus-local.yml:ro
+      - ./metrics/exporters/prometheus-remote.yml:/etc/prometheus/prometheus-remote.yml:ro
+      - prometheus_data:/prometheus
+    environment:
+      - PROMETHEUS_MODE=${PROMETHEUS_MODE:-remote}
+      - NODE=${NODE}
+    entrypoint: 
+      - /bin/sh
+      - -c
+      - >-
+        case "${PROMETHEUS_MODE:-remote}" in
+          local)
+            cp /etc/prometheus/prometheus-local.yml /etc/prometheus/prometheus.yml
+            EXTRA_FLAGS="--web.enable-remote-write-receiver"
+            ;;
+          remote)
+            cp /etc/prometheus/prometheus-remote.yml /etc/prometheus/prometheus.yml
+            EXTRA_FLAGS=""
+            ;;
+          *)
+            echo "Invalid PROMETHEUS_MODE: ${PROMETHEUS_MODE}" >&2
+            exit 1
+            ;;
+        esac &&
+        exec /bin/prometheus \
+          --config.file=/etc/prometheus/prometheus.yml \
+          --storage.tsdb.path=/prometheus \
+          --storage.tsdb.retention.size=5GB \
+          --storage.tsdb.retention.time=15d \
+          --web.console.libraries=/etc/prometheus/console_libraries \
+          --web.console.templates=/etc/prometheus/consoles \
+          --web.enable-lifecycle \
+          --enable-feature=expand-external-labels \
+          $$EXTRA_FLAGS
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    ports:
+      # host 9090 forwarded to container 9090 (default Prometheus port)
+      - "9090:9090"
+    networks:
+      - metrics_network
+
+  # Blackbox exporter
+  blackbox-exporter:
+    image: prom/blackbox-exporter:latest
+    container_name: blackbox-exporter
+    restart: unless-stopped
+    volumes:
+      - ./metrics/exporters/blackbox.yml:/etc/blackbox_exporter/config.yml:ro
+    command:
+      - '--config.file=/etc/blackbox_exporter/config.yml'
+    networks:
+      - metrics_network

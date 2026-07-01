@@ -64,7 +64,7 @@ class VersionChecker:
             return_code = process.poll()
             full_output = '\n'.join(output_lines)
 
-            if return_code == 0:
+            if return_code == 0 and 'return code 1' not in full_output.lower():
                 return True, full_output
             else:
                 return False, full_output
@@ -82,7 +82,7 @@ class VersionChecker:
         github_token = env_vars.get('GH_PAT')
         credentials = f'-H "Authorization: Bearer {github_token}"' if github_token else ''
         # Use authorization header with token when possible
-        command = f'curl -s {credentials} "https://api.github.com/repos/{org}/{repo}/tags"'
+        command = f'curl -s {credentials} "https://api.github.com/repos/{org}/{repo}/tags" 2>/dev/null'
         success, output = self.run_command(command, shell=True, stream_output=False)
 
         if not success or not output:
@@ -97,7 +97,7 @@ class VersionChecker:
 
             # Ask the API for the commit data
             commit_url = tag['commit']['url']
-            command = f'curl -s {credentials} "{commit_url}"'
+            command = f'curl -s {credentials} "{commit_url}" 2>/dev/null'
             success, output = self.run_command(command, shell=True, stream_output=False)
             if not success or not output:
                 raise RuntimeError(f'Could not fetch data from {commit_url}')
