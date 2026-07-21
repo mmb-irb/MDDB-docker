@@ -22,13 +22,13 @@ case "${PROMETHEUS_MODE}" in
       --web.console.libraries=/etc/prometheus/console_libraries \
       --web.console.templates=/etc/prometheus/consoles \
       --web.enable-lifecycle \
-      --enable-feature=expand-external-labels \
       --web.enable-remote-write-receiver
     ;;
 
   remote)
     # Substitute the remote_write URL and credentials into the node config.
-    sed -e "s|__PROM_URL__|${PROM_URL}|g" \
+    sed -e "s|__NODE__|${NODE}|g" \
+        -e "s|__PROM_URL__|${PROM_URL}|g" \
         -e "s|__PROM_USER__|${PROM_USER}|g" \
         -e "s|__PROM_PASS__|${PROM_PASS}|g" \
         /etc/prometheus/prometheus-remote.yml > /tmp/prometheus.yml
@@ -40,8 +40,7 @@ case "${PROMETHEUS_MODE}" in
       --storage.tsdb.retention.time=15d \
       --web.console.libraries=/etc/prometheus/console_libraries \
       --web.console.templates=/etc/prometheus/consoles \
-      --web.enable-lifecycle \
-      --enable-feature=expand-external-labels
+      --web.enable-lifecycle
     ;;
 
   *)
