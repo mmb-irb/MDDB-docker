@@ -65,6 +65,10 @@ All commands are run from the **repo root** and overlay the extension on the mai
 | Variable | Default | Purpose | Example |
 |----------|---------|---------|---------|
 | `PROMETHEUS_MODE` | `remote` | `remote` = remote_write to central Prometheus; `local` = act as the central backend | `remote` or `local` |
+| `BLACKBOX_REPLICAS` | `0` | Optional blackbox exporter (HTTP probing): `0` = not deployed, `1` = deployed | `0` or `1` |
+| `PROM_URL` | `http://monitoring-central:9090/api/v1/write` | `remote` mode only: central Prometheus remote_write endpoint the node pushes to (see the Apache receiver below) | `https://central.mddbr.eu/prometheus/api/v1/write` |
+| `PROM_USER` | _(none)_ | basic_auth username for remote_write: sent by nodes, validated by Apache on the central host | `mddb_nodes` |
+| `PROM_PASS` | _(none)_ | basic_auth password: sent by nodes (injected into prometheus-remote.yml); Apache generates its htpasswd file from this at startup | `s3cret` |
 | `REST_OTEL_ENDPOINT` | `http://otel-collector:4318/v1/logs` | REST API logs destination (OTLP/HTTP endpoint) | `http://central-ip:4318/v1/logs` |
 | `GF_AUTH_GOOGLE_*` | disabled | Grafana Google OAuth (central host only) | see template |
 | `GF_SMTP_*` | disabled | Grafana SMTP for alert emails (central host only) | see template |
@@ -79,21 +83,28 @@ All commands are run from the **repo root** and overlay the extension on the mai
 Runs both the Grafana stack (visualization) and the exporter stack in `local` Prometheus mode (acts as the central metrics backend).
 
 1. Set `PROMETHEUS_MODE=local` in the root `.env` and fill in the `GF_*` values.
-2. **Start the stacks:**
+2. **Set the remote_write credentials.** Set `PROM_USER` and `PROM_PASS` in the root `.env`, then generate `apache/prometheus.htpasswd` (mounted as a volume into Apache — no image rebuild needed when rotating credentials):
     ```bash
-    docker compose -f docker-compose.yml -f extensions/grafana.yml up -d
-    docker compose -f docker-compose.yml -f extensions/metrics.yml up -d
+    htpasswd -nb "${PROM_USER}" "${PROM_PASS}" > apache/prometheus.htpasswd
+    ```
+    Apache enforces basic_auth on `/prometheus/api/v1/write` using this file. Prometheus itself runs without auth — Grafana and local `curl` reach port 9090 freely.
+3. **Start the stacks:**
+    ```bash
+    set -a; source .env; set +a
+    docker stack deploy -c docker-compose.yml -c extensions/grafana.yml -c extensions/metrics.yml my_stack
     ```
 
 ### Per-Node Setup
 
 Runs only the exporter stack in `remote` Prometheus mode, forwarding metrics to the central Prometheus via remote_write.
 
-1. Set `PROMETHEUS_MODE=remote` in the root `.env`. The `node:` external label in [`metrics/exporters/prometheus-remote.yml`](exporters/prometheus-remote.yml) is filled automatically from the root `.env` `NODE` variable, so metrics are differentiated per node in Grafana — no per-node edit of the Prometheus config is needed.
-2. Point `remote_write` at your central host: edit the `url` in [`metrics/exporters/prometheus-remote.yml`](exporters/prometheus-remote.yml) to the central monitoring machine's address.
-3. **Start the exporter stack** on each node:
+1. Set `PROMETHEUS_MODE=remote` in the root `.env`. The `NODE` variable is also used so metrics are differentiated per node in Grafana.
+2. Point `remote_write` at your central host by setting `PROM_URL` in the root `.env`.
+3. Set the remote_write credentials `PROM_USER` / `PROM_PASS` in the root `.env` to match the user configured on the central host (step 2 of the Central setup). All three tokens (`PROM_URL`, `PROM_USER`, `PROM_PASS`) are substituted into the config at container start.
+4. **Start the exporter stack** on each node:
     ```bash
-    docker compose -f docker-compose.yml -f extensions/metrics.yml up -d
+    set -a; source .env; set +a
+    docker stack deploy -c docker-compose.yml -c extensions/metrics.yml my_stack
     ```
 ---
 
@@ -113,4 +124,10 @@ docker exec -it prometheus du -sh /prometheus
 docker logs prometheus 2>&1 | grep -i "error"
 docker logs loki 2>&1 | grep -i "error"
 docker logs otel-collector 2>&1 | grep -i "error"
+
+# Checks the services are running:
+docker stack services my_stack
+
+# Update service
+docker service update --force my_stack_prometheus
 ```

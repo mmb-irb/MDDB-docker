@@ -1,0 +1,31 @@
+# Blackbox Exporter HTTP health checks.
+# This file is loaded by prometheus-local.yml via scrape_config_files only when the
+# blackbox exporter is running (BLACKBOX_REPLICAS=1). When it is not deployed, this file
+# is absent from /tmp/prometheus/scrape_configs/ and the job is simply not configured,
+# so Prometheus never shows the targets as DOWN.
+
+scrape_configs:
+  - job_name: 'blackbox_http_check'
+    scrape_interval: 1m
+    metrics_path: /probe
+    params:
+      module: [http_2xx] # Matches the module in blackbox.yml
+    static_configs:
+      - targets:
+        - https://irb.mddbr.eu
+        - https://irb-dev.mddbr.eu
+        - https://cineca.mddbr.eu
+        - https://inria.mddbr.eu
+        - https://rpbs.mddbr.eu
+        - https://jsc.mddbr.eu
+        - https://devmddb.rc.ufl.edu
+        - https://bsc.mddbr.eu
+    relabel_configs:
+      # The Blackbox Exporter needs the target address as a 'target' parameter
+      - source_labels: [__address__]
+        target_label: __param_target
+      # Prometheus needs to point to the actual Blackbox Exporter instance
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: blackbox-exporter:9115
