@@ -14,8 +14,11 @@ case "${PROMETHEUS_MODE}" in
       cp /etc/prometheus/prometheus-blackbox.yml /tmp/prometheus/scrape_configs/blackbox.yml
     fi
 
+    sed -e "s|__NODE__|${NODE:-central}|g" \
+        /etc/prometheus/prometheus-local.yml > /tmp/prometheus-local.yml
+
     exec /bin/prometheus \
-      --config.file=/etc/prometheus/prometheus-local.yml \
+      --config.file=/tmp/prometheus-local.yml \
       --storage.tsdb.path=/prometheus \
       --storage.tsdb.retention.size=10GB \
       --storage.tsdb.retention.time=30d \

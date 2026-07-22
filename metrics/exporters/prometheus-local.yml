@@ -25,7 +25,7 @@ scrape_configs:
     static_configs:
       - targets: ['node-exporter:9100']
         labels:
-          node: 'central'
+          node: '__NODE__'
           owner: 'monitoring'
 
   # Scrape local cAdvisor for central container metrics
@@ -33,7 +33,7 @@ scrape_configs:
     static_configs:
       - targets: ['cadvisor:8080']
         labels:
-          node: 'central'
+          node: '__NODE__'
 
 # IMPORTANT: All application node metrics arrive via remote_write from each node's Prometheus
 # into this central Prometheus (remote write receiver enabled in docker-compose).

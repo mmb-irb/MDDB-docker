@@ -142,7 +142,7 @@
               }
             }
           },
-          "version": "13.1.0"
+          "version": "13.1.1"
         }
       }
     },
@@ -281,12 +281,16 @@
                 "multiLane": false
               },
               "legend": {
-                "calcs": [],
-                "displayMode": "list",
+                "calcs": [
+                  "last"
+                ],
+                "displayMode": "table",
                 "enableFacetedFilter": false,
                 "overflow": "ellipsis",
                 "placement": "right",
                 "showLegend": true,
+                "sortBy": "Last",
+                "sortDesc": true,
                 "width": "25%"
               },
               "tooltip": {
@@ -296,7 +300,7 @@
               }
             }
           },
-          "version": "13.1.0"
+          "version": "13.1.1"
         }
       }
     },
@@ -481,7 +485,7 @@
               ]
             }
           },
-          "version": "13.1.0"
+          "version": "13.1.1"
         }
       }
     },
@@ -604,7 +608,7 @@
               }
             }
           },
-          "version": "13.1.0"
+          "version": "13.1.1"
         }
       }
     },
@@ -773,7 +777,7 @@
               ]
             }
           },
-          "version": "13.1.0"
+          "version": "13.1.1"
         }
       }
     },
@@ -896,7 +900,7 @@
               }
             }
           },
-          "version": "13.1.0"
+          "version": "13.1.1"
         }
       }
     },
@@ -1019,7 +1023,7 @@
               }
             }
           },
-          "version": "13.1.0"
+          "version": "13.1.1"
         }
       }
     },
@@ -1204,7 +1208,7 @@
               ]
             }
           },
-          "version": "13.1.0"
+          "version": "13.1.1"
         }
       }
     },
@@ -1328,7 +1332,7 @@
               }
             }
           },
-          "version": "13.1.0"
+          "version": "13.1.1"
         }
       }
     },
@@ -1463,7 +1467,7 @@
               "xTickLabelSpacing": 0
             }
           },
-          "version": "13.1.0"
+          "version": "13.1.1"
         }
       }
     },
@@ -1486,7 +1490,7 @@
                     "kind": "DataQuery",
                     "spec": {
                       "editorMode": "code",
-                      "expr": "(sum by(device) (node_filesystem_size_bytes{device!=\"none\"}) - (sum by(device) (node_filesystem_free_bytes))) / (sum by(device) (node_filesystem_size_bytes))",
+                      "expr": "(sum by(device) (node_filesystem_size_bytes{device!=\"none\", node=~\"$node2\"}) - (sum by(device) (node_filesystem_free_bytes))) / (sum by(device) (node_filesystem_size_bytes))",
                       "legendFormat": "{{label}}",
                       "range": true
                     },
@@ -1584,7 +1588,7 @@
               }
             }
           },
-          "version": "13.1.0"
+          "version": "13.1.1"
         }
       }
     },
@@ -1684,7 +1688,7 @@
               }
             }
           },
-          "version": "13.1.0"
+          "version": "13.1.1"
         }
       }
     },
@@ -1707,7 +1711,7 @@
                     "kind": "DataQuery",
                     "spec": {
                       "editorMode": "builder",
-                      "expr": "sum by(name) (container_fs_usage_bytes{name!=\"\"})",
+                      "expr": "sum by(name) (container_fs_usage_bytes{name!=\"\", node=~\"$node2\"})",
                       "legendFormat": "__auto",
                       "range": true
                     },
@@ -1717,7 +1721,9 @@
                 }
               }
             ],
-            "queryOptions": {},
+            "queryOptions": {
+              "interval": "1m"
+            },
             "transformations": [
               {
                 "group": "renameByRegex",
@@ -1821,7 +1827,7 @@
               }
             }
           },
-          "version": "13.1.0"
+          "version": "13.1.1"
         }
       }
     },
@@ -1844,7 +1850,7 @@
                     "kind": "DataQuery",
                     "spec": {
                       "editorMode": "builder",
-                      "expr": "avg by(name) (container_memory_usage_bytes{name!=\"\"})",
+                      "expr": "avg by(name) (container_memory_usage_bytes{name!=\"\", node=~\"$node2\"})",
                       "legendFormat": "__auto",
                       "range": true
                     },
@@ -1876,7 +1882,9 @@
                 }
               }
             ],
-            "queryOptions": {},
+            "queryOptions": {
+              "interval": "1m"
+            },
             "transformations": [
               {
                 "group": "renameByRegex",
@@ -1981,7 +1989,7 @@
               }
             }
           },
-          "version": "13.1.0"
+          "version": "13.1.1"
         }
       }
     },
@@ -2003,8 +2011,8 @@
                     "group": "prometheus",
                     "kind": "DataQuery",
                     "spec": {
-                      "editorMode": "code",
-                      "expr": "sum(rate(container_cpu_usage_seconds_total{name!=\"\"}[10m])) by (name) *100",
+                      "editorMode": "builder",
+                      "expr": "sum by(name) (rate(container_cpu_usage_seconds_total{name!=\"\", node=~\"$node2\"}[10m])) * 100",
                       "legendFormat": "__auto",
                       "range": true
                     },
@@ -2122,7 +2130,7 @@
               }
             }
           },
-          "version": "13.1.0"
+          "version": "13.1.1"
         }
       }
     },
@@ -2145,7 +2153,7 @@
                     "kind": "DataQuery",
                     "spec": {
                       "editorMode": "builder",
-                      "expr": "sum(node_memory_MemTotal_bytes)",
+                      "expr": "sum(node_memory_MemTotal_bytes{node=~\"$node2\"})",
                       "legendFormat": "Total",
                       "range": true
                     },
@@ -2165,8 +2173,8 @@
                     "group": "prometheus",
                     "kind": "DataQuery",
                     "spec": {
-                      "editorMode": "code",
-                      "expr": "sum(node_memory_MemFree_bytes)",
+                      "editorMode": "builder",
+                      "expr": "node_memory_MemFree_bytes{node=~\"$node2\"}",
                       "legendFormat": "Free",
                       "range": true
                     },
@@ -2186,8 +2194,8 @@
                     "group": "prometheus",
                     "kind": "DataQuery",
                     "spec": {
-                      "editorMode": "code",
-                      "expr": "sum(node_memory_MemTotal_bytes) - sum(node_memory_MemFree_bytes)",
+                      "editorMode": "builder",
+                      "expr": "sum(node_memory_MemTotal_bytes{node=~\"$node2\"}) - (sum(node_memory_MemFree_bytes{node=\"$node2\"}))",
                       "legendFormat": "Used",
                       "range": true
                     },
@@ -2286,7 +2294,7 @@
               }
             }
           },
-          "version": "13.1.0"
+          "version": "13.1.1"
         }
       }
     }
@@ -2582,7 +2590,7 @@
       "1d"
     ],
     "fiscalYearStartMonth": 0,
-    "from": "now-24h",
+    "from": "now-3h",
     "hideTimepicker": false,
     "timezone": "browser",
     "to": "now"
@@ -2615,6 +2623,40 @@
             "refId": "LokiVariableQueryEditor-VariableQuery",
             "stream": "",
             "type": 1
+          },
+          "version": "v0"
+        },
+        "refresh": "onDashboardLoad",
+        "regex": "",
+        "regexApplyTo": "value",
+        "skipUrlSync": false,
+        "sort": "disabled"
+      }
+    },
+    {
+      "kind": "QueryVariable",
+      "spec": {
+        "allowCustomValue": false,
+        "current": {
+          "text": "central",
+          "value": "central"
+        },
+        "definition": "label_values(node)",
+        "hide": "dontHide",
+        "includeAll": true,
+        "multi": false,
+        "name": "node2",
+        "options": [],
+        "query": {
+          "datasource": {
+            "name": "PBFA97CFB590B2093"
+          },
+          "group": "prometheus",
+          "kind": "DataQuery",
+          "spec": {
+            "qryType": 1,
+            "query": "label_values(node)",
+            "refId": "PrometheusVariableQueryEditor-VariableQuery"
           },
           "version": "v0"
         },
