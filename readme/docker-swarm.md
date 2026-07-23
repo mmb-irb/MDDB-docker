@@ -109,7 +109,7 @@ docker exec -it \
 docker service update --force my_stack_rest
 ```
 
-## Generate VRE lite database
+## Generate VRE lite database
 
 The versions for **each service** of the stack are stored into a database. The **status** of these services is shown in the **VRE lite service**. After the **installation** and **deploy** of the services, this **database** must be **generated**:
 
