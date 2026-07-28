@@ -1490,7 +1490,7 @@
                     "kind": "DataQuery",
                     "spec": {
                       "editorMode": "code",
-                      "expr": "(sum by(device) (node_filesystem_size_bytes{device!=\"none\", node=~\"$node2\"}) - (sum by(device) (node_filesystem_free_bytes))) / (sum by(device) (node_filesystem_size_bytes))",
+                      "expr": "(sum by(device) (node_filesystem_size_bytes{device!=\"none\", node=~\"$node2\"}) - (sum by(device) (node_filesystem_free_bytes{device!=\"none\", node=~\"$node2\"}))) / (sum by(device) (node_filesystem_size_bytes))",
                       "legendFormat": "{{label}}",
                       "range": true
                     },

@@ -14,6 +14,11 @@ server:
 
 limits_config:
   allow_structured_metadata: true
+  max_query_series: 10000
+  # Enable sharded evaluation for approx_topk so high-cardinality "top N"
+  # queries (e.g. top accessions) don't hit max_query_series.
+  shard_aggregations:
+    - approx_topk
 
 schema_config:
   configs:
