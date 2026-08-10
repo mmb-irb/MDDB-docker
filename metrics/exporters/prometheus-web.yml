@@ -1,0 +1,19 @@
+# Prometheus web (HTTP server) config for the CENTRAL Prometheus.
+# Enabled via --web.config.file (see the local Prometheus service in extensions/metrics.yml).
+# It authenticates ALL HTTP endpoints, including the /api/v1/write remote_write receiver,
+# so node agents must send matching basic_auth credentials (PROM_USER / PROM_PASS).
+#
+# NOTE: this protects the Prometheus UI/API too — reaching :9090 will require these
+# credentials.
+#
+# The __UPPER__ tokens below are substituted at container start from environment
+# variables (see the entrypoint in extensions/metrics.yml):
+#   __PROM_USER__       <- PROM_USER       (must match the nodes' PROM_USER)
+#   __PROM_PASS_HASH__  <- PROM_PASS_HASH  (bcrypt hash of the nodes' PROM_PASS)
+#
+# Generate the hash (the username is supplied separately via PROM_USER):
+#   htpasswd -nBC 10 "" | tr -d ':\n'     # prints just the bcrypt hash
+# Store the result in PROM_PASS_HASH in the root .env.
+
+basic_auth_users:
+  __PROM_USER__: __PROM_PASS_HASH__
