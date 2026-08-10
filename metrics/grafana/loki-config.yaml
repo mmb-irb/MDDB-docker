@@ -20,6 +20,9 @@ limits_config:
   shard_aggregations:
     - approx_topk
 
+frontend:
+  encoding: protobuf
+
 schema_config:
   configs:
   - from: 2020-05-15

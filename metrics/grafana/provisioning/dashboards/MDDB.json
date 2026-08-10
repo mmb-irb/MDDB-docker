@@ -323,10 +323,10 @@
                     "kind": "DataQuery",
                     "spec": {
                       "direction": "backward",
-                      "editorMode": "code",
-                      "expr": "sum by(country) (count_over_time({service_name=\"rest-api\"} | __error__=`` | node =~ `$node` | country != `` [$__range]))",
-                      "legendFormat": "{{route}}",
-                      "queryType": "range"
+                      "editorMode": "builder",
+                      "expr": "sum by(country) (count_over_time({service_name=\"rest-api\", node=~\"$node\"} | __error__=`` | country != `` [$__range]))",
+                      "legendFormat": "{{country}}",
+                      "queryType": "instant"
                     },
                     "version": "v0"
                   },
@@ -337,24 +337,13 @@
             "queryOptions": {},
             "transformations": [
               {
-                "group": "reduce",
-                "kind": "Transformation",
-                "spec": {
-                  "options": {
-                    "labelsToFields": true,
-                    "reducers": [
-                      "last"
-                    ]
-                  }
-                }
-              },
-              {
                 "group": "organize",
                 "kind": "Transformation",
                 "spec": {
                   "options": {
                     "excludeByName": {
                       "Field": true,
+                      "Time": true,
                       "region": false
                     },
                     "includeByName": {},
@@ -366,7 +355,8 @@
                       "region": 2
                     },
                     "renameByName": {
-                      "Last": "Count"
+                      "Last": "Count",
+                      "Value #A": "Count"
                     }
                   }
                 }
@@ -456,7 +446,7 @@
                   "properties": [
                     {
                       "id": "custom.width",
-                      "value": 65
+                      "value": 167
                     }
                   ]
                 },
@@ -631,8 +621,8 @@
                     "kind": "DataQuery",
                     "spec": {
                       "direction": "backward",
-                      "editorMode": "code",
-                      "expr": "topk(1, sum by(route, referenceID) (count_over_time({service_name=\"rest-api\"} | __error__=`` | node =~ `$node` | status_code = `404` [$__auto])))",
+                      "editorMode": "builder",
+                      "expr": "sum by(route, referenceID) (count_over_time({service_name=\"rest-api\", node=~\"$node\"} | __error__=`` | status_code = `404` [$__auto]))",
                       "queryType": "range"
                     },
                     "version": "v0"
@@ -759,7 +749,7 @@
                   "properties": [
                     {
                       "id": "custom.width",
-                      "value": 174
+                      "value": 539
                     }
                   ]
                 }
@@ -800,8 +790,8 @@
                     "kind": "DataQuery",
                     "spec": {
                       "direction": "backward",
-                      "editorMode": "code",
-                      "expr": "sum by(source) (rate({service_name=\"rest-api\"} | __error__=`` | node =~ `$node`| label_format source=requestSource [1h])) * 60",
+                      "editorMode": "builder",
+                      "expr": "sum by(source) (rate({service_name=\"rest-api\"} | __error__=`` | node =~ `$node` [1h])) * 60",
                       "legendFormat": "{{status_code}}",
                       "queryType": "range"
                     },
@@ -1047,9 +1037,9 @@
                     "spec": {
                       "direction": "backward",
                       "editorMode": "code",
-                      "expr": "sum by(country, region, city) (count_over_time({service_name=\"rest-api\"} | __error__=`` | node =~ `$node` | country != `` [$__range]))",
+                      "expr": "sum by(country, region, city) (count_over_time({service_name=\"rest-api\", node =~ `$node` } | __error__=`` | country != `` [$__range]))",
                       "legendFormat": "{{route}}",
-                      "queryType": "range"
+                      "queryType": "instant"
                     },
                     "version": "v0"
                   },
@@ -1060,24 +1050,13 @@
             "queryOptions": {},
             "transformations": [
               {
-                "group": "reduce",
-                "kind": "Transformation",
-                "spec": {
-                  "options": {
-                    "labelsToFields": true,
-                    "reducers": [
-                      "last"
-                    ]
-                  }
-                }
-              },
-              {
                 "group": "organize",
                 "kind": "Transformation",
                 "spec": {
                   "options": {
                     "excludeByName": {
                       "Field": true,
+                      "Time": true,
                       "region": false
                     },
                     "includeByName": {},
@@ -1089,7 +1068,11 @@
                       "region": 2
                     },
                     "renameByName": {
-                      "Last": "Count"
+                      "Last": "Count",
+                      "Value #A": "Count",
+                      "city": "City",
+                      "country": "Country",
+                      "region": "Region"
                     }
                   }
                 }
@@ -1167,7 +1150,7 @@
                   "properties": [
                     {
                       "id": "custom.width",
-                      "value": 108
+                      "value": 123
                     }
                   ]
                 },
@@ -1179,7 +1162,7 @@
                   "properties": [
                     {
                       "id": "custom.width",
-                      "value": 50
+                      "value": 82
                     }
                   ]
                 },
@@ -1192,6 +1175,32 @@
                     {
                       "id": "custom.width",
                       "value": 88
+                    }
+                  ]
+                },
+                {
+                  "matcher": {
+                    "id": "byName",
+                    "options": "City",
+                    "scope": "series"
+                  },
+                  "properties": [
+                    {
+                      "id": "custom.width",
+                      "value": 131
+                    }
+                  ]
+                },
+                {
+                  "matcher": {
+                    "id": "byName",
+                    "options": "Region",
+                    "scope": "series"
+                  },
+                  "properties": [
+                    {
+                      "id": "custom.width",
+                      "value": 115
                     }
                   ]
                 }
@@ -1355,8 +1364,8 @@
                     "kind": "DataQuery",
                     "spec": {
                       "direction": "backward",
-                      "editorMode": "builder",
-                      "expr": "topk(10, sum by(accession) (count_over_time({service_name=\"rest-api\"} | node =~ `$node` | accession != `` [$__range])))",
+                      "editorMode": "code",
+                      "expr": "approx_topk(10, sum by(accession) (count_over_time({service_name=\"rest-api\", node=~\"$node\"} | accession != `` [$__range])))",
                       "queryType": "instant"
                     },
                     "version": "v0"
@@ -1686,6 +1695,717 @@
                 "mode": "single",
                 "sort": "none"
               }
+            }
+          },
+          "version": "13.1.1"
+        }
+      }
+    },
+    "panel-21": {
+      "kind": "Panel",
+      "spec": {
+        "data": {
+          "kind": "QueryGroup",
+          "spec": {
+            "queries": [
+              {
+                "kind": "PanelQuery",
+                "spec": {
+                  "hidden": false,
+                  "query": {
+                    "datasource": {
+                      "name": "P8E80F9AEF21F6940"
+                    },
+                    "group": "loki",
+                    "kind": "DataQuery",
+                    "spec": {
+                      "direction": "backward",
+                      "editorMode": "code",
+                      "expr": "sum by(route, source) (count_over_time({service_name=\"rest-api\", node=~\"$node\"} | __error__=``  [$__auto]))",
+                      "queryType": "range"
+                    },
+                    "version": "v0"
+                  },
+                  "refId": "A"
+                }
+              }
+            ],
+            "queryOptions": {},
+            "transformations": [
+              {
+                "group": "reduce",
+                "kind": "Transformation",
+                "spec": {
+                  "options": {
+                    "labelsToFields": true,
+                    "reducers": [
+                      "sum"
+                    ]
+                  }
+                }
+              },
+              {
+                "group": "partitionByValues",
+                "kind": "Transformation",
+                "spec": {
+                  "options": {
+                    "fields": [
+                      "source"
+                    ],
+                    "keepFields": false
+                  }
+                }
+              },
+              {
+                "group": "joinByField",
+                "kind": "Transformation",
+                "spec": {
+                  "options": {
+                    "byField": "route",
+                    "mode": "outer"
+                  }
+                }
+              },
+              {
+                "group": "calculateField",
+                "kind": "Transformation",
+                "spec": {
+                  "options": {}
+                }
+              },
+              {
+                "group": "organize",
+                "kind": "Transformation",
+                "spec": {
+                  "options": {
+                    "excludeByName": {
+                      "Field": true,
+                      "Field direct-api": true,
+                      "Field mdposit-client": true,
+                      "Field workflow": true
+                    },
+                    "includeByName": {},
+                    "indexByName": {
+                      "Field": 3,
+                      "Total": 0,
+                      "referenceID": 2,
+                      "route": 1
+                    },
+                    "renameByName": {
+                      "Field mdposit-client": "",
+                      "Total 3": "Total",
+                      "Total 4": "Total",
+                      "Total direct-api": "API",
+                      "Total mdposit-client": "client",
+                      "Total workflow": "workflow",
+                      "route direct-api": "route"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "description": "",
+        "id": 21,
+        "links": [],
+        "title": "Routes",
+        "vizConfig": {
+          "group": "table",
+          "kind": "VizConfig",
+          "spec": {
+            "fieldConfig": {
+              "defaults": {
+                "color": {
+                  "mode": "thresholds"
+                },
+                "custom": {
+                  "align": "auto",
+                  "cellOptions": {
+                    "type": "auto"
+                  },
+                  "footer": {
+                    "reducers": []
+                  },
+                  "inspect": false
+                },
+                "thresholds": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "green",
+                      "value": 0
+                    },
+                    {
+                      "color": "red",
+                      "value": 80
+                    }
+                  ]
+                }
+              },
+              "overrides": [
+                {
+                  "matcher": {
+                    "id": "byName",
+                    "options": "Field"
+                  },
+                  "properties": [
+                    {
+                      "id": "custom.width",
+                      "value": 75
+                    }
+                  ]
+                },
+                {
+                  "matcher": {
+                    "id": "byName",
+                    "options": "route"
+                  },
+                  "properties": [
+                    {
+                      "id": "custom.width",
+                      "value": 292
+                    }
+                  ]
+                },
+                {
+                  "matcher": {
+                    "id": "byName",
+                    "options": "Total"
+                  },
+                  "properties": [
+                    {
+                      "id": "custom.width",
+                      "value": 80
+                    }
+                  ]
+                },
+                {
+                  "matcher": {
+                    "id": "byName",
+                    "options": "referenceID"
+                  },
+                  "properties": [
+                    {
+                      "id": "custom.width",
+                      "value": 174
+                    }
+                  ]
+                },
+                {
+                  "matcher": {
+                    "id": "byName",
+                    "options": "route direct-api",
+                    "scope": "series"
+                  },
+                  "properties": [
+                    {
+                      "id": "custom.width",
+                      "value": 319
+                    }
+                  ]
+                },
+                {
+                  "matcher": {
+                    "id": "byName",
+                    "options": "Total 4",
+                    "scope": "series"
+                  },
+                  "properties": [
+                    {
+                      "id": "custom.width",
+                      "value": 103
+                    }
+                  ]
+                },
+                {
+                  "matcher": {
+                    "id": "byName",
+                    "options": "Total workflow",
+                    "scope": "series"
+                  },
+                  "properties": [
+                    {
+                      "id": "custom.width",
+                      "value": 124
+                    }
+                  ]
+                },
+                {
+                  "matcher": {
+                    "id": "byName",
+                    "options": "Total mdposit-client",
+                    "scope": "series"
+                  },
+                  "properties": [
+                    {
+                      "id": "custom.width",
+                      "value": 196
+                    }
+                  ]
+                },
+                {
+                  "matcher": {
+                    "id": "byName",
+                    "options": "Total direct-api",
+                    "scope": "series"
+                  },
+                  "properties": [
+                    {
+                      "id": "custom.width",
+                      "value": 126
+                    }
+                  ]
+                },
+                {
+                  "matcher": {
+                    "id": "byName",
+                    "options": "client",
+                    "scope": "series"
+                  },
+                  "properties": [
+                    {
+                      "id": "custom.width",
+                      "value": 82
+                    }
+                  ]
+                },
+                {
+                  "matcher": {
+                    "id": "byName",
+                    "options": "workflow",
+                    "scope": "series"
+                  },
+                  "properties": [
+                    {
+                      "id": "custom.width",
+                      "value": 86
+                    }
+                  ]
+                }
+              ]
+            },
+            "options": {
+              "cellHeight": "sm",
+              "frameIndex": 0,
+              "showHeader": true,
+              "sortBy": [
+                {
+                  "desc": true,
+                  "displayName": "Total"
+                }
+              ]
+            }
+          },
+          "version": "13.1.1"
+        }
+      }
+    },
+    "panel-22": {
+      "kind": "Panel",
+      "spec": {
+        "data": {
+          "kind": "QueryGroup",
+          "spec": {
+            "queries": [
+              {
+                "kind": "PanelQuery",
+                "spec": {
+                  "hidden": false,
+                  "query": {
+                    "datasource": {
+                      "name": "P8E80F9AEF21F6940"
+                    },
+                    "group": "loki",
+                    "kind": "DataQuery",
+                    "spec": {
+                      "direction": "backward",
+                      "editorMode": "builder",
+                      "expr": "topk(100, sum by(route, accession, analysisName, filename, referenceID, source, project, pdbid) (count_over_time({service_name=\"rest-api\", node=~\"$node\"} | __error__=`` | status_code != `404` [$__range])))",
+                      "queryType": "instant"
+                    },
+                    "version": "v0"
+                  },
+                  "refId": "A"
+                }
+              }
+            ],
+            "queryOptions": {},
+            "transformations": [
+              {
+                "group": "reduce",
+                "kind": "Transformation",
+                "spec": {
+                  "disabled": true,
+                  "options": {
+                    "labelsToFields": true,
+                    "reducers": [
+                      "sum"
+                    ]
+                  }
+                }
+              },
+              {
+                "group": "organize",
+                "kind": "Transformation",
+                "spec": {
+                  "options": {
+                    "excludeByName": {
+                      "Field": true,
+                      "Time": true
+                    },
+                    "includeByName": {},
+                    "indexByName": {
+                      "Time": 5,
+                      "Value #A": 0,
+                      "accession": 3,
+                      "analysisName": 6,
+                      "filename": 4,
+                      "referenceID": 7,
+                      "route": 2,
+                      "source": 1
+                    },
+                    "renameByName": {
+                      "Value #A": "Count"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "description": "",
+        "id": 22,
+        "links": [],
+        "title": "Routes with params",
+        "vizConfig": {
+          "group": "table",
+          "kind": "VizConfig",
+          "spec": {
+            "fieldConfig": {
+              "defaults": {
+                "color": {
+                  "mode": "thresholds"
+                },
+                "custom": {
+                  "align": "auto",
+                  "cellOptions": {
+                    "type": "auto"
+                  },
+                  "footer": {
+                    "reducers": []
+                  },
+                  "inspect": false
+                },
+                "thresholds": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "green",
+                      "value": 0
+                    },
+                    {
+                      "color": "red",
+                      "value": 80
+                    }
+                  ]
+                }
+              },
+              "overrides": [
+                {
+                  "matcher": {
+                    "id": "byName",
+                    "options": "Field"
+                  },
+                  "properties": [
+                    {
+                      "id": "custom.width",
+                      "value": 75
+                    }
+                  ]
+                },
+                {
+                  "matcher": {
+                    "id": "byName",
+                    "options": "route"
+                  },
+                  "properties": [
+                    {
+                      "id": "custom.width",
+                      "value": 278
+                    }
+                  ]
+                },
+                {
+                  "matcher": {
+                    "id": "byName",
+                    "options": "Total"
+                  },
+                  "properties": [
+                    {
+                      "id": "custom.width",
+                      "value": 60
+                    }
+                  ]
+                },
+                {
+                  "matcher": {
+                    "id": "byName",
+                    "options": "referenceID"
+                  },
+                  "properties": [
+                    {
+                      "id": "custom.width",
+                      "value": 564
+                    }
+                  ]
+                },
+                {
+                  "matcher": {
+                    "id": "byName",
+                    "options": "accession",
+                    "scope": "series"
+                  },
+                  "properties": [
+                    {
+                      "id": "custom.width",
+                      "value": 137
+                    }
+                  ]
+                },
+                {
+                  "matcher": {
+                    "id": "byName",
+                    "options": "filename",
+                    "scope": "series"
+                  },
+                  "properties": [
+                    {
+                      "id": "custom.width",
+                      "value": 172
+                    }
+                  ]
+                },
+                {
+                  "matcher": {
+                    "id": "byName",
+                    "options": "analysisName",
+                    "scope": "series"
+                  },
+                  "properties": [
+                    {
+                      "id": "custom.width",
+                      "value": 201
+                    }
+                  ]
+                },
+                {
+                  "matcher": {
+                    "id": "byName",
+                    "options": "Value #A",
+                    "scope": "series"
+                  },
+                  "properties": [
+                    {
+                      "id": "custom.width",
+                      "value": 102
+                    }
+                  ]
+                },
+                {
+                  "matcher": {
+                    "id": "byName",
+                    "options": "source",
+                    "scope": "series"
+                  },
+                  "properties": [
+                    {
+                      "id": "custom.width",
+                      "value": 113
+                    }
+                  ]
+                }
+              ]
+            },
+            "options": {
+              "cellHeight": "sm",
+              "frameIndex": 0,
+              "showHeader": true,
+              "sortBy": [
+                {
+                  "desc": true,
+                  "displayName": "Count"
+                }
+              ]
+            }
+          },
+          "version": "13.1.1"
+        }
+      }
+    },
+    "panel-23": {
+      "kind": "Panel",
+      "spec": {
+        "data": {
+          "kind": "QueryGroup",
+          "spec": {
+            "queries": [
+              {
+                "kind": "PanelQuery",
+                "spec": {
+                  "hidden": false,
+                  "query": {
+                    "datasource": {
+                      "name": "P8E80F9AEF21F6940"
+                    },
+                    "group": "loki",
+                    "kind": "DataQuery",
+                    "spec": {
+                      "direction": "backward",
+                      "editorMode": "code",
+                      "expr": "sum by(route, referenceID) (count_over_time({service_name=\"rest-api\", node=~\"$node\"} | __error__=`` | status_code != `404` | referenceID != `` [$__auto]))",
+                      "queryType": "range"
+                    },
+                    "version": "v0"
+                  },
+                  "refId": "A"
+                }
+              }
+            ],
+            "queryOptions": {},
+            "transformations": [
+              {
+                "group": "reduce",
+                "kind": "Transformation",
+                "spec": {
+                  "options": {
+                    "labelsToFields": true,
+                    "reducers": [
+                      "sum"
+                    ]
+                  }
+                }
+              },
+              {
+                "group": "organize",
+                "kind": "Transformation",
+                "spec": {
+                  "options": {
+                    "excludeByName": {
+                      "Field": true
+                    },
+                    "includeByName": {},
+                    "indexByName": {
+                      "Field": 3,
+                      "Total": 0,
+                      "referenceID": 2,
+                      "route": 1
+                    },
+                    "renameByName": {}
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "description": "",
+        "id": 23,
+        "links": [],
+        "title": "Accesed references",
+        "vizConfig": {
+          "group": "table",
+          "kind": "VizConfig",
+          "spec": {
+            "fieldConfig": {
+              "defaults": {
+                "color": {
+                  "mode": "thresholds"
+                },
+                "custom": {
+                  "align": "auto",
+                  "cellOptions": {
+                    "type": "auto"
+                  },
+                  "footer": {
+                    "reducers": []
+                  },
+                  "inspect": false
+                },
+                "thresholds": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "green",
+                      "value": 0
+                    },
+                    {
+                      "color": "red",
+                      "value": 80
+                    }
+                  ]
+                }
+              },
+              "overrides": [
+                {
+                  "matcher": {
+                    "id": "byName",
+                    "options": "Field"
+                  },
+                  "properties": [
+                    {
+                      "id": "custom.width",
+                      "value": 75
+                    }
+                  ]
+                },
+                {
+                  "matcher": {
+                    "id": "byName",
+                    "options": "route"
+                  },
+                  "properties": [
+                    {
+                      "id": "custom.width",
+                      "value": 340
+                    }
+                  ]
+                },
+                {
+                  "matcher": {
+                    "id": "byName",
+                    "options": "Total"
+                  },
+                  "properties": [
+                    {
+                      "id": "custom.width",
+                      "value": 60
+                    }
+                  ]
+                },
+                {
+                  "matcher": {
+                    "id": "byName",
+                    "options": "referenceID"
+                  },
+                  "properties": [
+                    {
+                      "id": "custom.width",
+                      "value": 539
+                    }
+                  ]
+                }
+              ]
+            },
+            "options": {
+              "cellHeight": "sm",
+              "frameIndex": 0,
+              "showHeader": true,
+              "sortBy": [
+                {
+                  "desc": true,
+                  "displayName": "Total"
+                }
+              ]
             }
           },
           "version": "13.1.1"
@@ -2518,7 +3238,7 @@
                         "name": "panel-11"
                       },
                       "height": 10,
-                      "width": 6,
+                      "width": 5,
                       "x": 12,
                       "y": 16
                     }
@@ -2531,8 +3251,8 @@
                         "name": "panel-17"
                       },
                       "height": 10,
-                      "width": 6,
-                      "x": 18,
+                      "width": 7,
+                      "x": 17,
                       "y": 16
                     }
                   },
@@ -2556,10 +3276,49 @@
                         "kind": "ElementReference",
                         "name": "panel-19"
                       },
-                      "height": 10,
+                      "height": 19,
                       "width": 12,
                       "x": 12,
                       "y": 26
+                    }
+                  },
+                  {
+                    "kind": "GridLayoutItem",
+                    "spec": {
+                      "element": {
+                        "kind": "ElementReference",
+                        "name": "panel-23"
+                      },
+                      "height": 9,
+                      "width": 12,
+                      "x": 0,
+                      "y": 36
+                    }
+                  },
+                  {
+                    "kind": "GridLayoutItem",
+                    "spec": {
+                      "element": {
+                        "kind": "ElementReference",
+                        "name": "panel-21"
+                      },
+                      "height": 11,
+                      "width": 8,
+                      "x": 0,
+                      "y": 45
+                    }
+                  },
+                  {
+                    "kind": "GridLayoutItem",
+                    "spec": {
+                      "element": {
+                        "kind": "ElementReference",
+                        "name": "panel-22"
+                      },
+                      "height": 11,
+                      "width": 16,
+                      "x": 8,
+                      "y": 45
                     }
                   }
                 ]
@@ -2590,7 +3349,7 @@
       "1d"
     ],
     "fiscalYearStartMonth": 0,
-    "from": "now-3h",
+    "from": "now-24h",
     "hideTimepicker": false,
     "timezone": "browser",
     "to": "now"
@@ -2665,6 +3424,23 @@
         "regexApplyTo": "value",
         "skipUrlSync": false,
         "sort": "disabled"
+      }
+    },
+    {
+      "datasource": {
+        "name": "P8E80F9AEF21F6940"
+      },
+      "group": "loki",
+      "kind": "AdhocVariable",
+      "spec": {
+        "allowCustomValue": true,
+        "baseFilters": [],
+        "defaultKeys": [],
+        "enableGroupBy": false,
+        "filters": [],
+        "hide": "dontHide",
+        "name": "Filters",
+        "skipUrlSync": false
       }
     }
   ]
