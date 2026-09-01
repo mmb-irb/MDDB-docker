@@ -11,3 +11,4 @@ __pycache__
 node_modules/
 /services_monitor/package-lock.json
 dev.*
+apache/prometheus.htpasswd

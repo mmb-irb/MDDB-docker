@@ -155,3 +155,45 @@ The versions for **each service** of the stack are stored into a database. The *
 ```sh
 python3 scripts/update-services-versions.py 
 ```
+
+## Troubleshooting
+
+### Builds fail to fetch/download from GitHub
+
+When rebuilding a service (`docker-compose build`, `docker service update`, or any build that runs `git clone` / `pip install` / `curl` against GitHub inside a container), the download may **hang and time out** even though the host itself has working internet. A typical symptom is a build step or a container that stalls and eventually fails with something like:
+
+```sh
+curl: (28) Connection timed out after 5003 milliseconds
+fatal: unable to access 'https://github.com/...': Failed to connect
+```
+
+Note that **DNS resolves fine** and the **TCP connection is established** — it only stalls while waiting for the first large response packet (e.g. the TLS certificate). This is the signature of an **MTU mismatch** between Docker and the host network, which is common on **cloud/OpenStack VMs** where the physical interface uses a reduced MTU (typically **1450**) for its VXLAN overlay, while Docker bridges default to **1500**. Oversized packets are silently dropped and, because Path-MTU discovery (ICMP) is usually filtered in these networks, the connection just hangs.
+
+**Confirm it.** Compare the host NIC MTU against the Docker bridges:
+
+```sh
+ip link show | grep -E 'mtu|ens|eth|docker'
+```
+
+If the physical interface (e.g. `ens3`) shows `mtu 1450` while `docker0` / `docker_gwbridge` show `mtu 1500`, that is the problem. You can also verify by running the same download on the host network, which bypasses the Docker bridge:
+
+```sh
+docker run --rm --network host alpine sh -lc "apk add --no-cache curl && curl -Is --max-time 15 https://github.com | head -1"
+```
+
+If this succeeds while a normal `docker run` times out, the bridge MTU is confirmed as the cause.
+
+**Fix the default bridge.** Set Docker's MTU to match the host interface in `/etc/docker/daemon.json`:
+
+```json
+{
+  "mtu": 1450
+}
+```
+
+Then restart Docker and re-test:
+
+```sh
+sudo systemctl restart docker
+docker run --rm alpine sh -lc "apk add --no-cache curl && curl -Is --max-time 15 https://github.com | head -1"
+```

@@ -21,6 +21,7 @@ services:
         SSL_CERT_KEY: ${SSL_CERT_KEY}
     volumes:
       - certs_volume:/usr/local/apache2/conf/ssl   # path to SSL certificates
+      - ./apache/prometheus.htpasswd:/usr/local/apache2/conf/prometheus.htpasswd:ro
     ports:
       - "${APACHE_HTTP_OUTER_PORT}:${APACHE_HTTP_INNER_PORT}"   # http port mapping
       - "${APACHE_HTTPS_OUTER_PORT}:${APACHE_HTTPS_INNER_PORT}"   # https port mapping

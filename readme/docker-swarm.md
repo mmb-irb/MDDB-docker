@@ -24,6 +24,7 @@ In order to execute the **long-term** tasks in **Docker Swarm** and the **one-of
 docker network create --driver overlay --attachable web_network
 docker network create --driver overlay --attachable data_network
 docker network create --driver overlay --attachable minio_network
+docker network create --driver overlay --attachable metrics_network
 ```
 
 > NOTE: In **docker old versions** the instruction for Docker Compose is with hyphen, so instead of `docker compose build`, `docker-compose build` must be typed and executed.

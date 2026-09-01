@@ -1,26 +1,30 @@
 # Prometheus agent config for each application node
-# Copy this to each node and customize the node name, owner, and central_prometheus_url
+# Copy this to each node and customize the node name, owner, and PROM_URL
 # Place in: /path/to/node/prometheus/prometheus.yml
 
 global:
   scrape_interval: 5m
   external_labels:
-    node: '${NODE}'  # taken from the root .env NODE variable (expanded by Prometheus)
+    node: '__NODE__'  # substituted at container start by the entrypoint (sed token)
 
 scrape_configs:
   # Scrape node-exporter for host hardware metrics
   - job_name: 'node-exporter'
     static_configs:
-      - targets: ['localhost:9100']
+      - targets: ['node-exporter:9100']
 
   # Scrape cAdvisor for container metrics
   - job_name: 'cadvisor'
     static_configs:
-      - targets: ['localhost:8080']
+      - targets: ['cadvisor:8080']
 
 remote_write:
-  # Send all metrics to central Prometheus
-  - url: http://monitoring-central:9090/api/v1/write  # <- CHANGE: IP or hostname of central monitoring machine
+  # Send all metrics to the central Prometheus.
+  # The __UPPER__ tokens below are substituted at container start from the matching
+  # environment variables (see the entrypoint in extensions/metrics.yml), because
+  # Prometheus does not expand env vars outside of external_labels. Set the values in
+  # the root .env: PROM_URL, PROM_USER, PROM_PASS.
+  - url: '__PROM_URL__'
     write_relabel_configs:
       # Optionally relabel or drop metrics before sending
       - source_labels: [__name__]
@@ -31,6 +35,10 @@ remote_write:
       max_shards: 200
       min_shards: 1
       max_samples_per_send: 1000
-      batch_send_wait: 5s
+      batch_send_deadline: 5s
       min_backoff: 30ms
       max_backoff: 100ms
+    basic_auth:
+      username: '__PROM_USER__'
+      password: '__PROM_PASS__'
+
