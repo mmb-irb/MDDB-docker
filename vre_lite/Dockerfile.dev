@@ -60,7 +60,7 @@ WORKDIR /app/mddb-vre
 COPY package-lock.json .
 
 # Install dependencies
-RUN npm install
+RUN npm install --legacy-peer-deps
 
 # Build website in production
 RUN npm run build:production
