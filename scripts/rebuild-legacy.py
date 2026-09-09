@@ -51,6 +51,7 @@ def main():
     parser.add_argument('-s', '--service', type=str, required=True, help='Service to build and push into the stack.')
     parser.add_argument('-v', '--version', type=str, required=True, help='Version of the service.')
     parser.add_argument('-t', '--stack', type=str, required=False, help='Name of the stack where the service is running (only for docker swarm).')
+    parser.add_argument('--tag', type=str, required=False, help='Image tag to read the version from (e.g. prod, dev, test). If not provided, the latest local image is used.')
 
     args = parser.parse_args()
 
@@ -80,7 +81,8 @@ def main():
         run_command(update_command)
 
         # Get version of the service
-        version_command = ['docker', 'run', '--entrypoint', '', '--rm', f'{args.service}_image', 'sh', '-c', 'cat /app/version.txt']
+        image = f'{args.service}_image:{args.tag}' if args.tag else f'{args.service}_image'
+        version_command = ['docker', 'run', '--entrypoint', '', '--rm', image, 'sh', '-c', 'cat /app/version.txt']
         # Get result of version command
         try:
             result = subprocess.run(version_command, capture_output=True, text=True, check=True)
@@ -118,7 +120,8 @@ def main():
         run_command_p(r)
 
         # Get version of the service
-        version_command = ['podman', 'run', '--entrypoint', '', '--rm', f'{args.service}_image', 'sh', '-c', 'cat /app/version.txt']
+        image = f'{args.service}_image:{args.tag}' if args.tag else f'{args.service}_image'
+        version_command = ['podman', 'run', '--entrypoint', '', '--rm', image, 'sh', '-c', 'cat /app/version.txt']
         # Get result of version command
         try:
             result = subprocess.run(version_command, capture_output=True, text=True, check=True)

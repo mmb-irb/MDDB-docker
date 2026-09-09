@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import argparse
 import subprocess
 import json
 import urllib.request
@@ -9,7 +10,7 @@ from typing import List, Tuple, Optional
 
 
 class VersionChecker:
-    def __init__(self):
+    def __init__(self, tag: Optional[str] = None):
         # Configuration: service_name -> (github_org, github_repo, docker_image)
         self.services = {
             "client": ("mmb-irb", "MDposit-client-build", "client_image"),
@@ -19,6 +20,9 @@ class VersionChecker:
             "workflow": ("mmb-irb", "MDDB-workflow", "workflow_image"),
             # Add more services as needed
         }
+
+        # Image tag to read the version from (e.g. prod, dev, test). If not set, the latest local image is used.
+        self.tag = tag
 
         self.updatable_services = []
         self.service_versions = {}
@@ -132,11 +136,13 @@ class VersionChecker:
         # else:
         #     command = f'docker run --entrypoint "" --rm {image_name} sh -c "cat /app/version.txt"'
 
+        image = f'{image_name}:{self.tag}' if self.tag else image_name
+
         docker = self.command_exists(['docker', 'version'])
         if docker:
-            command = f'docker run --entrypoint "" --rm {image_name} sh -c "cat /app/version.txt"'
+            command = f'docker run --entrypoint "" --rm {image} sh -c "cat /app/version.txt"'
         else:
-            command = f'podman run --entrypoint "" --rm {image_name} sh -c "cat /app/version.txt"'
+            command = f'podman run --entrypoint "" --rm {image} sh -c "cat /app/version.txt"'
 
         success, output = self.run_command(command, shell=True, stream_output=False)
 
@@ -365,7 +371,7 @@ class VersionChecker:
                 choice = input("\nEnter your choice (1-2): ").strip()
 
                 if choice == "1":
-                    self.__init__()  # Reset state
+                    self.__init__(self.tag)  # Reset state
                     self.check_all_versions()
                     self.display_summary()
                 elif choice == "2":
@@ -431,12 +437,20 @@ class VersionChecker:
                 print("❌ Invalid choice!")
 
 
+def parse_args():
+    parser = argparse.ArgumentParser(description='Check and update service versions.')
+    parser.add_argument('--tag', required=False,
+                         help="Image tag to read the current version from (e.g. prod, dev, test). If not provided, the latest local image is used.")
+    return parser.parse_args()
+
+
 def main():
     """Main entry point."""
     print("🚀 Docker Service Version Checker & Updater")
     print("=" * 60)
 
-    checker = VersionChecker()
+    args = parse_args()
+    checker = VersionChecker(tag=args.tag)
 
     try:
         # Initial version check
