@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import argparse
 import subprocess
 import sys
 import os
@@ -39,13 +40,14 @@ def docker_compose_script():
         sys.exit(1)
 
 
-def get_service_version(service, podman=False):
-    """Get version from service image."""
+def get_service_version(service, podman=False, tag=None):
+    """Get version from service image. Uses the given tag (e.g. prod, dev, test) if provided, otherwise the latest local image."""
+    image = f'{service}_image:{tag}' if tag else f'{service}_image'
     if podman:
-        version_command = ['podman', 'run', '--entrypoint', '', '--rm', f'{service}_image', 'sh', '-c', 'cat /app/version.txt']
+        version_command = ['podman', 'run', '--entrypoint', '', '--rm', image, 'sh', '-c', 'cat /app/version.txt']
     else:
-        version_command = ['docker', 'run', '--entrypoint', '', '--rm', f'{service}_image', 'sh', '-c', 'cat /app/version.txt']
-    print(f"🔍 Getting version for {service}...")
+        version_command = ['docker', 'run', '--entrypoint', '', '--rm', image, 'sh', '-c', 'cat /app/version.txt']
+    print(f"🔍 Getting version for {service} ({image})...")
 
     version, success = run_command(version_command, f"get version for {service}")
     if success:
@@ -83,8 +85,16 @@ def update_version_tracker(service, version, podman=False):
     return success
 
 
+def parse_args():
+    parser = argparse.ArgumentParser(description='Update the tracked version for all services.')
+    parser.add_argument('-t', '--tag', required=False,
+                         help="Image tag to read the version from (e.g. prod, dev, test). If not provided, the latest local image is used.")
+    return parser.parse_args()
+
+
 def main():
     """Main function to update all service versions."""
+    args = parse_args()
     services = ["client", "rest", "vre_lite", "loader", "workflow"]
 
     print("🚀 Starting service version update process")
@@ -101,7 +111,7 @@ def main():
         print("-" * 40)
 
         # Get version from service image
-        version = get_service_version(service, podman)
+        version = get_service_version(service, podman, args.tag)
 
         if version:
             # Update version tracker
