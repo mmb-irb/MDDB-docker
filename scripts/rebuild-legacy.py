@@ -65,10 +65,10 @@ def main():
 
         # Build service with --no-cache
         build_command = []
-        if command_exists(['docker-compose', 'version']):
+        if command_exists(['docker', 'compose', 'version']):
+                    build_command = ['docker', 'compose', 'build', '--build-arg', f'VERSION={args.version}', '--no-cache', args.service]
+        elif command_exists(['docker-compose', 'version']):
             build_command = ['docker-compose', 'build', '--build-arg', f'VERSION={args.version}', '--no-cache', args.service]
-        elif command_exists(['docker', 'compose', 'version']):
-            build_command = ['docker', 'compose', 'build', '--build-arg', f'VERSION={args.version}', '--no-cache', args.service]
         else:
             print("Error: Neither 'docker-compose' nor 'docker compose' commands are available.")
             sys.exit(1)
