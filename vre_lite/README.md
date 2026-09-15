@@ -113,7 +113,7 @@ COPY ecosystem.config.cjs .
 # Install minio client
 # RUN curl -fsSL -o /usr/local/bin/mc https://dl.min.io/client/mc/release/linux-amd64/mc && \
 #     chmod +x /usr/local/bin/mc
-RUN curl -fsSL -o /usr/local/bin/mc https://dl.min.io/aistor/mc/release/linux-amd64/mc && \
+RUN curl -fsSL -o /usr/local/bin/mc https://github.com/mmb-irb/MDDB-docker/releases/download/v1.0.0/mc && \
     chmod +x /usr/local/bin/mc
 
 # Define arguments passed from docker-compose
