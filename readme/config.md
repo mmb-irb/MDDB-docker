@@ -475,7 +475,7 @@ services:
         condition: on-failure   # Restart only on failure
 
   minio:
-    image: minio/minio
+    image: quay.io/minio/minio:latest
     environment:
       - MINIO_ROOT_USER=${MINIO_ROOT_USER}
       - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD}
