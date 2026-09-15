@@ -27,6 +27,7 @@ ARG DB_SERVER
 ARG DB_PORT
 ARG DB_NAME
 ARG PAT
+ARG STACK_NAME
 ARG NODE_NAME
 # Arguments from services-monitor
 ARG API_KEY
@@ -49,6 +50,7 @@ RUN echo "BASE_URL_DEVELOPMENT=${VRE_LITE_BASE_URL_DEVELOPMENT}" > /app/mddb-vre
     echo "DB_NAME=${DB_NAME}" >> /app/mddb-vre/.env && \
     echo "PAT=${PAT}" >> /app/mddb-vre/.env && \
     echo "NODE_NAME=${NODE_NAME}" >> /app/mddb-vre/.env && \
+    echo "STACK_NAME=${STACK_NAME}" >> /app/mddb-vre/.env && \
     # Arguments from services-monitor
     echo "API_KEY=${API_KEY}" >> /app/mddb-vre/.env && \
     echo "URL_DEV=${URL_DEV}" >> /app/mddb-vre/.env

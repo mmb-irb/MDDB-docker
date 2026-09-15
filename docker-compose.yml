@@ -291,6 +291,7 @@ services:
         DB_PORT: ${VRE_LITE_DB_OUTER_PORT}
         DB_NAME: ${VRE_LITE_MONGO_DATABASE}
         PAT: ${GH_PAT}
+        STACK_NAME: ${STACK_NAME}
         NODE_NAME: ${NODE}
         MINIO_ADDRESS: ${MINIO_ADDRESS}
     volumes:

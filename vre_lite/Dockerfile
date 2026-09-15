@@ -45,6 +45,7 @@ ARG DB_SERVER
 ARG DB_PORT
 ARG DB_NAME
 ARG PAT
+ARG STACK_NAME
 ARG NODE_NAME
 
 RUN echo "BASE_URL_DEVELOPMENT=${VRE_LITE_BASE_URL_DEVELOPMENT}" > /app/mddb-vre/.env && \
@@ -63,6 +64,7 @@ RUN echo "BASE_URL_DEVELOPMENT=${VRE_LITE_BASE_URL_DEVELOPMENT}" > /app/mddb-vre
     echo "DB_PORT=${DB_PORT}" >> /app/mddb-vre/.env && \
     echo "DB_NAME=${DB_NAME}" >> /app/mddb-vre/.env && \
     echo "PAT=${PAT}" >> /app/mddb-vre/.env && \
+    echo "STACK_NAME=${STACK_NAME}" >> /app/mddb-vre/.env && \
     echo "NODE_NAME=${NODE_NAME}" >> /app/mddb-vre/.env
 
 # Change working directory to /app/mddb-vre
