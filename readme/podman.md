@@ -14,15 +14,53 @@ Export environment variables defined in [**global .env file**](config.md#env-fil
 set -a; source .env; set +a
 ```
 
-### Create networks
+### Check the network backend
 
-Create the **networks** needed for connecting all the **services**:
+Since **Podman 5**, the old **CNI** network backend is no longer supported and the CNI plugins are usually not installed anymore. Check which backend is in use:
 
 ```sh
-podman network create web_network
-podman network create data_network
-podman network create minio_network
+podman info --format '{{.Host.NetworkBackend}}'
 ```
+
+If it says `cni` (it happens when podman finds old CNI networks or containers), switch to **netavark** for your user:
+
+```sh
+mkdir -p ~/.config/containers
+cat >> ~/.config/containers/containers.conf <<EOF
+[network]
+network_backend = "netavark"
+EOF
+```
+
+Networks created with CNI are not migrated, so they must be **created again** (see below). Old CNI configuration files in `~/.config/cni` are ignored once netavark is active.
+
+### Containers created with older podman versions
+
+If podman is upgraded and the **runc** runtime is replaced by **crun**, containers created before the upgrade can not be started anymore (`OCI Runtime runc is in use by a container, but is not available`). They must be **removed** (`podman rm <name>`) and **run again** with the commands below. The data is kept, as it lives in the **host folders** mounted with `-v` (e.g. **DB_VOLUME_PATH**), which `podman rm` does not touch. Before removing them, it is a good idea to save their configuration with `podman inspect <name> > <name>.json`.
+
+### Resource limits
+
+In **rootless** podman, the `--cpus` and `--memory` flags only work if the system delegates the corresponding **cgroup controllers** to your user. Check which ones are delegated:
+
+```sh
+podman info --format '{{.Host.CgroupControllers}}'
+```
+
+In many systems only `[memory pids]` are delegated, so `--cpus` fails with an error like `crun: controller 'cpu' is not available`. For this reason, the commands in this document **do not set resource limits**. If your system delegates the `cpu` and `memory` controllers, you can add `--cpus "${<SERVICE>_CPU_LIMIT}" --memory "${<SERVICE>_MEMORY_LIMIT}"` to any `podman run` command.
+
+Take into account that older podman versions (with the `cgroupfs` manager) silently **ignored** these limits in rootless mode, so containers created with them never had actual limits.
+
+### Create networks
+
+Create the **networks** needed for connecting all the **services**. Setting the **subnets explicitly** allows to give fixed IPs to **mongodb** and **minio** (see below), so they do not change when containers are recreated:
+
+```sh
+podman network create --subnet 10.89.0.0/24 web_network
+podman network create --subnet 10.89.1.0/24 data_network
+podman network create --subnet 10.89.2.0/24 minio_network
+```
+
+Any free private subnets can be used. Check that they do not collide with the existing ones with `podman network ls` and `podman network inspect <network>`.
 
 ## Deploy MongoDB
 
@@ -31,13 +69,13 @@ The **first service** to be deployed is **mongodb** because some other services 
 Typical execution:
 
 ```sh
-podman run -d --name mongodb -e MONGO_INITDB_ROOT_USERNAME=${MONGO_INITDB_ROOT_USERNAME} -e MONGO_INITDB_ROOT_PASSWORD=${MONGO_INITDB_ROOT_PASSWORD} -e MONGO_PORT=${DB_OUTER_PORT} -e MONGO_INITDB_DATABASE=${DB_NAME} -e LOADER_DB_LOGIN=${LOADER_DB_LOGIN} -e LOADER_DB_PASSWORD=${LOADER_DB_PASSWORD} -e MONGO_VRE_DATABASE=${VRE_LITE_MONGO_DATABASE} -e VRE_DB_LOGIN=${VRE_LITE_DB_LOGIN} -e VRE_DB_PASSWORD=${VRE_LITE_DB_PASSWORD} -e REST_DB_LOGIN=${REST_DB_LOGIN} -e REST_DB_PASSWORD=${REST_DB_PASSWORD} -v ${DB_VOLUME_PATH}:/data/db:Z -v $(pwd)/mongodb/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro --cpus "${DB_CPU_LIMIT}" --memory "${DB_MEMORY_LIMIT}" --network data_network --security-opt label=disable docker.io/library/mongo:6
+podman run -d --name mongodb -e MONGO_INITDB_ROOT_USERNAME=${MONGO_INITDB_ROOT_USERNAME} -e MONGO_INITDB_ROOT_PASSWORD=${MONGO_INITDB_ROOT_PASSWORD} -e MONGO_PORT=${DB_OUTER_PORT} -e MONGO_INITDB_DATABASE=${DB_NAME} -e LOADER_DB_LOGIN=${LOADER_DB_LOGIN} -e LOADER_DB_PASSWORD=${LOADER_DB_PASSWORD} -e MONGO_VRE_DATABASE=${VRE_LITE_MONGO_DATABASE} -e VRE_DB_LOGIN=${VRE_LITE_DB_LOGIN} -e VRE_DB_PASSWORD=${VRE_LITE_DB_PASSWORD} -e REST_DB_LOGIN=${REST_DB_LOGIN} -e REST_DB_PASSWORD=${REST_DB_PASSWORD} -v ${DB_VOLUME_PATH}:/data/db:Z -v $(pwd)/mongodb/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro --network data_network --security-opt label=disable docker.io/library/mongo:6
 ```
 
 Sometimes, podman gives **problems with permissions**. Typically, these problems arise from using **NFS file systems** and **non-root permissions** in podman. Therefore, to avoid these problems, an alternative execution can be performed, using a [**mongo-nonroot.sh**](../mongodb/mongo-nonroot.sh) bash script for intialising the **mongodb** service:
 
 ```sh
-podman run -d --name mongodb -e MONGO_INITDB_ROOT_USERNAME=${MONGO_INITDB_ROOT_USERNAME} -e MONGO_INITDB_ROOT_PASSWORD=${MONGO_INITDB_ROOT_PASSWORD} -e MONGO_PORT=${DB_OUTER_PORT} -e MONGO_INITDB_DATABASE=${DB_NAME} -e LOADER_DB_LOGIN=${LOADER_DB_LOGIN} -e LOADER_DB_PASSWORD=${LOADER_DB_PASSWORD} -e MONGO_VRE_DATABASE=${VRE_LITE_MONGO_DATABASE} -e VRE_DB_LOGIN=${VRE_LITE_DB_LOGIN} -e VRE_DB_PASSWORD=${VRE_LITE_DB_PASSWORD} -e REST_DB_LOGIN=${REST_DB_LOGIN} -e REST_DB_PASSWORD=${REST_DB_PASSWORD} -e DB_OUTER_PORT=${DB_OUTER_PORT} -v ${DB_VOLUME_PATH}:/data/db:Z -v $(pwd)/mongodb/mongo-nonroot.sh:/entrypoint.sh:Z --entrypoint /entrypoint.sh -v $(pwd)/mongodb/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro --cpus "${DB_CPU_LIMIT}" --memory "${DB_MEMORY_LIMIT}" --network data_network --security-opt label=disable docker.io/library/mongo:6
+podman run -d --name mongodb -e MONGO_INITDB_ROOT_USERNAME=${MONGO_INITDB_ROOT_USERNAME} -e MONGO_INITDB_ROOT_PASSWORD=${MONGO_INITDB_ROOT_PASSWORD} -e MONGO_PORT=${DB_OUTER_PORT} -e MONGO_INITDB_DATABASE=${DB_NAME} -e LOADER_DB_LOGIN=${LOADER_DB_LOGIN} -e LOADER_DB_PASSWORD=${LOADER_DB_PASSWORD} -e MONGO_VRE_DATABASE=${VRE_LITE_MONGO_DATABASE} -e VRE_DB_LOGIN=${VRE_LITE_DB_LOGIN} -e VRE_DB_PASSWORD=${VRE_LITE_DB_PASSWORD} -e REST_DB_LOGIN=${REST_DB_LOGIN} -e REST_DB_PASSWORD=${REST_DB_PASSWORD} -e DB_OUTER_PORT=${DB_OUTER_PORT} -v ${DB_VOLUME_PATH}:/data/db:Z -v $(pwd)/mongodb/mongo-nonroot.sh:/entrypoint.sh:Z --entrypoint /entrypoint.sh -v $(pwd)/mongodb/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro --network data_network --security-opt label=disable docker.io/library/mongo:6
 ```
 
 **IMPORTANT**
@@ -45,10 +83,10 @@ podman run -d --name mongodb -e MONGO_INITDB_ROOT_USERNAME=${MONGO_INITDB_ROOT_U
 In some podman implementations, the REST API gave some problems connecting to the mongo DB via service name. Therefore, in order to fix that, the **DB_SERVER** must be the **mongodb service IP**. So, for **setting this IP beforehand**, the **--ip flag** can be added:
 
 ```sh
-podman run -d --name mongodb -e MONGO_INITDB_ROOT_USERNAME=${MONGO_INITDB_ROOT_USERNAME} -e MONGO_INITDB_ROOT_PASSWORD=${MONGO_INITDB_ROOT_PASSWORD} -e MONGO_PORT=${DB_OUTER_PORT} -e MONGO_INITDB_DATABASE=${DB_NAME} -e LOADER_DB_LOGIN=${LOADER_DB_LOGIN} -e LOADER_DB_PASSWORD=${LOADER_DB_PASSWORD} -e MONGO_VRE_DATABASE=${VRE_LITE_MONGO_DATABASE} -e VRE_DB_LOGIN=${VRE_LITE_DB_LOGIN} -e VRE_DB_PASSWORD=${VRE_LITE_DB_PASSWORD} -e REST_DB_LOGIN=${REST_DB_LOGIN} -e REST_DB_PASSWORD=${REST_DB_PASSWORD} -e DB_OUTER_PORT=${DB_OUTER_PORT} -v ${DB_VOLUME_PATH}:/data/db:Z -v $(pwd)/mongodb/mongo-nonroot.sh:/entrypoint.sh:Z --entrypoint /entrypoint.sh -v $(pwd)/mongodb/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro --cpus "${DB_CPU_LIMIT}" --memory "${DB_MEMORY_LIMIT}" --network data_network --ip <IP ADDRESS> --security-opt label=disable docker.io/library/mongo:6
+podman run -d --name mongodb -e MONGO_INITDB_ROOT_USERNAME=${MONGO_INITDB_ROOT_USERNAME} -e MONGO_INITDB_ROOT_PASSWORD=${MONGO_INITDB_ROOT_PASSWORD} -e MONGO_PORT=${DB_OUTER_PORT} -e MONGO_INITDB_DATABASE=${DB_NAME} -e LOADER_DB_LOGIN=${LOADER_DB_LOGIN} -e LOADER_DB_PASSWORD=${LOADER_DB_PASSWORD} -e MONGO_VRE_DATABASE=${VRE_LITE_MONGO_DATABASE} -e VRE_DB_LOGIN=${VRE_LITE_DB_LOGIN} -e VRE_DB_PASSWORD=${VRE_LITE_DB_PASSWORD} -e REST_DB_LOGIN=${REST_DB_LOGIN} -e REST_DB_PASSWORD=${REST_DB_PASSWORD} -e DB_OUTER_PORT=${DB_OUTER_PORT} -v ${DB_VOLUME_PATH}:/data/db:Z -v $(pwd)/mongodb/mongo-nonroot.sh:/entrypoint.sh:Z --entrypoint /entrypoint.sh -v $(pwd)/mongodb/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro --network data_network --ip <IP ADDRESS> --security-opt label=disable docker.io/library/mongo:6
 ```
 
-Take into account that, in some infrastructures, the **IP** must belong to a **range** in order to work properly. So it's **highly recommended** to use the implementation **without the IP fixed** and let Podman to assign them automatically.
+The **IP** must belong to the **subnet** of **data_network** (e.g. `10.89.1.109` for `10.89.1.0/24`). Fixing the IP is **recommended**: otherwise podman may assign a different IP when the container is recreated, and then the **REST API** and the **loader** (whose images are built with **DB_SERVER**) can no longer reach the database and they have to be rebuilt.
 
 If the IP has been fixed, jump to the [**Build services**](#build-services) section, if not, execute the **following instruction** in order to get the **automatic IP** given to the **mongodb** service by podman:
 
@@ -103,7 +141,7 @@ podman build -t utils_image ./utils
 **Before** building **VRE lite**, deploy **MinIO** in order to get the **IP address** of this service:
 
 ```sh
-podman run -d --name minio -e MINIO_ROOT_USER=${MINIO_ROOT_USER} -e MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD} -e MINIO_BROWSER_REDIRECT_URL=${MINIO_BROWSER_REDIRECT_URL} -e MINIO_API_INNER_PORT=${MINIO_API_INNER_PORT} -e MINIO_UI_INNER_PORT=${MINIO_UI_INNER_PORT} -e MINIO_USER=${MINIO_USER} -e MINIO_PASSWORD=${MINIO_PASSWORD} -p ${MINIO_API_OUTER_PORT}:${MINIO_API_INNER_PORT} -p ${MINIO_UI_INNER_PORT}:${MINIO_UI_INNER_PORT} -v ${MINIO_VOLUME_PATH1}:/mnt/disk1:Z -v $(pwd)/minio/init-minio.sh:/entrypoint.sh --cpus "${MINIO_CPU_LIMIT}" --memory "${MINIO_MEMORY_LIMIT}" --network minio_network --network web_network --hostname minio --entrypoint /entrypoint.sh --healthcheck-command "curl -f http://localhost:${MINIO_API_INNER_PORT}/minio/health/live" --healthcheck-interval 10s --healthcheck-timeout 2s --healthcheck-retries 5 docker.io/minio/minio:latest
+podman run -d --name minio -e MINIO_ROOT_USER=${MINIO_ROOT_USER} -e MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD} -e MINIO_BROWSER_REDIRECT_URL=${MINIO_BROWSER_REDIRECT_URL} -e MINIO_API_INNER_PORT=${MINIO_API_INNER_PORT} -e MINIO_UI_INNER_PORT=${MINIO_UI_INNER_PORT} -e MINIO_USER=${MINIO_USER} -e MINIO_PASSWORD=${MINIO_PASSWORD} -p ${MINIO_API_OUTER_PORT}:${MINIO_API_INNER_PORT} -p ${MINIO_UI_INNER_PORT}:${MINIO_UI_INNER_PORT} -v ${MINIO_VOLUME_PATH1}:/mnt/disk1:Z -v $(pwd)/minio/init-minio.sh:/entrypoint.sh --network minio_network --network web_network --hostname minio --entrypoint /entrypoint.sh --healthcheck-command "curl -f http://localhost:${MINIO_API_INNER_PORT}/minio/health/live" --healthcheck-interval 10s --healthcheck-timeout 2s --healthcheck-retries 5 docker.io/minio/minio:latest
 ```
 
 ### VRE lite
@@ -117,6 +155,8 @@ podman inspect -f '{{.NetworkSettings.Networks.minio_network.IPAddress}}' minio
 ```
 
 And assign the value to **MINIO_ADDRESS** in the [**global .env**](config.md#env-file). 
+
+Alternatively, if **MINIO_ADDRESS** is already defined (e.g. when redeploying with an existing **vre_lite_image**), the MinIO IP can be fixed when running it, replacing `--network minio_network` with `--network minio_network:ip=${MINIO_ADDRESS}` in the [**MinIO command**](#minio). The IP must belong to the **subnet** of **minio_network**.
 
 After that, build the vre_lite service:
 
@@ -133,13 +173,13 @@ In this section there are the instructions needed for running the **long-running
 Take into account that this script performs a mongodump **every ${DB_BACKUP_INTERVAL} seconds**. So, if your database is large, please explore other options for doing backups of it.
 
 ```sh
-podman run -d --name mongo-backup -e MONGO_INITDB_ROOT_USERNAME=${MONGO_INITDB_ROOT_USERNAME} -e MONGO_INITDB_ROOT_PASSWORD=${MONGO_INITDB_ROOT_PASSWORD} -e MONGO_PORT=${DB_OUTER_PORT} -e MONGO_INITDB_DATABASE=${DB_AUTHSOURCE} -e DB_HOST=${DB_SERVER} -e BACKUP_DIR=/backup -e RETENTION_COUNT=${DB_BACKUP_RETENTION_COUNT} -e BACKUP_INTERVAL=${DB_BACKUP_INTERVAL} -v ${DB_BACKUP_VOLUME_PATH}:/backup:Z -v $(pwd)/mongodb/backup_script.sh:/backup_script.sh:ro --cpus "${DB_BACKUP_CPU_LIMIT}" --memory "${DB_BACKUP_MEMORY_LIMIT}" --network data_network --security-opt label=disable docker.io/library/mongo:6 bash -c "sh /backup_script.sh"
+podman run -d --name mongo-backup -e MONGO_INITDB_ROOT_USERNAME=${MONGO_INITDB_ROOT_USERNAME} -e MONGO_INITDB_ROOT_PASSWORD=${MONGO_INITDB_ROOT_PASSWORD} -e MONGO_PORT=${DB_OUTER_PORT} -e MONGO_INITDB_DATABASE=${DB_AUTHSOURCE} -e DB_HOST=${DB_SERVER} -e BACKUP_DIR=/backup -e RETENTION_COUNT=${DB_BACKUP_RETENTION_COUNT} -e BACKUP_INTERVAL=${DB_BACKUP_INTERVAL} -v ${DB_BACKUP_VOLUME_PATH}:/backup:Z -v $(pwd)/mongodb/backup_script.sh:/backup_script.sh:ro --network data_network --security-opt label=disable docker.io/library/mongo:6 bash -c "sh /backup_script.sh"
 ```
 
 For performing a **single mongodump**, please execute:
 
 ```sh
-podman run --rm --name mongo-dump -e MONGO_INITDB_ROOT_USERNAME=${MONGO_INITDB_ROOT_USERNAME} -e MONGO_INITDB_ROOT_PASSWORD=${MONGO_INITDB_ROOT_PASSWORD} -e MONGO_PORT=${DB_OUTER_PORT} -e MONGO_INITDB_DATABASE=${DB_AUTHSOURCE} -e DB_HOST=${DB_SERVER} -e BACKUP_DIR=/backup -v ${DB_BACKUP_VOLUME_PATH}:/backup:Z -v $(pwd)/mongodb/mongodump_script.sh:/mongodump_script.sh:ro --cpus "${DB_BACKUP_CPU_LIMIT}" --memory "${DB_BACKUP_MEMORY_LIMIT}" --network data_network --security-opt label=disable docker.io/library/mongo:6 bash -c "sh /mongodump_script.sh"
+podman run --rm --name mongo-dump -e MONGO_INITDB_ROOT_USERNAME=${MONGO_INITDB_ROOT_USERNAME} -e MONGO_INITDB_ROOT_PASSWORD=${MONGO_INITDB_ROOT_PASSWORD} -e MONGO_PORT=${DB_OUTER_PORT} -e MONGO_INITDB_DATABASE=${DB_AUTHSOURCE} -e DB_HOST=${DB_SERVER} -e BACKUP_DIR=/backup -v ${DB_BACKUP_VOLUME_PATH}:/backup:Z -v $(pwd)/mongodb/mongodump_script.sh:/mongodump_script.sh:ro --network data_network --security-opt label=disable docker.io/library/mongo:6 bash -c "sh /mongodump_script.sh"
 ```
 
 > NOTE: Depending of the size of the database, this operation can take hours, days and even weeks.
@@ -147,13 +187,13 @@ podman run --rm --name mongo-dump -e MONGO_INITDB_ROOT_USERNAME=${MONGO_INITDB_R
 ### REST API
 
 ```sh
-podman run -d --name rest -p ${REST_OUTER_PORT}:${REST_INNER_PORT} --cpus "${REST_CPU_LIMIT}" --memory "${REST_MEMORY_LIMIT}" --network data_network --network web_network rest_image
+podman run -d --name rest -p ${REST_OUTER_PORT}:${REST_INNER_PORT} --network data_network --network web_network rest_image
 ```
 
 ### client
 
 ```sh
-podman run -d --name client -p ${CLIENT_OUTER_PORT}:${CLIENT_INNER_PORT} --cpus "${CLIENT_CPU_LIMIT}" --memory "${CLIENT_MEMORY_LIMIT}" --network web_network client_image
+podman run -d --name client -p ${CLIENT_OUTER_PORT}:${CLIENT_INNER_PORT} --network web_network client_image
 ```
 
 ### VRE lite
@@ -173,13 +213,13 @@ systemctl --user start podman.socket
 After that, **launch** the **vre_lite** service:
 
 ```sh
-podman run -d --name vre_lite -p ${VRE_LITE_OUTER_PORT}:${VRE_LITE_INNER_PORT} -v ${VRE_LITE_VOLUME_PATH}:/vre_lite:Z -v /run/user/$(id -u)/podman/podman.sock:/var/run/docker.sock --cpus "${MINIO_CPU_LIMIT}" --memory "${MINIO_MEMORY_LIMIT}" --network minio_network --network web_network --network data_network vre_lite_image
+podman run -d --name vre_lite -p ${VRE_LITE_OUTER_PORT}:${VRE_LITE_INNER_PORT} -v ${VRE_LITE_VOLUME_PATH}:/vre_lite:Z -v /run/user/$(id -u)/podman/podman.sock:/var/run/docker.sock --network minio_network --network web_network --network data_network vre_lite_image
 ```
 
 ### Apache
 
 ```sh
-podman run -d --name apache -p ${APACHE_HTTP_OUTER_PORT}:${APACHE_HTTP_INNER_PORT} -p ${APACHE_HTTPS_OUTER_PORT}:${APACHE_HTTPS_INNER_PORT} -p ${APACHE_MINIO_OUTER_PORT}:${APACHE_MINIO_INNER_PORT} -v ${APACHE_CERTS_VOLUME_PATH}:/usr/local/apache2/conf/ssl:Z --cpus "${APACHE_CPU_LIMIT}" --memory "${APACHE_MEMORY_LIMIT}" --network web_network apache_image
+podman run -d --name apache -p ${APACHE_HTTP_OUTER_PORT}:${APACHE_HTTP_INNER_PORT} -p ${APACHE_HTTPS_OUTER_PORT}:${APACHE_HTTPS_INNER_PORT} -p ${APACHE_MINIO_OUTER_PORT}:${APACHE_MINIO_INNER_PORT} -v ${APACHE_CERTS_VOLUME_PATH}:/usr/local/apache2/conf/ssl:Z --network web_network apache_image
 ```
 
 ## Execute services
@@ -203,7 +243,7 @@ Please read carefully the [**workflow help**](../workflow) as it has an extensiv
 Example of **running** the workflow downloading an **already loaded** trajectory and saving the results into an **OUTPUT_FOLDER** that must be already created inside **WORKFLOW_VOLUME_PATH** defined in [**global .env**](config.md#env-file).
 
 ```sh
-podman run --rm --name workflow -v ${WORKFLOW_VOLUME_PATH}:/data --cpus "${WORKFLOW_CPU_LIMIT}" --memory "${WORKFLOW_MEMORY_LIMIT}" workflow_image mwf run -proj <ACCESSION ID> -smp -e clusters energies pockets -dir /data/<OUTPUT_FOLDER>
+podman run --rm --name workflow -v ${WORKFLOW_VOLUME_PATH}:/data workflow_image mwf run -proj <ACCESSION ID> -smp -e clusters energies pockets -dir /data/<OUTPUT_FOLDER>
 ```
 
 Note that this run excludes clusters, energies and pockets analyses. Adding the -smp flag it downloads only 10 frames of the trajectory. As this instruction is a test, this will save a lot of computational time.
@@ -213,7 +253,7 @@ Note that this run excludes clusters, energies and pockets analyses. Adding the 
 Example of **running** the workflow from data **uploaded via VRE lite**:
 
 ```sh
-podman run --rm -e BUCKET=<BUCKET> --network minio_network -v ${WORKFLOW_VOLUME_PATH}:/data:Z --cpus "${WORKFLOW_CPU_LIMIT}" --memory "${WORKFLOW_MEMORY_LIMIT}" --cap-add SYS_ADMIN --device /dev/fuse --security-opt apparmor:unconfined workflow_image mwf run -dir /data/<OUTPUT_FOLDER> -md /data/<OUTPUT_FOLDER>/<REPLICA_FOLDER> /mnt/<FOLDER>/<TOPOLOGY> /mnt/<FOLDER>/<TRAJECTORY> -top /mnt/<FOLDER>/<TOPOLOGY> -inp /mnt/<FOLDER>/inputs.yaml -filt -ns
+podman run --rm -e BUCKET=<BUCKET> --network minio_network -v ${WORKFLOW_VOLUME_PATH}:/data:Z --cap-add SYS_ADMIN --device /dev/fuse --security-opt apparmor:unconfined workflow_image mwf run -dir /data/<OUTPUT_FOLDER> -md /data/<OUTPUT_FOLDER>/<REPLICA_FOLDER> /mnt/<FOLDER>/<TOPOLOGY> /mnt/<FOLDER>/<TRAJECTORY> -top /mnt/<FOLDER>/<TOPOLOGY> -inp /mnt/<FOLDER>/inputs.yaml -filt -ns
 ```
 
 * **BUCKET:** Bucket created in MinIO via **VRE lite**. Given along with the credentials by the **VRE lite** for **uploading** the data via **command line**. In format **YYYYMMDD**.
@@ -231,13 +271,13 @@ While the **mongodb**, **client** and **rest** containers will remain up, the **
 **List** database documents:
 
 ```sh
-podman run --rm --name loader --cpus "${LOADER_CPU_LIMIT}" --memory "${LOADER_MEMORY_LIMIT}" --network data_network loader_image list
+podman run --rm --name loader --network data_network loader_image list
 ```
 
 **Load** documents to database:
 
 ```sh
-podman run --rm --network data_network -v ${WORKFLOW_VOLUME_PATH}:/data:Z --cpus "${LOADER_CPU_LIMIT}" --memory "${LOADER_MEMORY_LIMIT}" loader_image load /data/<OUTPUT_FOLDER>
+podman run --rm --network data_network -v ${WORKFLOW_VOLUME_PATH}:/data:Z loader_image load /data/<OUTPUT_FOLDER>
 ```
 
 Take into account that **OUTPUT_FOLDER** must be inside **WORKFLOW_VOLUME_PATH**, defined in [**global .env**](config.md#env-file).
@@ -245,13 +285,13 @@ Take into account that **OUTPUT_FOLDER** must be inside **WORKFLOW_VOLUME_PATH**
 **Remove** database document:
 
 ```sh
-podman run --rm --name loader --cpus "${LOADER_CPU_LIMIT}" --memory "${LOADER_MEMORY_LIMIT}" --network data_network loader_image delete <project_id>
+podman run --rm --name loader --network data_network loader_image delete <project_id>
 ```
 
 ### Use Utils
 
 ```sh
-podman run --rm --name utils -e DB_SERVER=${VRE_LITE_DB_SERVER} -e DB_PORT=${VRE_LITE_DB_OUTER_PORT} -e DB_VRE_NAME=${VRE_LITE_MONGO_DATABASE} -e DB_VRE_AUTH_USER=${VRE_LITE_DB_LOGIN} -e DB_VRE_AUTH_PASSWORD=${VRE_LITE_DB_PASSWORD} -e DB_VRE_AUTHSOURCE=${VRE_LITE_MONGO_DATABASE} --cpus "${UTILS_CPU_LIMIT}" --memory "${UTILS_MEMORY_LIMIT}" --network data_network utils_image version_tracker.py -h
+podman run --rm --name utils -e DB_SERVER=${VRE_LITE_DB_SERVER} -e DB_PORT=${VRE_LITE_DB_OUTER_PORT} -e DB_VRE_NAME=${VRE_LITE_MONGO_DATABASE} -e DB_VRE_AUTH_USER=${VRE_LITE_DB_LOGIN} -e DB_VRE_AUTH_PASSWORD=${VRE_LITE_DB_PASSWORD} -e DB_VRE_AUTHSOURCE=${VRE_LITE_MONGO_DATABASE} --network data_network utils_image version_tracker.py -h
 ```
 
 ### Check rest
@@ -370,7 +410,7 @@ It should show something like:
           "name": "data_network",
           "id": "<ID>",
           "driver": "bridge",
-          "network_interface": "cni-podman2",
+          "network_interface": "podman2",
           "created": "<DATE>",
           "subnets": [
                {

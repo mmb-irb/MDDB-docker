@@ -35,7 +35,7 @@ podman build -t client_image --no-cache --build-arg CLIENT_INNER_PORT=${CLIENT_I
 An then, run the service as usual:
 
 ```sh
-podman run -d --name client -p ${CLIENT_OUTER_PORT}:${CLIENT_INNER_PORT} --cpus "${CLIENT_CPU_LIMIT}" --memory "${CLIENT_MEMORY_LIMIT}" --network web_network client_image
+podman run -d --name client -p ${CLIENT_OUTER_PORT}:${CLIENT_INNER_PORT} --network web_network client_image
 ```
 
 ## Remove all containers and images
