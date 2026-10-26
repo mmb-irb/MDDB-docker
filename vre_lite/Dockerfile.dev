@@ -1,5 +1,5 @@
 # Stage 1: Build the Nuxt app
-FROM node:20.19.5 AS build
+FROM node:24.22.1 AS build
 
 # Set working directory
 WORKDIR /app
