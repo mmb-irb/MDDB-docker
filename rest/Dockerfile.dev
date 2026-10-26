@@ -57,7 +57,7 @@ RUN echo "DB_SERVER=${DB_SERVER}" > /app/MDDB-REST-API/.env && \
 WORKDIR /app/MDDB-REST-API
 
 # Install packages
-RUN npm install
+RUN npm ci
 
 # Build website
 RUN npm run build
