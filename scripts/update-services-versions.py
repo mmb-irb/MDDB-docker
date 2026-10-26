@@ -67,7 +67,6 @@ def update_version_tracker(service, version, podman=False):
                       '-e', f"DB_VRE_AUTH_USER={os.getenv('VRE_LITE_DB_LOGIN')}",
                       '-e', f"DB_VRE_AUTH_PASSWORD={os.getenv('VRE_LITE_DB_PASSWORD')}",
                       '-e', f"DB_VRE_AUTHSOURCE={os.getenv('VRE_LITE_MONGO_DATABASE')}",
-                      '--cpus', os.getenv('UTILS_CPU_LIMIT', '1.00'),
                       '--memory', os.getenv('UTILS_MEMORY_LIMIT', '1G'),
                       '--network', 'data_network',
                       'utils_image', 'version_tracker.py', service, version]
