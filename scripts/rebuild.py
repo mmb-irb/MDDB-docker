@@ -6,17 +6,11 @@ from podman_scripts import get_podman_script
 
 
 def run_command(command):
-    try:
-        subprocess.run(command, check=True)
-    except subprocess.CalledProcessError as e:
-        print(f"Command '{' '.join(command)}' failed with return code {e.returncode}")
+    subprocess.run(command, check=True)
 
 
 def run_command_p(command):
-    try:
-        subprocess.run(command, shell=True, check=True, executable='/bin/bash')
-    except subprocess.CalledProcessError as e:
-        print(f"Command '{command}' failed with return code {e.returncode}")
+    subprocess.run(command, shell=True, check=True, executable='/bin/bash')
 
 
 def command_exists(cmd):
@@ -109,17 +103,14 @@ def main():
             image = f'{service}_image:{args.tag}' if args.tag else f'{service}_image'
             version_command = ['docker', 'run', '--entrypoint', '', '--rm', image, 'sh', '-c', 'cat /app/version.txt']
             # Get result of version command
-            try:
-                result = subprocess.run(version_command, capture_output=True, text=True, check=True)
-                version = result.stdout.strip()
-                print(f"Version for {service}: {version}")
+            result = subprocess.run(version_command, stdout=subprocess.PIPE, text=True, check=True)
+            version = result.stdout.strip()
+            print(f"Version for {service}: {version}")
 
-                # Run version_tracker.py to update the version in the database
-                dc_command = docker_compose_script()
-                dc_command.extend(['run', '--rm', 'utils', 'version_tracker.py', service, version])
-                run_command(dc_command)
-            except subprocess.CalledProcessError as e:
-                print(f"Failed to get version for {service}: {e.stderr}")
+            # Run version_tracker.py to update the version in the database
+            dc_command = docker_compose_script()
+            dc_command.extend(['run', '--rm', 'utils', 'version_tracker.py', service, version])
+            run_command(dc_command)
 
         # Prune containers and images
         run_command(['docker', 'container', 'prune', '-f'])
@@ -147,13 +138,14 @@ def main():
                     key, value = line.split('=', 1)
                     os.environ[key] = value
 
+        # Build all images before stopping any container, so a failed build leaves the running services untouched
         for service in all_services:
-            if service != 'mongodb':
-                subprocess.run(f"podman stop {service} || true && podman rm {service} || true", shell=True, check=True, executable='/bin/bash')
             b = get_podman_script('build', service)
             run_command_p(b)
 
         for service in all_services:
+            if service != 'mongodb':
+                subprocess.run(f"podman stop {service} || true && podman rm {service} || true", shell=True, check=True, executable='/bin/bash')
             r = get_podman_script('run', service)
             run_command_p(r)
 
@@ -163,16 +155,13 @@ def main():
             image = f'{service}_image:{args.tag}' if args.tag else f'{service}_image'
             version_command = ['podman', 'run', '--entrypoint', '', '--rm', image, 'sh', '-c', 'cat /app/version.txt']
             # Get result of version command
-            try:
-                result = subprocess.run(version_command, capture_output=True, text=True, check=True)
-                version = result.stdout.strip()
-                print(f"Version for {service}: {version}")
+            result = subprocess.run(version_command, stdout=subprocess.PIPE, text=True, check=True)
+            version = result.stdout.strip()
+            print(f"Version for {service}: {version}")
 
-                # Run version_tracker.py to update the version in the database
-                v = get_podman_script('run', 'utils', service, version)
-                run_command_p(v)
-            except subprocess.CalledProcessError as e:
-                print(f"Failed to get version for {service}: {e.stderr}")
+            # Run version_tracker.py to update the version in the database
+            v = get_podman_script('run', 'utils', service, version)
+            run_command_p(v)
 
 
 if __name__ == '__main__':
