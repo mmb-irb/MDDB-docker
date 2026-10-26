@@ -16,10 +16,18 @@ ARG VERSION
 # If version is set, wget the specific version of the loader
 # Otherwise, use the latest version
 RUN if [ -z "$VERSION" ]; then \
-        echo "No VERSION provided, fetching latest tag..." && \
-        LATEST_TAG=$(curl -s "https://api.github.com/repos/mmb-irb/MDDB-loader/tags" \
-            | grep -m 1 '"name":' \
-            | sed -E 's/.*"name": "v?([^"]+)".*/\1/') && \
+        echo "No VERSION provided, fetching latest release..." && \
+        LATEST_TAG=$(curl -s "https://api.github.com/repos/mmb-irb/MDDB-loader/releases/latest" \
+            | grep -m 1 '"tag_name":' \
+            | sed -E 's/.*"tag_name": "v?([^"]+)".*/\1/') && \
+        if [ -z "$LATEST_TAG" ]; then \
+            echo "No releases found, fetching latest tag..." && \
+            LATEST_TAG=$(curl -s "https://api.github.com/repos/mmb-irb/MDDB-loader/tags?per_page=100" \
+                | grep '"name":' \
+                | sed -E 's/.*"name": "v?([^"]+)".*/\1/' \
+                | grep -E '^[0-9]+(\.[0-9]+)*$' \
+                | sort -V | tail -n 1); \
+        fi && \
         if [ -z "$LATEST_TAG" ]; then \
             echo "Failed to fetch latest tag, using master branch" && \
             git clone --branch master --depth 1 https://github.com/mmb-irb/MDDB-loader.git && \

@@ -12,9 +12,17 @@ WORKDIR /app
 # Otherwise, use the latest version
 RUN if [ -z "$VERSION" ]; then \
         wget https://github.com/mmb-irb/MDposit-client-build/raw/refs/heads/main/build.zip; \
-        curl -s "https://api.github.com/repos/mmb-irb/MDposit-client-build/tags" \
-            | grep -m 1 '"name":' \
-            | sed -E 's/.*"name": "v?([^"]+)".*/\1/' > version.txt; \
+        LATEST_TAG=$(curl -s "https://api.github.com/repos/mmb-irb/MDposit-client-build/releases/latest" \
+            | grep -m 1 '"tag_name":' \
+            | sed -E 's/.*"tag_name": "v?([^"]+)".*/\1/') && \
+        if [ -z "$LATEST_TAG" ]; then \
+            LATEST_TAG=$(curl -s "https://api.github.com/repos/mmb-irb/MDposit-client-build/tags?per_page=100" \
+                | grep '"name":' \
+                | sed -E 's/.*"name": "v?([^"]+)".*/\1/' \
+                | grep -E '^[0-9]+(\.[0-9]+)*$' \
+                | sort -V | tail -n 1); \
+        fi && \
+        echo "$LATEST_TAG" > version.txt; \
     else \
         wget https://raw.githubusercontent.com/mmb-irb/MDposit-client-build/v$VERSION/build.zip; \
         echo "$VERSION" > version.txt; \

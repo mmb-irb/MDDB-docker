@@ -3,6 +3,7 @@
 import argparse
 import subprocess
 import json
+import re
 import urllib.request
 import os
 import sys
@@ -77,45 +78,50 @@ class VersionChecker:
             print(f"Command execution error: {e}")
             return False, str(e)
 
-    def get_repo_version(self, org: str, repo: str) -> Optional[str]:
-        """Get the latest version from GitHub repo tags."""
-        print(f"  📡 Fetching latest version for {org}/{repo}...")
-
+    def github_api_get(self, path: str) -> Tuple[int, object]:
+        """Query the GitHub API and return the HTTP status code and the parsed JSON response."""
         # Get GitHub token from environment if available
         env_vars = self.read_env_file('.env')
         github_token = env_vars.get('GH_PAT')
         credentials = f'-H "Authorization: Bearer {github_token}"' if github_token else ''
         # Use authorization header with token when possible
-        command = f'curl -s {credentials} "https://api.github.com/repos/{org}/{repo}/tags" 2>/dev/null'
+        # The HTTP status code is appended in the last line of the output
+        command = f'curl -s -w "\\n%{{http_code}}" {credentials} "https://api.github.com/{path}" 2>/dev/null'
         success, output = self.run_command(command, shell=True, stream_output=False)
-
         if not success or not output:
-            print(f"    ⚠️  Could not fetch version for {org}/{repo}")
-            return "unknown"
-        
-        # Parse the response
-        tags = json.loads(output)
-        
-        # Get the date of every tag from the last commit
-        for tag in tags:
+            raise RuntimeError(f'Could not fetch data from https://api.github.com/{path}')
+        body, status = output.rsplit('\n', 1)
+        return int(status), json.loads(body)
 
-            # Ask the API for the commit data
-            commit_url = tag['commit']['url']
-            command = f'curl -s {credentials} "{commit_url}" 2>/dev/null'
-            success, output = self.run_command(command, shell=True, stream_output=False)
-            if not success or not output:
-                raise RuntimeError(f'Could not fetch data from {commit_url}')
-            
-            # Extract and store the date
-            commit = json.loads(output)
-            tag['date'] = commit['commit']['author']['date']
+    def parse_version(self, version: str) -> List[int]:
+        """Parse a version string (e.g. v1.2.3) into a list of integers for sorting."""
+        if version.startswith('v'):
+            version = version[1:]
+        return [int(x) for x in version.split('.')]
 
-        # Now sort tags according to their dates
-        sorted_tags = sorted(tags, key=lambda tag: tag['date'], reverse=True)
+    def get_repo_version(self, org: str, repo: str) -> Optional[str]:
+        """Get the latest version from GitHub repo releases, or from tags if there are no releases."""
+        print(f"  📡 Fetching latest version for {org}/{repo}...")
 
-        # Get the latest tag version
-        latest_tag = sorted_tags[0]
-        version = latest_tag['name']
+        # Ask for the latest release
+        # Note that drafts and prereleases are not considered
+        status, release = self.github_api_get(f'repos/{org}/{repo}/releases/latest')
+        if status == 200:
+            version = release['tag_name']
+        # A 404 means the repo has no releases, so we use the tags instead
+        elif status == 404:
+            status, tags = self.github_api_get(f'repos/{org}/{repo}/tags?per_page=100')
+            if status != 200:
+                raise RuntimeError(f'Could not fetch tags for {org}/{repo} (HTTP {status}): {tags}')
+            # Ignore tags which are not versions (e.g. master, v0.0.8_fixed)
+            tags = [tag for tag in tags if re.fullmatch(r'v?\d+(\.\d+)*', tag['name'])]
+            if len(tags) == 0:
+                raise RuntimeError(f'No releases or version tags found for {org}/{repo}')
+            # Sort tags according to their version numbers
+            sorted_tags = sorted(tags, key=lambda tag: self.parse_version(tag['name']), reverse=True)
+            version = sorted_tags[0]['name']
+        else:
+            raise RuntimeError(f'Could not fetch latest release for {org}/{repo} (HTTP {status}): {release}')
 
         # Remove 'v' prefix if present (v1.1 -> 1.1)
         if version.startswith('v'):
