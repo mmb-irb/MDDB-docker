@@ -3,18 +3,6 @@ FROM docker.io/library/nginx:alpine AS build
 
 # Install necessary packages
 RUN apk --no-cache add nodejs npm git curl
-RUN apk add build-base
-RUN apk add cmake
-
-# Define working dir
-WORKDIR /data
-
-# Clone and install the chemfiles fork customized to support '.bin' format reading and streaming.
-# RUN git clone https://github.com/d-beltran/chemfiles --depth 1 && cd chemfiles && git fetch --unshallow  && mkdir build && cd build && cmake -DCMAKE_POLICY_VERSION_MINIMUM=3.5 .. && make && make install
-
-# Copy and install the customized chemfiles to support '.bin' format reading and streaming.
-COPY chemfiles.tar.gz /data/chemfiles.tar.gz
-RUN tar -xvzf chemfiles.tar.gz && cd chemfiles/build && make && make install
 
 # Define working dir
 WORKDIR /app
@@ -59,16 +47,20 @@ WORKDIR /app/MDDB-REST-API
 # Install packages
 RUN npm ci
 
-# Build website
-RUN npm run build
+# Build the WebAssembly parsers
+# Note that the chemfiles converter is not built here, since it is precompiled (see below)
+RUN npm run asbuild:crdparse && npm run asbuild:binparse && npm run asbuild:f32parse
+
+# Copy the precompiled trajectory format converter, which relies in a customized chemfiles
+# It is statically linked, so it does not depend on any library in the image
+# See README.md to update it
+COPY chemfiles_bin_converter /app/MDDB-REST-API/build/chemfiles_bin_converter
 
 # Stage 2: Serve the REST API app with pm2
 FROM docker.io/library/nginx:alpine
 
 # Install necessary packages
 RUN apk --no-cache add nodejs npm curl
-# RUN apk add build-base
-# RUN apk add cmake
 
 # Install pm2
 RUN npm install pm2 -g
@@ -78,7 +70,6 @@ WORKDIR /app
 
 # Copy from the previous stage
 COPY --from=build /app/MDDB-REST-API /app/MDDB-REST-API
-# COPY --from=build /app/chemfiles /app/chemfiles
 COPY --from=build /app/version.txt /app/version.txt
 
 # Change working directory to /app/MDDB-REST-API
