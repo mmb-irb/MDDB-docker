@@ -87,7 +87,7 @@ https://hub.docker.com/r/pgsty/silo (a maintained fork of MinIO)
 
 ### Extensions
 
-**Optional** services that may be **deployed** or **omitted**, depending on the node’s requirements: `mcp` (MCP server for the REST API), `metrics` (Prometheus exporters) and `grafana`. See [extensions](readme/config.md#extensions).
+**Optional** services that may be **deployed** or **omitted**, depending on the node’s requirements: `metrics` (Prometheus exporters) and `grafana`. See [extensions](readme/config.md#extensions).
 
 ## Install a new node with Docker Swarm (recommended)
 

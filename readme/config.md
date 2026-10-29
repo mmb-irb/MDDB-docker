@@ -188,7 +188,7 @@ Most values are **build arguments**: they are written into the images when they 
 
 ## Extensions .env file
 
-In case some **extension** is added to the **core** services, the **environment variables** of each extension must be added to the main `.env` file created in the **root** of the project. The files [**.env.docker.extensions.git**](../.env.docker.extensions.git) (mcp) and [**.env.metrics.git**](../.env.metrics.git) (metrics and grafana) can be taken as templates.
+In case some **extension** is added to the **core** services, the **environment variables** of each extension must be added to the main `.env` file created in the **root** of the project. The file [**.env.metrics.git**](../.env.metrics.git) (metrics and grafana) can be taken as a template.
 
 ## MongoDB
 
@@ -218,6 +218,5 @@ All the configurable variables such as **resources**, **paths**, **ports** and s
 
 List of available **extensions**:
 
-* [**mcp**](../extensions/mcp.yml)
 * [**metrics**](../extensions/metrics.yml)
 * [**grafana**](../extensions/grafana.yml)
