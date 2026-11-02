@@ -156,6 +156,12 @@ The versions for **each service** of the stack are stored into a database. The *
 python3 scripts/update-services-versions.py 
 ```
 
+## Upgrade MongoDB
+
+The **mongodb** service now uses **MongoDB 8**. Nodes created with **MongoDB 6** must be upgraded step by step (6.0 → 7.0 → 8.0) **before** redeploying with the current [**docker-compose.yml**](../docker-compose.yml): MongoDB 8 does not start on MongoDB 6 data.
+
+[**Click here for the MongoDB upgrade guide**](mongo-upgrade.md)
+
 ## Troubleshooting
 
 ### Builds fail to fetch/download from GitHub
