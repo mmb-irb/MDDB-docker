@@ -49,7 +49,7 @@ services:
 
   mongodb:
     container_name: my_mongo_container
-    image: mongo:6
+    image: mongo:8
     environment:
       MONGO_INITDB_ROOT_USERNAME: ROOT_USER
       MONGO_INITDB_ROOT_PASSWORD: ROOT_PASSWORD
