@@ -50,7 +50,7 @@ RUN if [ -z "$VERSION" ]; then \
 RUN conda config --set solver libmamba
 
 # Create new environment
-RUN conda env create --file=/app/MDDB-workflow/envs/environment.yml && conda clean -afy
+RUN conda env create -n mwf_env --file=/app/MDDB-workflow/envs/environment.yml && conda clean -afy
 
 # Install mwf SW
 WORKDIR /app/MDDB-workflow

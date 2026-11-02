@@ -81,7 +81,7 @@ This service acts as a hodgepodge of utilities.
 
 In order to provide the users a way to **transfer big files** that can't be uploaded via web, a docker **MinIO** server is integrated into the infrastructure.
 
-https://quay.io/repository/minio/minio
+https://hub.docker.com/r/pgsty/minio
 
 ### Extensions
 

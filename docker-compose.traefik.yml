@@ -248,7 +248,7 @@ services:
         condition: on-failure   # Restart only on failure
 
   minio:
-    image: quay.io/minio/minio:latest
+    image: docker.io/pgsty/minio:latest
     environment:
       - MINIO_ROOT_USER=${MINIO_ROOT_USER}
       - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD}

@@ -141,7 +141,7 @@ podman build -t utils_image ./utils
 **Before** building **VRE lite**, deploy **MinIO** in order to get the **IP address** of this service:
 
 ```sh
-podman run -d --name minio -e MINIO_ROOT_USER=${MINIO_ROOT_USER} -e MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD} -e MINIO_BROWSER_REDIRECT_URL=${MINIO_BROWSER_REDIRECT_URL} -e MINIO_API_INNER_PORT=${MINIO_API_INNER_PORT} -e MINIO_UI_INNER_PORT=${MINIO_UI_INNER_PORT} -e MINIO_USER=${MINIO_USER} -e MINIO_PASSWORD=${MINIO_PASSWORD} -p ${MINIO_API_OUTER_PORT}:${MINIO_API_INNER_PORT} -p ${MINIO_UI_INNER_PORT}:${MINIO_UI_INNER_PORT} -v ${MINIO_VOLUME_PATH1}:/mnt/disk1:Z -v $(pwd)/minio/init-minio.sh:/entrypoint.sh --network minio_network --network web_network --hostname minio --entrypoint /entrypoint.sh --healthcheck-command "curl -f http://localhost:${MINIO_API_INNER_PORT}/minio/health/live" --healthcheck-interval 10s --healthcheck-timeout 2s --healthcheck-retries 5 docker.io/minio/minio:latest
+podman run -d --name minio -e MINIO_ROOT_USER=${MINIO_ROOT_USER} -e MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD} -e MINIO_BROWSER_REDIRECT_URL=${MINIO_BROWSER_REDIRECT_URL} -e MINIO_API_INNER_PORT=${MINIO_API_INNER_PORT} -e MINIO_UI_INNER_PORT=${MINIO_UI_INNER_PORT} -e MINIO_USER=${MINIO_USER} -e MINIO_PASSWORD=${MINIO_PASSWORD} -p ${MINIO_API_OUTER_PORT}:${MINIO_API_INNER_PORT} -p ${MINIO_UI_INNER_PORT}:${MINIO_UI_INNER_PORT} -v ${MINIO_VOLUME_PATH1}:/mnt/disk1:Z -v $(pwd)/minio/init-minio.sh:/entrypoint.sh --network minio_network --network web_network --hostname minio --entrypoint /entrypoint.sh --healthcheck-command "curl -f http://localhost:${MINIO_API_INNER_PORT}/minio/health/live" --healthcheck-interval 10s --healthcheck-timeout 2s --healthcheck-retries 5 docker.io/pgsty/minio:latest
 ```
 
 ### VRE lite
