@@ -4,8 +4,10 @@ FROM docker.io/continuumio/miniconda3:latest
 # Define working dir
 WORKDIR /app
 
+# Upgrade the base image system packages to get security fixes (e.g. brotli, openssl)
 # Install libgl1 for avoiding problems with VMD and fuse for using fusermount and goofys
 RUN apt-get update && \
+    apt-get upgrade -y && \
     apt-get install -y libgl1 && \
     apt-get install -y fuse curl
 
