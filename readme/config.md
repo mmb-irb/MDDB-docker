@@ -19,6 +19,7 @@ An `.env` file must be created in the **root** of the project. The file [**.env.
 | SLACK_WEBHOOK_URL         | string  | slack webhook used for sending update messages                                     |
 | GH_PAT         | string  | GitHub personal access token used by VRE lite                                     |
 | &nbsp;
+| APACHE_CONFIG         | string  | apache configuration file in the apache folder (default `apache-config.conf`; `apache-config-florida.conf` for nodes behind an external TLS proxy) |
 | APACHE_HTTP_OUTER_PORT         | number  | apache outer port for http protocol                                        |
 | APACHE_HTTPS_OUTER_PORT         | number  | apache outer port for https protocol                                        |
 | APACHE_MINIO_OUTER_PORT         | number  | apache outer port for MinIO API                                         |

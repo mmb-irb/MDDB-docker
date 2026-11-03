@@ -5,6 +5,7 @@ services:
       context: ./apache   # folder to search Dockerfile for this image
       # network: host  # Only during build
       args:
+        APACHE_CONFIG: ${APACHE_CONFIG:-apache-config.conf}
         APACHE_HTTP_INNER_PORT: ${APACHE_HTTP_INNER_PORT}
         APACHE_HTTPS_INNER_PORT: ${APACHE_HTTPS_INNER_PORT}
         APACHE_HTTP_OUTER_PORT: ${APACHE_HTTP_OUTER_PORT}
