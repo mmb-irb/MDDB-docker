@@ -224,7 +224,22 @@ docker run --rm --network data_network --cpus "${LOADER_CPU_LIMIT}" --memory "${
 
 The MongoDB backup service performs a complete database backup every so often depending on a variable defined by the user (${DB_BACKUP_INTERVAL} seconds). To disable this service, define **DB_BACKUP_REPLICAS** to 0. This operation is only recommended for small databases, so if your database is large, please explore other options for doing backups of it.
 
-Each backup is a `mongodump` output directory written as `<timestamp>.partial/` and only renamed to `<timestamp>/` (UTC timestamp of when the dump started) once `mongodump` has succeeded, so every `<timestamp>/` directory is a complete backup. With `DB_BACKUP_COMPRESS=true` the dump uses `mongodump --gzip` (restore with `mongorestore --gzip --dir <backup>`). On MDDB data (mostly binary trajectories in GridFS) compression only saves ~20% of disk, but it is single-threaded and makes the backup take days instead of ~15 hours, so it is disabled by default. Leftovers of interrupted runs are removed when the service starts. The next backup is scheduled `DB_BACKUP_INTERVAL` seconds after the start of the last complete one, so redeploying the stack does not trigger a new backup unless one is due. Only the `DB_BACKUP_RETENTION_COUNT` most recent complete backups (by name) are kept. If a backup fails, the service exits with an error (visible in `docker service ps <stack>_mongo-backup`) and is restarted by swarm.
+Each backup is named after the UTC time its dump started. `DB_BACKUP_COMPRESS` sets its format:
+
+| `DB_BACKUP_COMPRESS` | Backup | Restore |
+|---|---|---|
+| `no` | `<timestamp>/` plain `mongodump` directory | `mongorestore --dir <timestamp>` |
+| `gz` | `<timestamp>/` `mongodump --gzip` directory | `mongorestore --gzip --dir <timestamp>` |
+| `tar` | `<timestamp>.tar` (uncompressed) | extract, then `mongorestore --dir` |
+| `tar.gz` | `<timestamp>.tar.gz` | extract, then `mongorestore --dir` |
+
+Trade-offs measured on the MDDB production database (~4.9 TiB, mostly binary trajectories in GridFS):
+
+* gzip only saves ~20% of disk, because binary trajectories barely compress.
+* A plain dump took ~15 hours. gzip is single-threaded: `tar.gz` took ~4 more days after the dump. With `gz` the compression happens during the dump, so `mongodump` keeps reading from the database for days instead.
+* `tar` and `tar.gz` write the full dump first and then pack it, so during the backup the data is on disk twice. `tar` saves no space; it only produces a single file.
+
+Every backup is written under a `.partial` name and only renamed once all its steps have succeeded, so a backup with a final name is always complete. Leftovers of interrupted runs are removed when the service starts. The next backup is scheduled `DB_BACKUP_INTERVAL` seconds after the start of the last complete one, so redeploying the stack does not trigger a new backup unless one is due. After each successful backup, only the `DB_BACKUP_RETENTION_COUNT` most recent complete backups are kept, in any of the formats above (so changing the format does not leave old backups behind). If a backup fails, the service exits with an error (visible in `docker service ps <stack>_mongo-backup`) and is restarted by swarm.
 
 For performing a **single mongodump**, please execute:
 

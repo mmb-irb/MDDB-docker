@@ -85,7 +85,7 @@ An `.env` file must be created in the **root** of the project. The file [**.env.
 | DB_BACKUP_REPLICAS      | number  | number of replicas to deploy                                    |
 | DB_BACKUP_RETENTION_COUNT         | number  | maximum number of DB backup copies to preserve                                          |
 | DB_BACKUP_INTERVAL         | number  | interval in seconds between DB backups                                         |
-| DB_BACKUP_COMPRESS         | boolean | `true` to compress backups with `mongodump --gzip`: ~20% less disk on MDDB data, but several times slower (days instead of hours)    |
+| DB_BACKUP_COMPRESS         | string  | backup format: `no` (plain dump), `gz` (`mongodump --gzip`), `tar` or `tar.gz`. See [MongoDB backup service](docker-swarm.md#mongodb-backup-service) for the trade-offs |
 | DB_BACKUP_CPU_LIMIT      | string  | DB backup limit number of CPUs                                    |
 | DB_BACKUP_MEMORY_LIMIT          | string | DB backup limit memory                           |
 | DB_BACKUP_CPU_RESERVATION          | string  | DB backup reserved number of CPUs                           |
