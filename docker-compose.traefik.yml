@@ -232,6 +232,7 @@ services:
       RETENTION_COUNT: ${DB_BACKUP_RETENTION_COUNT}
       BACKUP_INTERVAL: ${DB_BACKUP_INTERVAL}
       COMPRESS: ${DB_BACKUP_COMPRESS}
+      LOCK: ${DB_BACKUP_LOCK}
     networks:
       - data_network
     depends_on:

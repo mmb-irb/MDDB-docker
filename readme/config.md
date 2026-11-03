@@ -87,6 +87,7 @@ An `.env` file must be created in the **root** of the project. The file [**.env.
 | DB_BACKUP_RETENTION_COUNT         | number  | maximum number of DB backup copies to preserve                                          |
 | DB_BACKUP_INTERVAL         | number  | interval in seconds between DB backups                                         |
 | DB_BACKUP_COMPRESS         | string  | backup format: `no` (plain dump), `gz` (`mongodump --gzip`), `tar` or `tar.gz`. See [MongoDB backup service](docker-swarm.md#mongodb-backup-service) for the trade-offs |
+| DB_BACKUP_LOCK         | string  | `yes` blocks writes (`db.fsyncLock`) while `mongodump` runs, so the backup is consistent; `no` does not. See [MongoDB backup service](docker-swarm.md#mongodb-backup-service) |
 | DB_BACKUP_CPU_LIMIT      | string  | DB backup limit number of CPUs                                    |
 | DB_BACKUP_MEMORY_LIMIT          | string | DB backup limit memory                           |
 | DB_BACKUP_CPU_RESERVATION          | string  | DB backup reserved number of CPUs                           |
@@ -450,6 +451,7 @@ services:
       RETENTION_COUNT: ${DB_BACKUP_RETENTION_COUNT}
       BACKUP_INTERVAL: ${DB_BACKUP_INTERVAL}
       COMPRESS: ${DB_BACKUP_COMPRESS}
+      LOCK: ${DB_BACKUP_LOCK}
     networks:
       - data_network
     depends_on:

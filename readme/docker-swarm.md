@@ -239,6 +239,15 @@ Trade-offs measured on the MDDB production database (~4.9 TiB, mostly binary tra
 * A plain dump took ~15 hours. gzip is single-threaded: `tar.gz` took ~4 more days after the dump. With `gz` the compression happens during the dump, so `mongodump` keeps reading from the database for days instead.
 * `tar` and `tar.gz` write the full dump first and then pack it, so during the backup the data is on disk twice. `tar` saves no space; it only produces a single file.
 
+**Consistency.** `mongodump` on a standalone `mongod` reads one collection after another, so writes made while it runs (e.g. a loader run) can leave the backup inconsistent between collections (such as `fs.files` and `fs.chunks`). With `DB_BACKUP_LOCK=yes` the service runs `db.fsyncLock()` before the dump and `db.fsyncUnlock()` right after it: reads keep working, but every write waits until the dump finishes (hours on large databases; plan loader runs accordingly). The lock is released when the service is stopped, and a lock left by a killed run (e.g. `SIGKILL`) is released on the next start, so do not `fsyncLock` the database by hand while the backup service runs. With `DB_BACKUP_LOCK=no` writes are never blocked.
+
+To check whether the database is write-locked, and to release it by hand:
+
+```sh
+mongosh ... --eval 'db.adminCommand({currentOp: 1}).fsyncLock'   # true when locked
+mongosh ... --eval 'while (db.adminCommand({currentOp: 1}).fsyncLock === true) db.fsyncUnlock()'
+```
+
 Every backup is written under a `.partial` name and only renamed once all its steps have succeeded, so a backup with a final name is always complete. Leftovers of interrupted runs are removed when the service starts. The next backup is scheduled `DB_BACKUP_INTERVAL` seconds after the start of the last complete one, so redeploying the stack does not trigger a new backup unless one is due. After each successful backup, only the `DB_BACKUP_RETENTION_COUNT` most recent complete backups are kept, in any of the formats above (so changing the format does not leave old backups behind). If a backup fails, the service exits with an error (visible in `docker service ps <stack>_mongo-backup`) and is restarted by swarm.
 
 For performing a **single mongodump**, please execute:

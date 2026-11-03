@@ -174,14 +174,14 @@ Take into account that this script performs a mongodump **every ${DB_BACKUP_INTE
 
 It works as the [Docker Swarm backup service](docker-swarm.md#mongodb-backup-service): the format is set by `DB_BACKUP_COMPRESS`, only the `DB_BACKUP_RETENTION_COUNT` latest complete backups are kept, and a backup is only renamed to its final name once complete. Before enabling it:
 
-* **`DB_BACKUP_COMPRESS` must be set** in `.env` (`no` is the recommended value for MDDB data); otherwise the script exits with an error.
+* **`DB_BACKUP_COMPRESS` and `DB_BACKUP_LOCK` must be set** in `.env` (`no` and `yes` are the recommended values for MDDB data); otherwise the script exits with an error.
 * **Disk space**: each backup takes about as much as the database, so plan for `DB_BACKUP_RETENTION_COUNT` + 1 times the database size in `DB_BACKUP_VOLUME_PATH` (the extra one is the backup being written). For large databases use a long interval (e.g. weekly, `604800`) and a small retention count.
 * **Time**: a plain dump runs at roughly 100 MB/s (~2 h for 700 GB) and adds read load on `mongod` while it runs.
 * The `mongo:8` image is used only for its `mongodump`, which works with MongoDB 6, 7 and 8 servers.
 * `--restart on-failure` restarts the container when a backup fails, as the swarm restart policy does.
 
 ```sh
-podman run -d --restart on-failure --name mongo-backup -e MONGO_INITDB_ROOT_USERNAME=${MONGO_INITDB_ROOT_USERNAME} -e MONGO_INITDB_ROOT_PASSWORD=${MONGO_INITDB_ROOT_PASSWORD} -e MONGO_PORT=${DB_OUTER_PORT} -e MONGO_INITDB_DATABASE=${DB_AUTHSOURCE} -e DB_HOST=${DB_SERVER} -e BACKUP_DIR=/backup -e RETENTION_COUNT=${DB_BACKUP_RETENTION_COUNT} -e BACKUP_INTERVAL=${DB_BACKUP_INTERVAL} -e COMPRESS=${DB_BACKUP_COMPRESS} -v ${DB_BACKUP_VOLUME_PATH}:/backup:Z -v $(pwd)/mongodb/backup_script.sh:/backup_script.sh:ro --network data_network --security-opt label=disable docker.io/library/mongo:8 bash /backup_script.sh
+podman run -d --restart on-failure --name mongo-backup -e MONGO_INITDB_ROOT_USERNAME=${MONGO_INITDB_ROOT_USERNAME} -e MONGO_INITDB_ROOT_PASSWORD=${MONGO_INITDB_ROOT_PASSWORD} -e MONGO_PORT=${DB_OUTER_PORT} -e MONGO_INITDB_DATABASE=${DB_AUTHSOURCE} -e DB_HOST=${DB_SERVER} -e BACKUP_DIR=/backup -e RETENTION_COUNT=${DB_BACKUP_RETENTION_COUNT} -e BACKUP_INTERVAL=${DB_BACKUP_INTERVAL} -e COMPRESS=${DB_BACKUP_COMPRESS} -e LOCK=${DB_BACKUP_LOCK} -v ${DB_BACKUP_VOLUME_PATH}:/backup:Z -v $(pwd)/mongodb/backup_script.sh:/backup_script.sh:ro --network data_network --security-opt label=disable docker.io/library/mongo:8 bash /backup_script.sh
 ```
 
 For performing a **single mongodump**, please execute:

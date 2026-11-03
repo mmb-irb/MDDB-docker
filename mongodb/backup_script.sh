@@ -31,6 +31,15 @@
 #
 # Any error makes the script exit with non-zero status, so the failure shows up in
 # `docker service ps` and the swarm restart policy starts it again.
+#
+# Consistency (LOCK): mongodump on a standalone mongod reads one collection after another, so
+# writes made while it runs (e.g. a loader run) can leave the dump inconsistent between
+# collections (such as fs.files and fs.chunks). With LOCK=yes the script runs db.fsyncLock()
+# before the dump and db.fsyncUnlock() right after it, so the dump is a consistent snapshot:
+# reads keep working, but every write waits until the dump finishes (hours on large
+# databases). The lock is also released when the script exits or is stopped, and any lock
+# left by a killed run is released on next start, so do not fsyncLock this mongod by hand
+# while the backup service runs. With LOCK=no writes are not blocked.
 set -euo pipefail
 shopt -s nullglob
 
@@ -42,6 +51,7 @@ shopt -s nullglob
 : "${RETENTION_COUNT:?Retention count not set}"
 : "${BACKUP_INTERVAL:?Backup interval not set}"
 : "${COMPRESS:?Backup compression (no/gz/tar/tar.gz) not set}"
+: "${LOCK:?Backup write lock (yes/no) not set}"
 : "${MONGO_INITDB_ROOT_USERNAME:?Mongo DB root username not set}"
 : "${MONGO_INITDB_ROOT_PASSWORD:?Mongo DB root password not set}"
 
@@ -57,6 +67,40 @@ case "$COMPRESS" in
     no|gz|tar|tar.gz) ;;
     *) echo "COMPRESS must be one of: no, gz, tar, tar.gz. Got '$COMPRESS'" >&2; exit 1 ;;
 esac
+case "$LOCK" in
+    yes|no) ;;
+    *) echo "LOCK must be yes or no. Got '$LOCK'" >&2; exit 1 ;;
+esac
+
+MONGO_URI="mongodb://${MONGO_INITDB_ROOT_USERNAME}:${MONGO_INITDB_ROOT_PASSWORD}@${DB_HOST}:${MONGO_PORT}/${MONGO_INITDB_DATABASE}?authSource=admin"
+mongo_eval() { mongosh "$MONGO_URI" --quiet --eval "$1"; }
+
+# Whether the server is write-locked (note: mongosh's db.currentOp() helper does not return
+# the fsyncLock field; the currentOp command does)
+is_write_locked() {
+    [ "$(mongo_eval 'db.adminCommand({currentOp: 1}).fsyncLock === true')" = true ]
+}
+
+# Release every fsyncLock held on the server (fsyncLock nests: each call needs an unlock)
+release_write_lock() {
+    mongo_eval 'while (db.adminCommand({currentOp: 1}).fsyncLock === true) { db.fsyncUnlock() }' >/dev/null
+    if is_write_locked; then
+        echo "Could not release the write lock: run db.fsyncUnlock() until it reports lockCount 0" >&2
+        exit 1
+    fi
+    echo "Writes unlocked at $(date)"
+}
+
+# Run a command in the background and wait for it, so a SIGTERM (container stop) is handled
+# right away instead of after the command finishes, and the EXIT trap releases the lock
+run_interruptible() {
+    "$@" &
+    CHILD=$!
+    wait "$CHILD"
+    CHILD=
+}
+CHILD=
+trap 'if [ -n "$CHILD" ]; then kill "$CHILD" 2>/dev/null || true; fi; exit 143' TERM INT
 
 TS_GLOB='[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]_[0-9][0-9]-[0-9][0-9]-[0-9][0-9]'
 
@@ -82,23 +126,47 @@ wait_for_next_backup() {
     remaining=$(( last_epoch + BACKUP_INTERVAL - $(date -u +%s) ))
     if (( remaining > 0 )); then
         echo "Last complete backup: $last. Next backup in $remaining seconds"
-        sleep "$remaining"
+        run_interruptible sleep "$remaining"
     fi
 }
 
 # Wait for MongoDB to be ready before starting first dump
-until mongosh "mongodb://${MONGO_INITDB_ROOT_USERNAME}:${MONGO_INITDB_ROOT_PASSWORD}@${DB_HOST}:${MONGO_PORT}/${MONGO_INITDB_DATABASE}?authSource=admin" --eval "db.stats()" >/dev/null 2>&1; do
+until mongosh "$MONGO_URI" --eval "db.stats()" >/dev/null 2>&1; do
   echo "Waiting for MongoDB..."
   sleep 2
 done
 
 mkdir -p "$BACKUP_DIR"
 
+# A run killed while holding the write lock (e.g. SIGKILL) leaves the database locked
+if [ "$LOCK" = yes ] && is_write_locked; then
+    echo "Database left write-locked by a previous run: releasing the lock"
+    release_write_lock
+fi
+
 # Remove leftovers of interrupted runs (only one backup replica writes to BACKUP_DIR)
 for leftover in "$BACKUP_DIR"/*.partial; do
     echo "Removing incomplete backup: $leftover"
     rm -rf -- "$leftover"
 done
+
+# Block writes for the duration of the dump (LOCK=yes); the EXIT trap releases the lock if
+# the script stops while holding it
+lock_writes() {
+    [ "$LOCK" = yes ] || return 0
+    trap release_write_lock EXIT
+    mongo_eval 'db.fsyncLock()' >/dev/null
+    if ! is_write_locked; then
+        echo "db.fsyncLock() did not lock the server" >&2
+        exit 1
+    fi
+    echo "Writes locked at $(date)"
+}
+unlock_writes() {
+    [ "$LOCK" = yes ] || return 0
+    release_write_lock
+    trap - EXIT
+}
 
 while true; do
     wait_for_next_backup
@@ -110,7 +178,9 @@ while true; do
         no|gz)
             DUMP_ARGS=()
             [ "$COMPRESS" = gz ] && DUMP_ARGS=(--gzip)
-            mongodump --host "$DB_HOST" -u "$MONGO_INITDB_ROOT_USERNAME" -p "$MONGO_INITDB_ROOT_PASSWORD" "${DUMP_ARGS[@]}" --out "$BACKUP_DIR/$TIMESTAMP.partial"
+            lock_writes
+            run_interruptible mongodump --host "$DB_HOST" -u "$MONGO_INITDB_ROOT_USERNAME" -p "$MONGO_INITDB_ROOT_PASSWORD" "${DUMP_ARGS[@]}" --out "$BACKUP_DIR/$TIMESTAMP.partial"
+            unlock_writes
             mv -- "$BACKUP_DIR/$TIMESTAMP.partial" "$BACKUP_DIR/$TIMESTAMP"
             BACKUP="$BACKUP_DIR/$TIMESTAMP"
             ;;
@@ -119,9 +189,11 @@ while true; do
             BACKUP="$BACKUP_DIR/$TIMESTAMP.$COMPRESS"
             TAR_ARGS=(-cf)
             [ "$COMPRESS" = tar.gz ] && TAR_ARGS=(-czf)
-            mongodump --host "$DB_HOST" -u "$MONGO_INITDB_ROOT_USERNAME" -p "$MONGO_INITDB_ROOT_PASSWORD" --out "$DUMP_DIR"
+            lock_writes
+            run_interruptible mongodump --host "$DB_HOST" -u "$MONGO_INITDB_ROOT_USERNAME" -p "$MONGO_INITDB_ROOT_PASSWORD" --out "$DUMP_DIR"
+            unlock_writes
             echo "Dump finished at $(date), packing into $COMPRESS"
-            tar "${TAR_ARGS[@]}" "$BACKUP.partial" -C "$DUMP_DIR" .
+            run_interruptible tar "${TAR_ARGS[@]}" "$BACKUP.partial" -C "$DUMP_DIR" .
             mv -- "$BACKUP.partial" "$BACKUP"
             rm -rf -- "$DUMP_DIR"
             ;;
