@@ -2,6 +2,7 @@ import argparse
 import os
 import subprocess
 import time
+from podman_scripts import get_podman_script
 
 
 def check_file_exists(fname, warning=False):
@@ -217,6 +218,9 @@ def deploy_stack(rm):
     subprocess.run("podman run -d --name vre_lite -p ${VRE_LITE_OUTER_PORT}:${VRE_LITE_INNER_PORT} -v ${VRE_LITE_VOLUME_PATH}:/vre_lite:Z --memory \"${MINIO_MEMORY_LIMIT}\" --network minio_network --network web_network vre_lite_image", shell=True, check=True)
 
     subprocess.run("podman run -d --name apache -p ${APACHE_HTTP_OUTER_PORT}:${APACHE_HTTP_INNER_PORT} -p ${APACHE_HTTPS_OUTER_PORT}:${APACHE_HTTPS_INNER_PORT} -p ${APACHE_MINIO_OUTER_PORT}:${APACHE_MINIO_INNER_PORT} -v ${APACHE_CERTS_VOLUME_PATH}:/usr/local/apache2/conf/ssl:Z --memory \"${APACHE_MEMORY_LIMIT}\" --network web_network apache_image", shell=True, check=True)
+
+    # Periodic MongoDB backups (see readme/podman.md#mongodb-backup-service)
+    subprocess.run(get_podman_script('run', 'mongo-backup'), shell=True, check=True)
 
     # Poll until MinIO is up and running
     if 'env_vars' not in locals():
