@@ -1,6 +1,10 @@
 # Use nginx Alpine Linux as base image
 FROM docker.io/library/nginx:alpine
 
+# Upgrade the base image system packages to get security fixes (e.g. brotli, openssl)
+# 'apk add' alone does not upgrade packages already present in the base image
+RUN apk upgrade --no-cache
+
 # Define the build arguments
 ARG VERSION
 ARG CLIENT_INNER_PORT

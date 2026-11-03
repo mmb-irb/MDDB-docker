@@ -90,6 +90,10 @@ RUN npm run build:production
 # Stage 2: Serve the Nuxt app with pm2
 FROM docker.io/library/nginx:alpine
 
+# Upgrade the base image system packages to get security fixes (e.g. brotli, openssl)
+# 'apk add' alone does not upgrade packages already present in the base image
+RUN apk upgrade --no-cache
+
 # Install necessary packages
 RUN apk --no-cache add nodejs npm curl
 

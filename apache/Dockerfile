@@ -1,6 +1,9 @@
 # Base docker with apache 2.4
 FROM docker.io/library/httpd:2.4
 
+# Upgrade the base image system packages to get security fixes (e.g. brotli, openssl, gnutls)
+RUN apt-get update && apt-get upgrade -y && rm -rf /var/lib/apt/lists/*
+
 # Copy the custom Apache configuration file
 COPY apache-config.conf /usr/local/apache2/conf/conf.d/custom.conf
 
