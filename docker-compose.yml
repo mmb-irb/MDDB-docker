@@ -193,7 +193,7 @@ services:
   mongo-backup:
     image: mongo
     command: >
-      bash -c "sh /backup_script.sh"
+      bash /backup_script.sh
     volumes:
       - ${DB_BACKUP_VOLUME_PATH}:/backup
       - ./mongodb/backup_script.sh:/backup_script.sh:ro
@@ -206,6 +206,7 @@ services:
       BACKUP_DIR: /backup
       RETENTION_COUNT: ${DB_BACKUP_RETENTION_COUNT}
       BACKUP_INTERVAL: ${DB_BACKUP_INTERVAL}
+      COMPRESS: ${DB_BACKUP_COMPRESS}
     networks:
       - data_network
     depends_on:

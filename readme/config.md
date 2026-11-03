@@ -85,6 +85,7 @@ An `.env` file must be created in the **root** of the project. The file [**.env.
 | DB_BACKUP_REPLICAS      | number  | number of replicas to deploy                                    |
 | DB_BACKUP_RETENTION_COUNT         | number  | maximum number of DB backup copies to preserve                                          |
 | DB_BACKUP_INTERVAL         | number  | interval in seconds between DB backups                                         |
+| DB_BACKUP_COMPRESS         | boolean | `true` to compress backups with `mongodump --gzip`: ~20% less disk on MDDB data, but several times slower (days instead of hours)    |
 | DB_BACKUP_CPU_LIMIT      | string  | DB backup limit number of CPUs                                    |
 | DB_BACKUP_MEMORY_LIMIT          | string | DB backup limit memory                           |
 | DB_BACKUP_CPU_RESERVATION          | string  | DB backup reserved number of CPUs                           |
@@ -445,7 +446,7 @@ services:
   mongo-backup:
     image: mongo
     command: >
-      bash -c "sh /backup_script.sh"
+      bash /backup_script.sh
     volumes:
       - ${DB_BACKUP_VOLUME_PATH}:/backup
       - ./mongodb/backup_script.sh:/backup_script.sh:ro
@@ -458,6 +459,7 @@ services:
       BACKUP_DIR: /backup
       RETENTION_COUNT: ${DB_BACKUP_RETENTION_COUNT}
       BACKUP_INTERVAL: ${DB_BACKUP_INTERVAL}
+      COMPRESS: ${DB_BACKUP_COMPRESS}
     networks:
       - data_network
     depends_on:
