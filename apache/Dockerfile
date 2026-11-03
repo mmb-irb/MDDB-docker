@@ -25,7 +25,6 @@ ARG SERVER_URL
 ARG SSL_CERTIFICATE
 ARG SSL_CERT_KEY
 # extension services
-ARG OPTIMADE_INNER_PORT
 ARG MCP_INNER_PORT
 # development services
 ARG SERVICES_MONITOR_API_INNER_PORT
@@ -43,7 +42,6 @@ RUN sed -i "s/SERVER_URL/${SERVER_URL}/g" /usr/local/apache2/conf/conf.d/custom.
 RUN sed -i "s/SSL_CERTIFICATE/${SSL_CERTIFICATE}/g" /usr/local/apache2/conf/conf.d/custom.conf
 RUN sed -i "s/SSL_CERT_KEY/${SSL_CERT_KEY}/g" /usr/local/apache2/conf/conf.d/custom.conf
 # extension services
-RUN sed -i "s/OPTIMADE_INNER_PORT/${OPTIMADE_INNER_PORT:-5000}/g" /usr/local/apache2/conf/conf.d/custom.conf
 RUN sed -i "s/MCP_INNER_PORT/${MCP_INNER_PORT:-8000}/g" /usr/local/apache2/conf/conf.d/custom.conf
 # development services
 RUN sed -i "s/SERVICES_MONITOR_API_INNER_PORT/${SERVICES_MONITOR_API_INNER_PORT:-3001}/g" /usr/local/apache2/conf/conf.d/custom.conf

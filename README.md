@@ -87,14 +87,6 @@ https://hub.docker.com/r/pgsty/minio
 
 The **complementary** services that may be **deployed** or **omitted**, depending on the node’s requirements.
 
-#### Optimade
-
-The **Open Databases Integration for Materials Design** (OPTIMADE) consortium aims to make materials databases interoperable by developing a specification for a common REST API.
-
-For this project, the following repo has been used:
-
-https://github.com/JPBergsma/optimade-python-tools.git
-
 ## Before the installation
 
 There are a **few checks** to do in the **VM** where the services will be installed:

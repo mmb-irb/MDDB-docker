@@ -2,7 +2,7 @@
   "openapi": "3.0.2",
   "info": {
     "title": "$DATABASE API",
-    "description": "This is the $DATABASE REST API documentation.\nThis API grants programmatic access to the $DATABASE database.\nIt may retrieve trajectory data, analyses, files and metadata.\nIt also exposes PDBe knowledge annotations through the /knowledge endpoints.\nBelow, API endpoints are listed and documented.\nClick on any endpoint to drop more information such as the description and accepted parameters.\nUse the 'try it out' button to test any endpoint at the moment.\n<br />\n<br />\nData may be accessed also through an\n<a href=\"//$CLIENT_URL/optimade/\" target=\"_blank\" rel=\"noreferrer noopener\">OPTIMADE API</a>.\n<br />\n<br />\nThis API is used by the\n<a href=\"//$CLIENT_URL\" target=\"_blank\" rel=\"noreferrer noopener\">$DATABASE web client</a>.",
+    "description": "This is the $DATABASE REST API documentation.\nThis API grants programmatic access to the $DATABASE database.\nIt may retrieve trajectory data, analyses, files and metadata.\nIt also exposes PDBe knowledge annotations through the /knowledge endpoints.\nBelow, API endpoints are listed and documented.\nClick on any endpoint to drop more information such as the description and accepted parameters.\nUse the 'try it out' button to test any endpoint at the moment.\n<br />\n<br />\nThis API is used by the\n<a href=\"//$CLIENT_URL\" target=\"_blank\" rel=\"noreferrer noopener\">$DATABASE web client</a>.",
     "version": "1.0.0"
   },
   "paths": {

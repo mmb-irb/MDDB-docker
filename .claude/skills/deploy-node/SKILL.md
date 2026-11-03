@@ -34,7 +34,7 @@ run every command below through `ssh <alias> '...'`, and copy the helper scripts
 | Public domain name(s) of the node (e.g. `mdposit-xx.mddbr.eu`) | `MINIO_URL`, `REST_URL`, certificate, DNS |
 | Storage path(s) for data and for MinIO | `*_VOLUME_PATH` variables, capacity check |
 | Is MongoDB in the stack (default) or an external server? | `DB_SERVER`, users, backups |
-| Extensions: `mcp`, `optimade`, `metrics`, `grafana`? | Extra `-f` / `-c` files |
+| Extensions: `mcp`, `metrics`, `grafana`? | Extra `-f` / `-c` files |
 | Where are the TLS certificate (full chain) and key? | `certs/` folder |
 | Which MinIO API port is opened publicly (default 9000)? | `APACHE_MINIO_OUTER_PORT` |
 | Who runs sudo commands? | Step 2 hand-offs |

@@ -166,18 +166,7 @@ Neither the **VRE_LITE_BASE_URL_DEVELOPMENT** nor the **VRE_LITE_BASE_URL_STAGIN
 
 ⚠️ No sensible default value is provided for any of these fields, they **need to be defined** ⚠️
 
-In case some **extension** is added to the **core** services, the below **environment variables** must be added to the main `.env` file created in the **root** of the project. The file [**.env.docker.extensions.git**](../.env.docker.extensions.git) can be taken as an example. The file must contain the following environment variables:
-
-| key              | value   | description                                     |
-| ---------------- | ------- | ----------------------------------------------- |
-| OPTIMADE_REPLICAS      | number  | number of replicas to deploy                                    |
-| OPTIMADE_OUTER_PORT         | number  | OPTIMADE outer port                                         |
-| OPTIMADE_INNER_PORT         | number  | OPTIMADE inner port                                         |
-| OPTIMADE_CPU_LIMIT    | string  | OPTIMADE limit number of CPUs                               |
-| OPTIMADE_MEMORY_LIMIT    | string  | OPTIMADE limit memory                             |
-| OPTIMADE_CPU_RESERVATION    | string  | OPTIMADE reserved number of CPUs                               |
-| OPTIMADE_MEMORY_RESERVATION    | string  | OPTIMADE reserved memory                               |
-
+In case some **extension** is added to the **core** services, the **environment variables** of each extension must be added to the main `.env` file created in the **root** of the project. The file [**.env.docker.extensions.git**](../.env.docker.extensions.git) can be taken as an example.
 
 ## MongoDB
 
@@ -668,4 +657,6 @@ All the configurable variables such as **resources**, **paths**, **ports** and s
 
 List of available **extensions**:
 
-* [**OPTIMADE**](../extensions/optimade.yml): The **Open Databases Integration for Materials Design** (OPTIMADE) consortium aims to make materials databases interoperable by developing a specification for a common REST API.
+* [**mcp**](../extensions/mcp.yml)
+* [**metrics**](../extensions/metrics.yml)
+* [**grafana**](../extensions/grafana.yml)
