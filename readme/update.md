@@ -150,14 +150,15 @@ python3 scripts/rebuild-legacy.py -s client vre_lite -v 0.0.1 -t my_stack
 
 ## vre_lite and rest without root
 
-Since mddb-vre **0.0.7**, the **vre_lite** and **rest** images run as an unprivileged user (uid **10001**), and vre_lite no longer mounts the Docker socket: it checks the other services over HTTP.
+Since mddb-vre **0.0.7**, the **vre_lite** and **rest** images run as an unprivileged user (uid **65532**, the usual "nonroot" uid of container images; 10001 is a real user on the IRB machines), and vre_lite no longer mounts the Docker socket: it checks the other services over HTTP.
 
 When updating an **existing Docker Swarm node** to these images, do this once:
 
 ```sh
 set -a && source .env && set +a
-# Give the vre_lite log volume to uid 10001 (it was written by root until now)
-docker run --rm -v ${VRE_LITE_VOLUME_PATH}:/v alpine chown -R 10001:10001 /v
+# Give the vre_lite log folder and its log file(s) to uid 65532 (written by root until now).
+# Not recursive: on some nodes other services keep subfolders there (e.g. services-monitor)
+docker run --rm -v ${VRE_LITE_VOLUME_PATH}:/v alpine find /v -maxdepth 1 \( -path /v -o -name "*.json" \) -exec chown 65532:65532 {} +
 # 'docker service update --image' keeps the old mounts: remove the Docker socket explicitly
 docker service update --force --image vre_lite_image:latest --mount-rm /var/run/docker.sock my_stack_vre_lite
 docker service update --force --image rest_image:latest my_stack_rest

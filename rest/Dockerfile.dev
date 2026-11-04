@@ -83,7 +83,7 @@ WORKDIR /app/MDDB-REST-API
 ARG REST_INNER_PORT
 
 # Run as an unprivileged user (pm2 keeps its files in its home)
-RUN adduser -D -u 10001 -h /home/rest rest
+RUN adduser -D -u 65532 -h /home/rest rest
 USER rest
 
 # Expose the port where the app runs on

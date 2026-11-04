@@ -128,8 +128,8 @@ RUN echo '#!/bin/sh' > entrypoint.sh && \
     chmod +x entrypoint.sh
 
 # Run as an unprivileged user (pm2 and mc keep their files in its home).
-# The log volume mounted at /vre_lite must be writable by uid 10001: see readme/update.md
-RUN adduser -D -u 10001 -h /home/vre vre
+# The log volume mounted at /vre_lite must be writable by uid 65532: see readme/update.md
+RUN adduser -D -u 65532 -h /home/vre vre
 USER vre
 
 # Expose the port the app runs on

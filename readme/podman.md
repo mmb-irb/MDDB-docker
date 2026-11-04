@@ -220,10 +220,10 @@ podman run -d --name client -p ${CLIENT_OUTER_PORT}:${CLIENT_INNER_PORT} --netwo
 
 ### VRE lite
 
-VRE lite runs as uid 10001 inside the container, so first give it the log volume, then **launch** the **vre_lite** service:
+VRE lite runs as uid 65532 inside the container, so first give it the log volume, then **launch** the **vre_lite** service:
 
 ```sh
-podman unshare chown -R 10001:10001 ${VRE_LITE_VOLUME_PATH}
+podman unshare find ${VRE_LITE_VOLUME_PATH} -maxdepth 1 \( -path ${VRE_LITE_VOLUME_PATH} -o -name '*.json' \) -exec chown 65532:65532 {} +
 podman run -d --name vre_lite -p ${VRE_LITE_OUTER_PORT}:${VRE_LITE_INNER_PORT} -v ${VRE_LITE_VOLUME_PATH}:/vre_lite:Z --network minio_network --network web_network --network data_network vre_lite_image
 ```
 
