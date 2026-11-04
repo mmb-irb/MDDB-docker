@@ -82,6 +82,10 @@ WORKDIR /app/MDDB-REST-API
 # Define environment variable
 ARG REST_INNER_PORT
 
+# Run as an unprivileged user (pm2 keeps its files in its home)
+RUN adduser -D -u 10001 -h /home/rest rest
+USER rest
+
 # Expose the port where the app runs on
 EXPOSE ${REST_INNER_PORT}
 

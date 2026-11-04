@@ -335,9 +335,11 @@ services:
         STACK_NAME: ${STACK_NAME}
         NODE_NAME: ${NODE}
         MINIO_ADDRESS: ${MINIO_ADDRESS}
+        CLIENT_INNER_PORT: ${CLIENT_INNER_PORT}
+        REST_INNER_PORT: ${REST_INNER_PORT}
+        SERVICES_MONITOR_API_INNER_PORT: ${SERVICES_MONITOR_API_INNER_PORT:-}
     volumes:
       - vre_lite_log_volume:/vre_lite
-      - /var/run/docker.sock:/var/run/docker.sock
     # ports:
     #   - "${VRE_LITE_OUTER_PORT}:${VRE_LITE_INNER_PORT}"
     networks:

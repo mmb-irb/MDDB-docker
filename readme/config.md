@@ -540,7 +540,6 @@ services:
         NODE_NAME: ${NODE}
     volumes:
       - vre_lite_log_volume:/vre_lite
-      - /var/run/docker.sock:/var/run/docker.sock
     ports:
       - "${VRE_LITE_OUTER_PORT}:${VRE_LITE_INNER_PORT}"
     networks:

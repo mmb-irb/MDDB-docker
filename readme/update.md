@@ -148,6 +148,23 @@ Example for rollback to the **version 0.0.1** of the **client** service from the
 python3 scripts/rebuild-legacy.py -s client vre_lite -v 0.0.1 -t my_stack
 ```
 
+## vre_lite and rest without root
+
+Since mddb-vre **0.0.7**, the **vre_lite** and **rest** images run as an unprivileged user (uid **10001**), and vre_lite no longer mounts the Docker socket: it checks the other services over HTTP.
+
+When updating an **existing Docker Swarm node** to these images, do this once:
+
+```sh
+set -a && source .env && set +a
+# Give the vre_lite log volume to uid 10001 (it was written by root until now)
+docker run --rm -v ${VRE_LITE_VOLUME_PATH}:/v alpine chown -R 10001:10001 /v
+# 'docker service update --image' keeps the old mounts: remove the Docker socket explicitly
+docker service update --force --image vre_lite_image:latest --mount-rm /var/run/docker.sock my_stack_vre_lite
+docker service update --force --image rest_image:latest my_stack_rest
+```
+
+On **Podman** nodes, [**scripts/podman_scripts.py**](../scripts/podman_scripts.py) already runs `podman unshare chown` on the volume before starting vre_lite.
+
 ## Update services versions
 
 The versions for **each service** of the stack are stored into a database. The **status** of these services is shown in the **VRE lite service**. Though this script is **integrated** into the automatic **deploy** script, located in [**scripts/update-services-versions.py**](../scripts/update-services-versions.py), it can be used **separately** for updating all the versions in a single call:

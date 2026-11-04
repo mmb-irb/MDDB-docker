@@ -97,9 +97,6 @@ RUN apk upgrade --no-cache
 # Install necessary packages
 RUN apk --no-cache add nodejs npm curl
 
-# Install Docker CLI to allow interaction with Docker from within the container
-RUN apk add --no-cache docker-cli
-
 # Install pm2
 RUN npm install pm2 -g
 
@@ -131,6 +128,15 @@ ENV MINIO_PASSWORD=$MINIO_PASSWORD
 ENV MINIO_API_PORT=$MINIO_API_PORT
 ENV MINIO_ADDRESS=${MINIO_ADDRESS:-minio}
 
+# Ports used to check the status of the other services over HTTP (mddb-vre server/utils/status.js).
+# vre_lite has no access to the Docker socket.
+ARG CLIENT_INNER_PORT
+ARG REST_INNER_PORT
+ARG SERVICES_MONITOR_API_INNER_PORT
+ENV CLIENT_INNER_PORT=${CLIENT_INNER_PORT:-80}
+ENV REST_INNER_PORT=${REST_INNER_PORT:-3000}
+ENV SERVICES_MONITOR_API_INNER_PORT=${SERVICES_MONITOR_API_INNER_PORT:-3001}
+
 # Create the entrypoint script
 RUN echo '#!/bin/sh' > entrypoint.sh && \
     echo 'until curl -f http://$MINIO_ADDRESS:$MINIO_API_PORT/minio/health/live; do' >> entrypoint.sh && \
@@ -140,6 +146,11 @@ RUN echo '#!/bin/sh' > entrypoint.sh && \
     echo 'mc alias set myminio http://$MINIO_ADDRESS:$MINIO_API_PORT $MINIO_USER $MINIO_PASSWORD' >> entrypoint.sh && \
     echo 'exec pm2-runtime start ecosystem.config.cjs --name mddb-vre' >> entrypoint.sh && \
     chmod +x entrypoint.sh
+
+# Run as an unprivileged user (pm2 and mc keep their files in its home).
+# The log volume mounted at /vre_lite must be writable by uid 10001: see readme/update.md
+RUN adduser -D -u 10001 -h /home/vre vre
+USER vre
 
 # Expose the port the app runs on
 EXPOSE ${VRE_LITE_INNER_PORT}

@@ -219,23 +219,14 @@ podman run -d --name client -p ${CLIENT_OUTER_PORT}:${CLIENT_INNER_PORT} --netwo
 
 ### VRE lite
 
-Before launching VRE lite, please be sure that **Podman socket** is initialised:
+VRE lite runs as uid 10001 inside the container, so first give it the log volume, then **launch** the **vre_lite** service:
 
 ```sh
-systemctl --user status podman.socket
+podman unshare chown -R 10001:10001 ${VRE_LITE_VOLUME_PATH}
+podman run -d --name vre_lite -p ${VRE_LITE_OUTER_PORT}:${VRE_LITE_INNER_PORT} -v ${VRE_LITE_VOLUME_PATH}:/vre_lite:Z --network minio_network --network web_network --network data_network vre_lite_image
 ```
 
-If the socket is **not running** (ie it says `Active: inactive (dead)`), you need to **start it**:
-
-```sh
-systemctl --user start podman.socket 
-```
-
-After that, **launch** the **vre_lite** service:
-
-```sh
-podman run -d --name vre_lite -p ${VRE_LITE_OUTER_PORT}:${VRE_LITE_INNER_PORT} -v ${VRE_LITE_VOLUME_PATH}:/vre_lite:Z -v /run/user/$(id -u)/podman/podman.sock:/var/run/docker.sock --network minio_network --network web_network --network data_network vre_lite_image
-```
+VRE lite does not need the Podman socket: it checks the other services over HTTP.
 
 ### Apache
 
