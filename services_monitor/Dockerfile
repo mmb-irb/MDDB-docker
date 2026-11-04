@@ -1,8 +1,16 @@
 # Single stage build with both Python and Node.js
-FROM node:18-alpine
+# Node.js comes from the Alpine package instead of the node image: the official node binaries
+# bundle their own brotli, while the Alpine package uses the system one, which gets security fixes
+FROM docker.io/library/alpine:3.24
+
+# Upgrade the base image system packages to get security fixes (e.g. brotli, openssl)
+# 'apk add' alone does not upgrade packages already present in the base image
+RUN apk upgrade --no-cache
 
 # Install system packages needed for both Python and Node.js
-RUN apk update && apk add --no-cache \
+RUN apk add --no-cache \
+    nodejs \
+    npm \
     python3 \
     python3-dev \
     py3-pip \
