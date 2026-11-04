@@ -211,9 +211,11 @@ Keep the backup until you are sure you will not need it.
 
 ## Podman nodes
 
-The Podman scripts and [podman.md](podman.md) use `docker.io/library/mongo:8`. A node created before still runs
-`mongo:6`: the procedure is the same, recreating the container instead of updating a service. Keep each old
-container (renamed) as the way back while the FCV allows it:
+The Podman scripts and [podman.md](podman.md) use `mongo_image`, built from `mongo:8.0` (see
+[Deploy MongoDB](podman.md#deploy-mongodb)). A node created before still runs `mongo:6`: the procedure is the
+same, recreating the container instead of updating a service. Use the official `mongo:7.0` image for step 3
+and `mongo_image` for step 4 (**not** `mongo:8`, which now points to newer short-lived releases). Keep each
+old container (renamed) as the way back while the FCV allows it:
 
 ```sh
 # the container's own environment, without putting passwords on a command line
@@ -222,7 +224,7 @@ container (renamed) as the way back while the FCV allows it:
 podman stop -t 1800 mongodb && podman rename mongodb mongodb-6
 # the same `podman run … --name mongodb …` you used (same volumes, same --ip), with
 #   --env-file ~/mongodb.env instead of the -e options, ending in:
-#   docker.io/library/mongo:7.0      then, at step 4, docker.io/library/mongo:8.0
+#   docker.io/library/mongo:7.0      then, at step 4, mongo_image
 mongo_cid() { echo mongodb; }    # then mongo_eval works as above, through `podman exec`:
 mongo_eval() { podman exec mongodb sh -c 'mongosh --quiet -u "$MONGO_INITDB_ROOT_USERNAME" \
   -p "$MONGO_INITDB_ROOT_PASSWORD" --authenticationDatabase admin --eval "$0"' "$1"; }

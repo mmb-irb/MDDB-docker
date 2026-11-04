@@ -40,14 +40,14 @@ def get_podman_script(type, service, svc=None, version=None):
             cmd = "echo No run for Loader service"
     elif service == 'mongodb':
         if type == 'build':
-            cmd = "echo No build for MongoDB service"
+            cmd = "podman build -t mongo_image --pull=always --no-cache ./mongodb"
         elif type == 'run':
             cmd = "echo Please, run MongoDB manually"
     elif service == 'mongo-backup':
         if type == 'build':
-            cmd = "echo No build for MongoDB Backup service"
+            cmd = "echo MongoDB Backup uses mongo_image: build the mongodb service"
         elif type == 'run':
-            cmd = "podman run -d --restart on-failure --name mongo-backup -e MONGO_INITDB_ROOT_USERNAME=${MONGO_INITDB_ROOT_USERNAME} -e MONGO_INITDB_ROOT_PASSWORD=${MONGO_INITDB_ROOT_PASSWORD} -e MONGO_PORT=${DB_OUTER_PORT} -e MONGO_INITDB_DATABASE=${DB_AUTHSOURCE} -e DB_HOST=${DB_SERVER} -e BACKUP_DIR=/backup -e RETENTION_COUNT=${DB_BACKUP_RETENTION_COUNT} -e BACKUP_INTERVAL=${DB_BACKUP_INTERVAL} -e COMPRESS=${DB_BACKUP_COMPRESS} -e LOCK=${DB_BACKUP_LOCK} -v ${DB_BACKUP_VOLUME_PATH}:/backup:Z -v $(pwd)/mongodb/backup_script.sh:/backup_script.sh:ro --memory ${DB_BACKUP_MEMORY_LIMIT} --network data_network --security-opt label=disable docker.io/library/mongo:8 bash /backup_script.sh"
+            cmd = "podman run -d --restart on-failure --name mongo-backup -e MONGO_INITDB_ROOT_USERNAME=${MONGO_INITDB_ROOT_USERNAME} -e MONGO_INITDB_ROOT_PASSWORD=${MONGO_INITDB_ROOT_PASSWORD} -e MONGO_PORT=${DB_OUTER_PORT} -e MONGO_INITDB_DATABASE=${DB_AUTHSOURCE} -e DB_HOST=${DB_SERVER} -e BACKUP_DIR=/backup -e RETENTION_COUNT=${DB_BACKUP_RETENTION_COUNT} -e BACKUP_INTERVAL=${DB_BACKUP_INTERVAL} -e COMPRESS=${DB_BACKUP_COMPRESS} -e LOCK=${DB_BACKUP_LOCK} -v ${DB_BACKUP_VOLUME_PATH}:/backup:Z -v $(pwd)/mongodb/backup_script.sh:/backup_script.sh:ro --memory ${DB_BACKUP_MEMORY_LIMIT} --network data_network --security-opt label=disable mongo_image bash /backup_script.sh"
     elif service == 'utils':
         if type == 'build':
             cmd = "podman build -t utils_image --no-cache ./utils"
