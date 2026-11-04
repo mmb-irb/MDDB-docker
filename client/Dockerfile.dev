@@ -35,6 +35,10 @@ RUN npm run build
 # Stage 2: Serve the client app with nginx
 FROM docker.io/library/nginx:alpine
 
+# Upgrade the base image system packages to get security fixes (e.g. brotli, openssl)
+# 'apk add' alone does not upgrade packages already present in the base image
+RUN apk upgrade --no-cache
+
 # Define the build arguments
 ARG CLIENT_INNER_PORT
 

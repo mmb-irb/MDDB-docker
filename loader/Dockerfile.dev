@@ -4,8 +4,10 @@ FROM docker.io/continuumio/miniconda3:latest
 # Define working dir
 WORKDIR /app
 
-# Install Node.js
+# Upgrade the base image system packages to get security fixes (e.g. brotli, openssl)
+# and install Node.js
 RUN apt-get update && \
+    apt-get upgrade -y && \
     apt-get install -y curl && \
     curl -sL https://deb.nodesource.com/setup_26.x | bash - && \
     apt-get install -y nodejs
