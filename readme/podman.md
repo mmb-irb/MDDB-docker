@@ -67,8 +67,9 @@ Any free private subnets can be used. Check that they do not collide with the ex
 The **first service** to be deployed is **mongodb** because some other services such as the **REST API** and the **VRE lite** need to know the **mongodb IP** address **before starting** the building process.
 
 Build the MongoDB image first. It is the official `mongo:8.0` image (the long-term support release; the plain
-`mongo:8` tag moves to newer short-lived releases) with its `gosu` binary, built with an old Go that security
-scanners flag, replaced by an equivalent script that uses `setpriv`. `--pull=always` picks up the image's
+`mongo:8` tag moves to newer short-lived releases) without two helpers that security scanners flag: `gosu`,
+built with an old Go, is replaced by an equivalent script that uses `setpriv`, and `js-yaml` 3.x, which the
+official entrypoint only needs to read a YAML `--config` file, is removed. `--pull=always` picks up the image's
 security updates on every build; the backup service uses the same image.
 
 ```sh
