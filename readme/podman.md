@@ -69,13 +69,13 @@ The **first service** to be deployed is **mongodb** because some other services 
 Typical execution:
 
 ```sh
-podman run -d --name mongodb -e MONGO_INITDB_ROOT_USERNAME=${MONGO_INITDB_ROOT_USERNAME} -e MONGO_INITDB_ROOT_PASSWORD=${MONGO_INITDB_ROOT_PASSWORD} -e MONGO_PORT=${DB_OUTER_PORT} -e MONGO_INITDB_DATABASE=${DB_NAME} -e LOADER_DB_LOGIN=${LOADER_DB_LOGIN} -e LOADER_DB_PASSWORD=${LOADER_DB_PASSWORD} -e MONGO_VRE_DATABASE=${VRE_LITE_MONGO_DATABASE} -e VRE_DB_LOGIN=${VRE_LITE_DB_LOGIN} -e VRE_DB_PASSWORD=${VRE_LITE_DB_PASSWORD} -e REST_DB_LOGIN=${REST_DB_LOGIN} -e REST_DB_PASSWORD=${REST_DB_PASSWORD} -v ${DB_VOLUME_PATH}:/data/db:Z -v $(pwd)/mongodb/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro --network data_network --security-opt label=disable docker.io/library/mongo:6
+podman run -d --name mongodb -e MONGO_INITDB_ROOT_USERNAME=${MONGO_INITDB_ROOT_USERNAME} -e MONGO_INITDB_ROOT_PASSWORD=${MONGO_INITDB_ROOT_PASSWORD} -e MONGO_PORT=${DB_OUTER_PORT} -e MONGO_INITDB_DATABASE=${DB_NAME} -e LOADER_DB_LOGIN=${LOADER_DB_LOGIN} -e LOADER_DB_PASSWORD=${LOADER_DB_PASSWORD} -e MONGO_VRE_DATABASE=${VRE_LITE_MONGO_DATABASE} -e VRE_DB_LOGIN=${VRE_LITE_DB_LOGIN} -e VRE_DB_PASSWORD=${VRE_LITE_DB_PASSWORD} -e REST_DB_LOGIN=${REST_DB_LOGIN} -e REST_DB_PASSWORD=${REST_DB_PASSWORD} -v ${DB_VOLUME_PATH}:/data/db:Z -v $(pwd)/mongodb/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro --network data_network --security-opt label=disable docker.io/library/mongo:8
 ```
 
 Sometimes, podman gives **problems with permissions**. Typically, these problems arise from using **NFS file systems** and **non-root permissions** in podman. Therefore, to avoid these problems, an alternative execution can be performed, using a [**mongo-nonroot.sh**](../mongodb/mongo-nonroot.sh) bash script for intialising the **mongodb** service:
 
 ```sh
-podman run -d --name mongodb -e MONGO_INITDB_ROOT_USERNAME=${MONGO_INITDB_ROOT_USERNAME} -e MONGO_INITDB_ROOT_PASSWORD=${MONGO_INITDB_ROOT_PASSWORD} -e MONGO_PORT=${DB_OUTER_PORT} -e MONGO_INITDB_DATABASE=${DB_NAME} -e LOADER_DB_LOGIN=${LOADER_DB_LOGIN} -e LOADER_DB_PASSWORD=${LOADER_DB_PASSWORD} -e MONGO_VRE_DATABASE=${VRE_LITE_MONGO_DATABASE} -e VRE_DB_LOGIN=${VRE_LITE_DB_LOGIN} -e VRE_DB_PASSWORD=${VRE_LITE_DB_PASSWORD} -e REST_DB_LOGIN=${REST_DB_LOGIN} -e REST_DB_PASSWORD=${REST_DB_PASSWORD} -e DB_OUTER_PORT=${DB_OUTER_PORT} -v ${DB_VOLUME_PATH}:/data/db:Z -v $(pwd)/mongodb/mongo-nonroot.sh:/entrypoint.sh:Z --entrypoint /entrypoint.sh -v $(pwd)/mongodb/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro --network data_network --security-opt label=disable docker.io/library/mongo:6
+podman run -d --name mongodb -e MONGO_INITDB_ROOT_USERNAME=${MONGO_INITDB_ROOT_USERNAME} -e MONGO_INITDB_ROOT_PASSWORD=${MONGO_INITDB_ROOT_PASSWORD} -e MONGO_PORT=${DB_OUTER_PORT} -e MONGO_INITDB_DATABASE=${DB_NAME} -e LOADER_DB_LOGIN=${LOADER_DB_LOGIN} -e LOADER_DB_PASSWORD=${LOADER_DB_PASSWORD} -e MONGO_VRE_DATABASE=${VRE_LITE_MONGO_DATABASE} -e VRE_DB_LOGIN=${VRE_LITE_DB_LOGIN} -e VRE_DB_PASSWORD=${VRE_LITE_DB_PASSWORD} -e REST_DB_LOGIN=${REST_DB_LOGIN} -e REST_DB_PASSWORD=${REST_DB_PASSWORD} -e DB_OUTER_PORT=${DB_OUTER_PORT} -v ${DB_VOLUME_PATH}:/data/db:Z -v $(pwd)/mongodb/mongo-nonroot.sh:/entrypoint.sh:Z --entrypoint /entrypoint.sh -v $(pwd)/mongodb/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro --network data_network --security-opt label=disable docker.io/library/mongo:8
 ```
 
 **IMPORTANT**
@@ -83,10 +83,14 @@ podman run -d --name mongodb -e MONGO_INITDB_ROOT_USERNAME=${MONGO_INITDB_ROOT_U
 In some podman implementations, the REST API gave some problems connecting to the mongo DB via service name. Therefore, in order to fix that, the **DB_SERVER** must be the **mongodb service IP**. So, for **setting this IP beforehand**, the **--ip flag** can be added:
 
 ```sh
-podman run -d --name mongodb -e MONGO_INITDB_ROOT_USERNAME=${MONGO_INITDB_ROOT_USERNAME} -e MONGO_INITDB_ROOT_PASSWORD=${MONGO_INITDB_ROOT_PASSWORD} -e MONGO_PORT=${DB_OUTER_PORT} -e MONGO_INITDB_DATABASE=${DB_NAME} -e LOADER_DB_LOGIN=${LOADER_DB_LOGIN} -e LOADER_DB_PASSWORD=${LOADER_DB_PASSWORD} -e MONGO_VRE_DATABASE=${VRE_LITE_MONGO_DATABASE} -e VRE_DB_LOGIN=${VRE_LITE_DB_LOGIN} -e VRE_DB_PASSWORD=${VRE_LITE_DB_PASSWORD} -e REST_DB_LOGIN=${REST_DB_LOGIN} -e REST_DB_PASSWORD=${REST_DB_PASSWORD} -e DB_OUTER_PORT=${DB_OUTER_PORT} -v ${DB_VOLUME_PATH}:/data/db:Z -v $(pwd)/mongodb/mongo-nonroot.sh:/entrypoint.sh:Z --entrypoint /entrypoint.sh -v $(pwd)/mongodb/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro --network data_network --ip <IP ADDRESS> --security-opt label=disable docker.io/library/mongo:6
+podman run -d --name mongodb -e MONGO_INITDB_ROOT_USERNAME=${MONGO_INITDB_ROOT_USERNAME} -e MONGO_INITDB_ROOT_PASSWORD=${MONGO_INITDB_ROOT_PASSWORD} -e MONGO_PORT=${DB_OUTER_PORT} -e MONGO_INITDB_DATABASE=${DB_NAME} -e LOADER_DB_LOGIN=${LOADER_DB_LOGIN} -e LOADER_DB_PASSWORD=${LOADER_DB_PASSWORD} -e MONGO_VRE_DATABASE=${VRE_LITE_MONGO_DATABASE} -e VRE_DB_LOGIN=${VRE_LITE_DB_LOGIN} -e VRE_DB_PASSWORD=${VRE_LITE_DB_PASSWORD} -e REST_DB_LOGIN=${REST_DB_LOGIN} -e REST_DB_PASSWORD=${REST_DB_PASSWORD} -e DB_OUTER_PORT=${DB_OUTER_PORT} -v ${DB_VOLUME_PATH}:/data/db:Z -v $(pwd)/mongodb/mongo-nonroot.sh:/entrypoint.sh:Z --entrypoint /entrypoint.sh -v $(pwd)/mongodb/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro --network data_network --ip <IP ADDRESS> --security-opt label=disable docker.io/library/mongo:8
 ```
 
 The **IP** must belong to the **subnet** of **data_network** (e.g. `10.89.1.109` for `10.89.1.0/24`). Fixing the IP is **recommended**: otherwise podman may assign a different IP when the container is recreated, and then the **REST API** and the **loader** (whose images are built with **DB_SERVER**) can no longer reach the database and they have to be rebuilt.
+
+**Existing nodes still on `mongo:6`**: do not recreate `mongodb` with these commands. MongoDB 8 refuses to start on data written by MongoDB 6; follow the [MongoDB upgrade guide](mongo-upgrade.md#podman-nodes) first.
+
+**Stopping mongodb**: always give it time to shut down cleanly, `podman stop -t 1800 mongodb`. The default 10 seconds can kill a large `mongod` in the middle of its shutdown.
 
 If the IP has been fixed, jump to the [**Build services**](#build-services) section, if not, execute the **following instruction** in order to get the **automatic IP** given to the **mongodb** service by podman:
 
@@ -393,13 +397,13 @@ Check that at least the mongo, rest and client containers are up & running:
 ```sh
 $ podman ps -a
 CONTAINER ID  IMAGE                            COMMAND               CREATED         STATUS                PORTS                                                           NAMES
-<ID>          docker.io/library/mongo:6                              2 hours ago     Up 2 hours            0.0.0.0:27017->27017/tcp                                        mongodb
+<ID>          docker.io/library/mongo:8                              2 hours ago     Up 2 hours            0.0.0.0:27017->27017/tcp                                        mongodb
 <ID>          localhost/client_image:latest    nginx -g daemon o...  2 hours ago     Up 2 hours            0.0.0.0:8080->80/tcp                                            client
-<ID>          docker.io/minio/minio:latest                           2 hours ago     Up 2 hours (healthy)  0.0.0.0:9001-9002->9001-9002/tcp                                minio
+<ID>          docker.io/pgsty/minio:latest                           2 hours ago     Up 2 hours (healthy)  0.0.0.0:9001-9002->9001-9002/tcp                                minio
 <ID>          localhost/apache_image:latest    httpd-foreground      2 hours ago     Up 2 hours            0.0.0.0:21402->21402/tcp, 0.0.0.0:21411-21412->21411-21412/tcp  apache
 <ID>          localhost/rest_image:latest      pm2-runtime start...  58 minutes ago  Up 58 minutes         0.0.0.0:8081->3000/tcp                                          rest
 <ID>          localhost/vre_lite_image:latest                        3 seconds ago   Up 4 seconds          0.0.0.0:8082->3001/tcp                                          vre_lite
-<ID>          docker.io/library/mongo:6        bash -c sh /backu...  3 minutes ago   Up 3 minutes                                                                          mongo-backup
+<ID>          docker.io/library/mongo:8        bash -c sh /backu...  3 minutes ago   Up 3 minutes                                                                          mongo-backup
 ```
 
 ### Inspect podman network 

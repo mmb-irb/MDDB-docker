@@ -211,17 +211,32 @@ Keep the backup until you are sure you will not need it.
 
 ## Podman nodes
 
-The Podman scripts and [podman.md](podman.md) still use `docker.io/library/mongo:6`. The procedure is the
-same, recreating the container instead of updating a service:
+The Podman scripts and [podman.md](podman.md) use `docker.io/library/mongo:8`. A node created before still runs
+`mongo:6`: the procedure is the same, recreating the container instead of updating a service. Keep each old
+container (renamed) as the way back while the FCV allows it:
 
 ```sh
-podman stop -t 1800 mongodb && podman rm mongodb
-# the same `podman run … --name mongodb …` you used (same volume, same --ip), ending in:
+# the container's own environment, without putting passwords on a command line
+(umask 077; podman inspect mongodb --format '{{range .Config.Env}}{{println .}}{{end}}' \
+  | grep -E '^(MONGO_INITDB_|MONGO_PORT|MONGO_VRE_DATABASE|LOADER_DB_|VRE_DB_|REST_DB_|DB_OUTER_PORT)' > ~/mongodb.env)
+podman stop -t 1800 mongodb && podman rename mongodb mongodb-6
+# the same `podman run … --name mongodb …` you used (same volumes, same --ip), with
+#   --env-file ~/mongodb.env instead of the -e options, ending in:
 #   docker.io/library/mongo:7.0      then, at step 4, docker.io/library/mongo:8.0
 mongo_cid() { echo mongodb; }    # then mongo_eval works as above, through `podman exec`:
 mongo_eval() { podman exec mongodb sh -c 'mongosh --quiet -u "$MONGO_INITDB_ROOT_USERNAME" \
   -p "$MONGO_INITDB_ROOT_PASSWORD" --authenticationDatabase admin --eval "$0"' "$1"; }
 ```
+
+* Run the long steps with `setsid nohup … &` from a normal shell, **never with `systemd-run --user`**: when the
+  unit ends, systemd kills every container started from it (and its `fuse-overlayfs`). `mongod` dies without a
+  clean shutdown and the container is left without its root filesystem (`/entrypoint.sh: No such file or
+  directory`); remove it with `podman rm --storage --force <id>` and create it again.
+* REST connects to MongoDB only at start-up: `podman restart rest` after each image change.
+* Delete `~/mongodb.env` and the old `mongodb-6` / `mongodb-7` containers once the FCV is 8.0.
+
+Tested on pubperez1 (730 GB): 6.0.27 → 7.0.45 → 8.0.34. Each image change took seconds; counting the
+documents (`countDocuments` on every collection) took about 20 minutes.
 
 ## External MongoDB
 
