@@ -11,6 +11,10 @@ RUN apt-get update && \
     apt-get install -y libgl1 && \
     apt-get install -y fuse curl
 
+# Upgrade the brotli libraries of the base conda environment to get security fixes (CVE-2026-111497):
+# the miniconda image can ship them older than the 'defaults' channel
+RUN conda update -n base -y libbrotlicommon libbrotlidec libbrotlienc && conda clean -afy
+
 # Download goofys and make it executable
 # RUN wget https://github.com/kahing/goofys/releases/latest/download/goofys
 COPY goofys .

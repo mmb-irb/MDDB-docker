@@ -12,6 +12,10 @@ RUN apt-get update && \
     curl -sL https://deb.nodesource.com/setup_26.x | bash - && \
     apt-get install -y nodejs
 
+# Upgrade the brotli libraries of the base conda environment to get security fixes (CVE-2026-111497):
+# the miniconda image can ship them older than the 'defaults' channel
+RUN conda update -n base -y libbrotlicommon libbrotlidec libbrotlienc && conda clean -afy
+
 # Clone git repository
 RUN git clone https://github.com/mmb-irb/MDDB-loader.git
 
