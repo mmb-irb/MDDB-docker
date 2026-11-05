@@ -22,7 +22,8 @@
 # its steps succeed, so a file or directory with a final name is always a complete backup.
 # With tar and tar.gz, the dump directory gets its final name (<timestamp>/) as soon as the dump
 # finishes, so it is a usable backup while it is packed. Once the archive is complete, the
-# directory is removed. If packing is interrupted, the directory stays as that backup (not packed).
+# directory is removed. If packing fails or is interrupted, the directory stays as that backup
+# and packing is retried on next start; the dump is only removed once its archive is complete.
 # Anything left by an interrupted run (container killed, stack redeployed, error) keeps the
 # ".partial" suffix and is removed on next start.
 #
@@ -32,8 +33,15 @@
 # Backups are scheduled from the timestamp of the last complete backup, so restarting the
 # service does not trigger a new backup unless one is due.
 #
-# Any error makes the script exit with non-zero status, so the failure shows up in
-# `docker service ps` and the swarm restart policy starts it again.
+# Errors and retries: any error makes the script wait RETRY_DELAY seconds (default 3600) and
+# then exit with non-zero status, so the failure shows up in `docker service ps` and the swarm
+# restart policy starts it again after that delay: a failed dump is done again from scratch,
+# a failed packing is retried on the finished dump.
+#
+# Logs: the output of every run of this script is also written to
+# $BACKUP_DIR/logs/<start time>.log. If the run fails, its log is renamed to
+# <start time>.error.log; error logs are never removed automatically. Of the other logs, only the
+# LOG_RETENTION_COUNT (default 20) most recent are kept.
 #
 # Consistency (LOCK): mongodump on a standalone mongod reads one collection after another, so
 # writes made while it runs (e.g. a loader run) can leave the dump inconsistent between
@@ -57,6 +65,8 @@ shopt -s nullglob
 : "${LOCK:?Backup write lock (yes/no) not set}"
 : "${MONGO_INITDB_ROOT_USERNAME:?Mongo DB root username not set}"
 : "${MONGO_INITDB_ROOT_PASSWORD:?Mongo DB root password not set}"
+RETRY_DELAY=${RETRY_DELAY:-3600}
+LOG_RETENTION_COUNT=${LOG_RETENTION_COUNT:-20}
 
 if ! [[ "$RETENTION_COUNT" =~ ^[1-9][0-9]*$ ]]; then
     echo "RETENTION_COUNT must be a positive integer, got '$RETENTION_COUNT'" >&2
@@ -64,6 +74,14 @@ if ! [[ "$RETENTION_COUNT" =~ ^[1-9][0-9]*$ ]]; then
 fi
 if ! [[ "$BACKUP_INTERVAL" =~ ^[0-9]+$ ]]; then
     echo "BACKUP_INTERVAL must be a non-negative integer (seconds), got '$BACKUP_INTERVAL'" >&2
+    exit 1
+fi
+if ! [[ "$RETRY_DELAY" =~ ^[0-9]+$ ]]; then
+    echo "RETRY_DELAY must be a non-negative integer (seconds), got '$RETRY_DELAY'" >&2
+    exit 1
+fi
+if ! [[ "$LOG_RETENTION_COUNT" =~ ^[1-9][0-9]*$ ]]; then
+    echo "LOG_RETENTION_COUNT must be a positive integer, got '$LOG_RETENTION_COUNT'" >&2
     exit 1
 fi
 case "$COMPRESS" in
@@ -74,6 +92,25 @@ case "$LOCK" in
     yes|no) ;;
     *) echo "LOCK must be yes or no. Got '$LOCK'" >&2; exit 1 ;;
 esac
+
+TS_GLOB='[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]_[0-9][0-9]-[0-9][0-9]-[0-9][0-9]'
+
+# Log this run to $BACKUP_DIR/logs/<start time>.log as well as to the container log
+LOG_DIR="$BACKUP_DIR/logs"
+mkdir -p "$LOG_DIR"
+LOG="$LOG_DIR/$(date -u +%Y-%m-%d_%H-%M-%S).log"
+exec > >(tee -a "$LOG") 2>&1
+echo "Backup service started at $(date) (compress=$COMPRESS, lock=$LOCK, log: $LOG)"
+
+# Keep only the LOG_RETENTION_COUNT most recent logs of runs that did not fail
+ok_logs=()
+for f in "$LOG_DIR"/$TS_GLOB.log; do
+    [ "$f" = "$LOG" ] || ok_logs+=("$f")
+done
+n_old_logs=$(( ${#ok_logs[@]} - LOG_RETENTION_COUNT ))
+for (( i = 0; i < n_old_logs; i++ )); do
+    rm -- "${ok_logs[i]}"
+done
 
 MONGO_URI="mongodb://${MONGO_INITDB_ROOT_USERNAME}:${MONGO_INITDB_ROOT_PASSWORD}@${DB_HOST}:${MONGO_PORT}/${MONGO_INITDB_DATABASE}?authSource=admin"
 mongo_eval() { mongosh "$MONGO_URI" --quiet --eval "$1"; }
@@ -105,7 +142,30 @@ run_interruptible() {
 CHILD=
 trap 'if [ -n "$CHILD" ]; then kill "$CHILD" 2>/dev/null || true; fi; exit 143' TERM INT
 
-TS_GLOB='[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]_[0-9][0-9]-[0-9][0-9]-[0-9][0-9]'
+# On exit: release the write lock if this run holds it; if the run failed, keep its log as an
+# error log and wait RETRY_DELAY seconds, so the swarm restarts the service after that delay
+LOCKED=no
+on_exit() {
+    local status=$?
+    if [ "$LOCKED" = yes ]; then
+        if ! ( release_write_lock ); then
+            status=1
+        fi
+    fi
+    if [ "$status" -eq 0 ] || [ "$status" -eq 143 ]; then
+        return
+    fi
+    local error_log="${LOG%.log}.error.log"
+    mv -- "$LOG" "$error_log"
+    echo "Backup run FAILED with status $status at $(date). Log kept in $error_log"
+    echo "Retrying in $RETRY_DELAY seconds (the service will be restarted)"
+    trap 'kill "$CHILD" 2>/dev/null; exit 143' TERM INT
+    sleep "$RETRY_DELAY" &
+    CHILD=$!
+    wait "$CHILD"
+    exit "$status"
+}
+trap on_exit EXIT
 
 # Complete backups in any format, oldest first (timestamp names sort chronologically)
 complete_backups() {
@@ -133,6 +193,23 @@ wait_for_next_backup() {
     fi
 }
 
+# tar/tar.gz: pack a finished dump directory into its archive, then remove the directory.
+# The directory is only removed once the archive is complete
+pack_dump() {
+    local dump_dir=$1
+    local archive="$dump_dir.$COMPRESS"
+    local tar_args=(-cf)
+    [ "$COMPRESS" = tar.gz ] && tar_args=(-czf)
+    echo "Packing $dump_dir into $archive at $(date)"
+    run_interruptible tar "${tar_args[@]}" "$archive.partial" -C "$dump_dir" .
+    mv -- "$archive.partial" "$archive"
+    # Rename the dump before removing it, so an interrupted removal leaves a ".partial"
+    # (removed on next start) instead of an incomplete directory with a final name
+    mv -- "$dump_dir" "$dump_dir.dump.partial"
+    rm -rf -- "$dump_dir.dump.partial"
+    echo "Packed at $(date): $archive"
+}
+
 # Wait for MongoDB to be ready before starting first dump
 until mongosh "$MONGO_URI" --eval "db.stats()" >/dev/null 2>&1; do
   echo "Waiting for MongoDB..."
@@ -153,11 +230,18 @@ for leftover in "$BACKUP_DIR"/*.partial; do
     rm -rf -- "$leftover"
 done
 
+# tar/tar.gz: retry packing the dumps that a previous run finished but did not pack
+if [ "$COMPRESS" = tar ] || [ "$COMPRESS" = tar.gz ]; then
+    for dump_dir in "$BACKUP_DIR"/$TS_GLOB/; do
+        pack_dump "${dump_dir%/}"
+    done
+fi
+
 # Block writes for the duration of the dump (LOCK=yes); the EXIT trap releases the lock if
 # the script stops while holding it
 lock_writes() {
     [ "$LOCK" = yes ] || return 0
-    trap release_write_lock EXIT
+    LOCKED=yes
     mongo_eval 'db.fsyncLock()' >/dev/null
     if ! is_write_locked; then
         echo "db.fsyncLock() did not lock the server" >&2
@@ -168,7 +252,7 @@ lock_writes() {
 unlock_writes() {
     [ "$LOCK" = yes ] || return 0
     release_write_lock
-    trap - EXIT
+    LOCKED=no
 }
 
 while true; do
@@ -189,22 +273,15 @@ while true; do
             ;;
         tar|tar.gz)
             DUMP_DIR="$BACKUP_DIR/$TIMESTAMP"
-            BACKUP="$BACKUP_DIR/$TIMESTAMP.$COMPRESS"
-            TAR_ARGS=(-cf)
-            [ "$COMPRESS" = tar.gz ] && TAR_ARGS=(-czf)
             lock_writes
             run_interruptible mongodump --host "$DB_HOST" -u "$MONGO_INITDB_ROOT_USERNAME" -p "$MONGO_INITDB_ROOT_PASSWORD" --out "$DUMP_DIR.dump.partial"
             unlock_writes
             # The finished dump is already a complete backup: give it its final name before packing
-            # (which can take days), so an interrupted packing does not lose it
+            # (which can take days), so a failed or interrupted packing does not lose it
             mv -- "$DUMP_DIR.dump.partial" "$DUMP_DIR"
-            echo "Dump finished at $(date): $DUMP_DIR. Packing into $COMPRESS"
-            run_interruptible tar "${TAR_ARGS[@]}" "$BACKUP.partial" -C "$DUMP_DIR" .
-            mv -- "$BACKUP.partial" "$BACKUP"
-            # Rename the dump before removing it, so an interrupted removal leaves a ".partial"
-            # (removed on next start) instead of an incomplete directory with a final name
-            mv -- "$DUMP_DIR" "$DUMP_DIR.dump.partial"
-            rm -rf -- "$DUMP_DIR.dump.partial"
+            echo "Dump finished at $(date): $DUMP_DIR"
+            pack_dump "$DUMP_DIR"
+            BACKUP="$DUMP_DIR.$COMPRESS"
             ;;
     esac
     echo "Backup completed at $(date): $BACKUP"
