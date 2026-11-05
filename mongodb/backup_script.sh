@@ -58,9 +58,8 @@
 # (e.g. a loader run), so the backup is postponed BUSY_RETRY_DELAY seconds (default 3600) and
 # then checked again. This avoids locking writes in the middle of a loader run (LOCK=yes) or
 # dumping data that is being changed (LOCK=no). A backup is not postponed for more than
-# MAX_POSTPONE seconds (default 172800, 48 h) after it was due: past that, it starts even if
-# someone is writing. The due time is computed from the last complete backup, so restarting the
-# service does not reset this limit.
+# MAX_POSTPONE seconds (default 172800, 48 h) since the first check: past that, it starts even if
+# someone is writing. Restarting the service starts the count again.
 set -euo pipefail
 shopt -s nullglob
 
@@ -200,21 +199,18 @@ complete_backups() {
     done | sort
 }
 
-# Sleep until BACKUP_INTERVAL seconds have passed since the last complete backup started.
-# Sets DUE_EPOCH to the time the next backup was due (now if there is no complete backup)
+# Sleep until BACKUP_INTERVAL seconds have passed since the last complete backup started
 wait_for_next_backup() {
     local last ts last_epoch remaining
     last=$(complete_backups | tail -n 1)
     if [ -z "$last" ]; then
         echo "No complete backup found"
-        DUE_EPOCH=$(date -u +%s)
         return
     fi
     ts=$(basename "$last")
     ts=${ts:0:19}  # e.g. 2026-10-21_17-05-31 (UTC)
     last_epoch=$(date -u -d "${ts:0:10} ${ts:11:2}:${ts:14:2}:${ts:17:2}" +%s)
-    DUE_EPOCH=$(( last_epoch + BACKUP_INTERVAL ))
-    remaining=$(( DUE_EPOCH - $(date -u +%s) ))
+    remaining=$(( last_epoch + BACKUP_INTERVAL - $(date -u +%s) ))
     if (( remaining > 0 )); then
         echo "Last complete backup: $last. Next backup in $remaining seconds"
         run_interruptible sleep "$remaining"
@@ -238,10 +234,11 @@ write_count() {
 }
 
 # Wait until nobody writes to the database during WRITE_CHECK_WINDOW seconds, checking again
-# every BUSY_RETRY_DELAY seconds, but not past MAX_POSTPONE seconds after DUE_EPOCH
+# every BUSY_RETRY_DELAY seconds, but not for more than MAX_POSTPONE seconds since the first check
 wait_until_no_writes() {
-    local before after now deadline delay
-    deadline=$(( DUE_EPOCH + MAX_POSTPONE ))
+    local before after now start deadline delay
+    start=$(date -u +%s)
+    deadline=$(( start + MAX_POSTPONE ))
     while true; do
         echo "Checking for writes to the database during $WRITE_CHECK_WINDOW seconds ($(date))"
         before=$(write_count)
@@ -254,7 +251,7 @@ wait_until_no_writes() {
         now=$(date -u +%s)
         if (( now >= deadline )); then
             echo "$(( after - before )) write operations in $WRITE_CHECK_WINDOW seconds, but the" \
-                "backup has been postponed for $(( now - DUE_EPOCH )) seconds (MAX_POSTPONE is" \
+                "backup has been postponed for $(( now - start )) seconds (MAX_POSTPONE is" \
                 "$MAX_POSTPONE): starting the backup while someone is writing"
             return
         fi
