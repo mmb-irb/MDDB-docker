@@ -401,7 +401,7 @@ services:
         order: start-first  # Priority over other services
 
   mongodb:
-    image: mongo:8
+    image: mongo:8.0
     user: "${MONGO_CONTAINER_USER}:${MONGO_CONTAINER_GROUP}"
     environment:
       MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME}

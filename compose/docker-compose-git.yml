@@ -49,7 +49,8 @@ services:
 
   mongodb:
     container_name: my_mongo_container
-    image: mongo:8
+    # mongo:8.0 is the long-term support release; the plain mongo:8 tag moves to short-lived releases (8.2, 8.3...)
+    image: mongo:8.0
     # A large mongod needs minutes to shut down cleanly; Docker kills it after 10 s by default
     stop_grace_period: 30m
     environment:

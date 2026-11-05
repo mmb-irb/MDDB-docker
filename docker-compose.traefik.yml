@@ -184,7 +184,8 @@ services:
         order: start-first  # Priority over other services
 
   mongodb:
-    image: mongo:8
+    # mongo:8.0 is the long-term support release; the plain mongo:8 tag moves to short-lived releases (8.2, 8.3...)
+    image: mongo:8.0
     user: "${MONGO_CONTAINER_USER}:${MONGO_CONTAINER_GROUP}"
     # A large mongod needs minutes to shut down cleanly; Docker kills it after 10 s by default
     stop_grace_period: 30m
@@ -218,7 +219,7 @@ services:
         condition: on-failure   # Restart only on failure
 
   mongo-backup:
-    image: mongo
+    image: mongo:8.0   # same image as mongodb: its mongodump
     command: >
       bash /backup_script.sh
     volumes:

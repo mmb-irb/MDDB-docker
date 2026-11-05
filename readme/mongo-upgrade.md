@@ -1,6 +1,6 @@
 # Upgrade MongoDB from 6 to 8
 
-The `mongodb` service in [**docker-compose.yml**](../docker-compose.yml) now uses `mongo:8`. A node created
+The `mongodb` service in [**docker-compose.yml**](../docker-compose.yml) now uses `mongo:8.0`. A node created
 before that runs `mongo:6` on data written by MongoDB 6, and **MongoDB 8 refuses to start on that data**.
 This guide upgrades such a node safely, including databases of several terabytes.
 
@@ -32,7 +32,7 @@ Everything below was tested on a throwaway database (6.0.28 → 7.0.45 → 8.0.3
 
 ## ⚠️ Until the node is upgraded: do not redeploy with the new compose file
 
-A `git pull` followed by `docker stack deploy` replaces the image with `mongo:8` and MongoDB will not start.
+A `git pull` followed by `docker stack deploy` replaces the image with `mongo:8.0` and MongoDB will not start.
 If you must redeploy the stack before upgrading, keep MongoDB 6 with an override file **outside** the
 repository, e.g. `~/mongo-pin.yml`:
 
@@ -191,7 +191,8 @@ mongo_eval 'db.adminCommand({getParameter: 1, featureCompatibilityVersion: 1}).f
 ## 8. Back to the normal deployment
 
 Now `git pull` and deploy as usual; delete `~/mongo-pin.yml` if you created it. The compose file uses
-`mongo:8`, the same major version.
+`mongo:8.0`, the same version. Not the plain `mongo:8` tag: it points to short-lived releases (8.3 in
+November 2026), and a redeploy with it would replace 8.0 by a newer binary without any plan.
 
 The compose file sets `stop_grace_period: 30m` for `mongodb`, so `docker stack deploy` keeps the 30 minutes
 of step 2 (older compose files did not set it, and a redeploy reset it to 10 seconds).
