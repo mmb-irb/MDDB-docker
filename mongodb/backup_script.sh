@@ -51,6 +51,16 @@
 # databases). The lock is also released when the script exits or is stopped, and any lock
 # left by a killed run is released on next start, so do not fsyncLock this mongod by hand
 # while the backup service runs. With LOCK=no writes are not blocked.
+#
+# Waiting for writes to stop: before every backup, the script counts the operations that write
+# to the database (every collection outside admin, config and local, which mongod writes to on
+# its own) during WRITE_CHECK_WINDOW seconds (default 300). If there was any, someone is writing
+# (e.g. a loader run), so the backup is postponed BUSY_RETRY_DELAY seconds (default 3600) and
+# then checked again. This avoids locking writes in the middle of a loader run (LOCK=yes) or
+# dumping data that is being changed (LOCK=no). A backup is not postponed for more than
+# MAX_POSTPONE seconds (default 172800, 48 h) after it was due: past that, it starts even if
+# someone is writing. The due time is computed from the last complete backup, so restarting the
+# service does not reset this limit.
 set -euo pipefail
 shopt -s nullglob
 
@@ -67,6 +77,9 @@ shopt -s nullglob
 : "${MONGO_INITDB_ROOT_PASSWORD:?Mongo DB root password not set}"
 RETRY_DELAY=${RETRY_DELAY:-3600}
 LOG_RETENTION_COUNT=${LOG_RETENTION_COUNT:-20}
+WRITE_CHECK_WINDOW=${WRITE_CHECK_WINDOW:-300}
+BUSY_RETRY_DELAY=${BUSY_RETRY_DELAY:-3600}
+MAX_POSTPONE=${MAX_POSTPONE:-172800}
 
 if ! [[ "$RETENTION_COUNT" =~ ^[1-9][0-9]*$ ]]; then
     echo "RETENTION_COUNT must be a positive integer, got '$RETENTION_COUNT'" >&2
@@ -78,6 +91,18 @@ if ! [[ "$BACKUP_INTERVAL" =~ ^[0-9]+$ ]]; then
 fi
 if ! [[ "$RETRY_DELAY" =~ ^[0-9]+$ ]]; then
     echo "RETRY_DELAY must be a non-negative integer (seconds), got '$RETRY_DELAY'" >&2
+    exit 1
+fi
+if ! [[ "$WRITE_CHECK_WINDOW" =~ ^[1-9][0-9]*$ ]]; then
+    echo "WRITE_CHECK_WINDOW must be a positive integer (seconds), got '$WRITE_CHECK_WINDOW'" >&2
+    exit 1
+fi
+if ! [[ "$BUSY_RETRY_DELAY" =~ ^[1-9][0-9]*$ ]]; then
+    echo "BUSY_RETRY_DELAY must be a positive integer (seconds), got '$BUSY_RETRY_DELAY'" >&2
+    exit 1
+fi
+if ! [[ "$MAX_POSTPONE" =~ ^[0-9]+$ ]]; then
+    echo "MAX_POSTPONE must be a non-negative integer (seconds), got '$MAX_POSTPONE'" >&2
     exit 1
 fi
 if ! [[ "$LOG_RETENTION_COUNT" =~ ^[1-9][0-9]*$ ]]; then
@@ -175,22 +200,69 @@ complete_backups() {
     done | sort
 }
 
-# Sleep until BACKUP_INTERVAL seconds have passed since the last complete backup started
+# Sleep until BACKUP_INTERVAL seconds have passed since the last complete backup started.
+# Sets DUE_EPOCH to the time the next backup was due (now if there is no complete backup)
 wait_for_next_backup() {
     local last ts last_epoch remaining
     last=$(complete_backups | tail -n 1)
     if [ -z "$last" ]; then
         echo "No complete backup found"
+        DUE_EPOCH=$(date -u +%s)
         return
     fi
     ts=$(basename "$last")
     ts=${ts:0:19}  # e.g. 2026-10-21_17-05-31 (UTC)
     last_epoch=$(date -u -d "${ts:0:10} ${ts:11:2}:${ts:14:2}:${ts:17:2}" +%s)
-    remaining=$(( last_epoch + BACKUP_INTERVAL - $(date -u +%s) ))
+    DUE_EPOCH=$(( last_epoch + BACKUP_INTERVAL ))
+    remaining=$(( DUE_EPOCH - $(date -u +%s) ))
     if (( remaining > 0 )); then
         echo "Last complete backup: $last. Next backup in $remaining seconds"
         run_interruptible sleep "$remaining"
     fi
+}
+
+# Number of operations that took a write lock on a user collection since mongod started (the
+# `top` command; admin, config and local are left out because mongod writes there on its own)
+write_count() {
+    local n
+    n=$(mongo_eval 'let n = 0;
+        for (const [ns, t] of Object.entries(db.adminCommand({top: 1}).totals)) {
+            if (ns !== "note" && !/^(admin|config|local)\./.test(ns)) n += Number(t.writeLock.count);
+        }
+        print(n)')
+    if ! [[ "$n" =~ ^[0-9]+$ ]]; then
+        echo "Could not count the writes to the database: top returned '$n'" >&2
+        exit 1
+    fi
+    echo "$n"
+}
+
+# Wait until nobody writes to the database during WRITE_CHECK_WINDOW seconds, checking again
+# every BUSY_RETRY_DELAY seconds, but not past MAX_POSTPONE seconds after DUE_EPOCH
+wait_until_no_writes() {
+    local before after now deadline delay
+    deadline=$(( DUE_EPOCH + MAX_POSTPONE ))
+    while true; do
+        echo "Checking for writes to the database during $WRITE_CHECK_WINDOW seconds ($(date))"
+        before=$(write_count)
+        run_interruptible sleep "$WRITE_CHECK_WINDOW"
+        after=$(write_count)
+        if [ "$after" = "$before" ]; then
+            echo "No writes to the database: starting the backup"
+            return
+        fi
+        now=$(date -u +%s)
+        if (( now >= deadline )); then
+            echo "$(( after - before )) write operations in $WRITE_CHECK_WINDOW seconds, but the" \
+                "backup has been postponed for $(( now - DUE_EPOCH )) seconds (MAX_POSTPONE is" \
+                "$MAX_POSTPONE): starting the backup while someone is writing"
+            return
+        fi
+        delay=$(( deadline - now < BUSY_RETRY_DELAY ? deadline - now : BUSY_RETRY_DELAY ))
+        echo "$(( after - before )) write operations in $WRITE_CHECK_WINDOW seconds: someone is" \
+            "writing to the database. Postponing the backup $delay seconds"
+        run_interruptible sleep "$delay"
+    done
 }
 
 # tar/tar.gz: pack a finished dump directory into its archive, then remove the directory.
@@ -257,6 +329,7 @@ unlock_writes() {
 
 while true; do
     wait_for_next_backup
+    wait_until_no_writes
 
     TIMESTAMP=$(date -u +%Y-%m-%d_%H-%M-%S)
     echo "Starting backup $TIMESTAMP (compress=$COMPRESS) at $(date)"

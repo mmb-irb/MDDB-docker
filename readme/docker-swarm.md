@@ -273,6 +273,8 @@ Trade-offs measured on the MDDB production database (~4.9 TiB, mostly binary tra
 
 **Consistency.** `mongodump` on a standalone `mongod` reads one collection after another, so writes made while it runs (e.g. a loader run) can leave the backup inconsistent between collections (such as `fs.files` and `fs.chunks`). With `DB_BACKUP_LOCK=yes` the service runs `db.fsyncLock()` before the dump and `db.fsyncUnlock()` right after it: reads keep working, but every write waits until the dump finishes (hours on large databases; plan loader runs accordingly). The lock is released when the service is stopped, and a lock left by a killed run (e.g. `SIGKILL`) is released on the next start, so do not `fsyncLock` the database by hand while the backup service runs. With `DB_BACKUP_LOCK=no` writes are never blocked.
 
+**Waiting for writes to stop.** Before every backup, the service counts the write operations on the database (every collection outside `admin`, `config` and `local`) during `WRITE_CHECK_WINDOW` seconds (default 300). If there was any, someone is writing (e.g. a loader run), so the backup is postponed `BUSY_RETRY_DELAY` seconds (default 3600) and checked again. This avoids locking writes in the middle of a loader run, or dumping data while it changes. A backup is not postponed more than `MAX_POSTPONE` seconds (default 172800, 48 h) after it was due: past that, it starts even if someone is writing (the log says `starting the backup while someone is writing`). The due time comes from the last complete backup, so restarting the service does not reset this limit.
+
 To check whether the database is write-locked, and to release it by hand:
 
 ```sh
