@@ -164,7 +164,7 @@ docker service update --force --image vre_lite_image:latest --mount-rm /var/run/
 docker service update --force --image rest_image:latest my_stack_rest
 ```
 
-On **Podman** nodes, [**scripts/podman_scripts.py**](../scripts/podman_scripts.py) already runs `podman unshare chown` on the volume before starting vre_lite.
+On **Podman** nodes, nothing has to be changed on the volume: [**scripts/podman_scripts.py**](../scripts/podman_scripts.py) starts vre_lite with `--userns keep-id:uid=65532,gid=65532`, which maps uid 65532 to the user who runs podman (see [podman.md](podman.md#vre-lite)). Do not `chown` the volume to a subuid: it fails on NFS.
 
 ## Update services versions
 

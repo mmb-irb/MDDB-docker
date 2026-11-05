@@ -220,11 +220,10 @@ podman run -d --name client -p ${CLIENT_OUTER_PORT}:${CLIENT_INNER_PORT} --netwo
 
 ### VRE lite
 
-VRE lite runs as uid 65532 inside the container, so first give it the log volume, then **launch** the **vre_lite** service:
+VRE lite runs as uid 65532 inside the container. `--userns keep-id:uid=65532,gid=65532` (Podman 4.3 or newer) maps that uid to the user who runs podman, so the log volume must belong to that user, and it does not have to be given to any other uid. A `chown` to another uid is not an option on NFS file systems: a rootless user cannot change the owner of files there (`Operation not permitted`). **Launch** the **vre_lite** service:
 
 ```sh
-podman unshare find ${VRE_LITE_VOLUME_PATH} -maxdepth 1 \( -path ${VRE_LITE_VOLUME_PATH} -o -name '*.json' \) -exec chown 65532:65532 {} +
-podman run -d --name vre_lite -p ${VRE_LITE_OUTER_PORT}:${VRE_LITE_INNER_PORT} -v ${VRE_LITE_VOLUME_PATH}:/vre_lite:Z --network minio_network --network web_network --network data_network vre_lite_image
+podman run -d --name vre_lite --userns keep-id:uid=65532,gid=65532 -p ${VRE_LITE_OUTER_PORT}:${VRE_LITE_INNER_PORT} -v ${VRE_LITE_VOLUME_PATH}:/vre_lite:Z --network minio_network --network web_network --network data_network vre_lite_image
 ```
 
 VRE lite does not need the Podman socket: it checks the other services over HTTP.
