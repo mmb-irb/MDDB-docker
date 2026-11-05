@@ -193,8 +193,8 @@ mongo_eval 'db.adminCommand({getParameter: 1, featureCompatibilityVersion: 1}).f
 Now `git pull` and deploy as usual; delete `~/mongo-pin.yml` if you created it. The compose file uses
 `mongo:8`, the same major version.
 
-`docker stack deploy` resets the stop grace period to 10 seconds, because the compose file does not set
-one. Before any later restart of a large database, raise it again as in step 2.
+The compose file sets `stop_grace_period: 30m` for `mongodb`, so `docker stack deploy` keeps the 30 minutes
+of step 2 (older compose files did not set it, and a redeploy reset it to 10 seconds).
 
 Keep the backup until you are sure you will not need it.
 

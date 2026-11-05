@@ -186,6 +186,8 @@ services:
   mongodb:
     image: mongo:8
     user: "${MONGO_CONTAINER_USER}:${MONGO_CONTAINER_GROUP}"
+    # A large mongod needs minutes to shut down cleanly; Docker kills it after 10 s by default
+    stop_grace_period: 30m
     environment:
       MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME}
       MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD}
