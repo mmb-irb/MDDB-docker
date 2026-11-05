@@ -63,17 +63,33 @@ docker stack deploy -c docker-compose.yml -c extensions/extension1.yml my_stack
 
 `docker stack deploy` rewrites every service from the compose files: anything changed by hand with
 `docker service update` (a published port, a mount, an environment variable, the replicas, the stop grace
-period...) is **lost**. Before redeploying, check what would change, with the **same** `-c` files as the deploy:
+period...) is **lost** at the next deploy. So:
+
+* **Settings of one node only go in `docker-compose.node.yml`**, never only in `docker service update`. Copy
+  [docker-compose.node.yml.example](../docker-compose.node.yml.example): the file is ignored by git (it can
+  say which ports a node opens, and this repository is public) and is added last, after `docker-compose.yml`
+  and the extensions, by the scripts below, `scripts/docker-deploy.py` and `scripts/rebuild.py`.
+* **Redeploy with the script**, which compares first and deploys with the same files:
 
 ```sh
-python3 scripts/stack-diff.py -t my_stack -c docker-compose.yml [-c extensions/extension1.yml ...]
+python3 scripts/stack-deploy.py -t my_stack [-c docker-compose.yml -c extensions/extension1.yml ...]
 ```
 
-It changes nothing. `REMOVE` lines are settings that exist only in the running service (probably made by
-hand): add them to a compose file passed with `-c` before deploying. Services that are not running yet are
-listed as `[new]` (the deploy creates them), and services with fewer tasks than wanted as `[down]`: a deploy
-does not restart a service whose spec does not change, use `docker service update --force <service>`.
-Exit code 0 means the deploy would not change any running service.
+It shows what would change in the running services and asks before deploying (`--yes` skips the question).
+After the deploy it compares again: no running service should differ. To only compare, without deploying:
+
+```sh
+python3 scripts/stack-diff.py -t my_stack [-c docker-compose.yml -c extensions/extension1.yml ...]
+```
+
+`REMOVE` lines are settings that exist only in the running service (probably made by hand): the comparison
+prints them as YAML to add to `docker-compose.node.yml`. Services that are not running yet are listed as
+`[new]` (the deploy creates them), and services with fewer tasks than wanted as `[down]`: a deploy does not
+restart a service whose spec does not change, use `docker service update --force <service>`.
+`stack-diff.py` exits with 0 when the deploy would not change any running service.
+
+A quick change with `docker service update` is fine, but if it must stay, add it to
+`docker-compose.node.yml` too (or the next deploy undoes it).
 
 Check services:
 

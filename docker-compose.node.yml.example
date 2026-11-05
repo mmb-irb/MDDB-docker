@@ -1,0 +1,30 @@
+# Settings of THIS node only: copy to docker-compose.node.yml (ignored by git) and edit.
+#
+# 'docker stack deploy' rewrites every service from the compose files, so a change made by hand with
+# 'docker service update' (a published port, a mount, an environment variable, the replicas...) is lost
+# at the next deploy. Put such changes here instead. This file is added last, after docker-compose.yml
+# and any extension, by scripts/stack-deploy.py, scripts/stack-diff.py, scripts/docker-deploy.py and
+# scripts/rebuild.py. Lists such as ports and volumes are added to the ones in docker-compose.yml;
+# single values (replicas, stop_grace_period...) replace them.
+#
+# Redeploy with:      python3 scripts/stack-deploy.py -t <stack>
+# Only compare with:  python3 scripts/stack-diff.py -t <stack>
+# (by hand:  docker stack deploy -c docker-compose.yml [-c extensions/x.yml] -c docker-compose.node.yml <stack>)
+
+services:
+  # Example: publish MongoDB on the host (mode: host, so only on this machine's own port)
+  # mongodb:
+  #   ports:
+  #     - target: 27017
+  #       published: 27017
+  #       mode: host
+
+  # Example: more REST replicas than the .env value, and an extra read-only mount
+  # rest:
+  #   deploy:
+  #     replicas: 6
+  #   volumes:
+  #     - type: bind
+  #       source: /data/extra
+  #       target: /extra
+  #       read_only: true

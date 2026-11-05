@@ -65,6 +65,10 @@ def main():
         # Build services with --no-cache
         build_command = docker_compose_script()
         build_command.extend(['-f', 'docker-compose.yml'])
+        # the node's own settings (not in git) go last, as in scripts/stack-deploy.py
+        node_file = []
+        if os.path.isfile('docker-compose.node.yml'):
+            node_file = ['-f', 'docker-compose.node.yml']
 
         all_services = []
         if args.services:
@@ -78,6 +82,7 @@ def main():
             for service in args.development:
                 build_command.extend(['-f', f'development/{service}.yml'])
 
+        build_command.extend(node_file)
         build_command.append('build')
 
         if args.services:

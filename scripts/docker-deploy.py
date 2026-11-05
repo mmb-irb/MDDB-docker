@@ -278,15 +278,17 @@ def deploy_stack(rm):
         print("Creating web network.")
         subprocess.run("docker network create --driver overlay --attachable web_network", shell=True, check=True)
 
+    # the node's own settings (docker-compose.node.yml, not in git) go last, as in scripts/stack-deploy.py
+    compose_files = ['docker-compose.yml'] + (['docker-compose.node.yml'] if os.path.isfile('docker-compose.node.yml') else [])
     if command_exists(['docker-compose', 'version']):
-        subprocess.run(['docker-compose', 'build'])
+        subprocess.run(['docker-compose'] + [a for f in compose_files for a in ('-f', f)] + ['build'])
     elif command_exists(['docker', 'compose', 'version']):
-        subprocess.run(['docker', 'compose', 'build'])
+        subprocess.run(['docker', 'compose'] + [a for f in compose_files for a in ('-f', f)] + ['build'])
     else:
         print("Error: Neither 'docker-compose' nor 'docker compose' commands are available.")
         sys.exit(1)
 
-    subprocess.run(f"set -a && source .env && set +a && docker stack deploy -c docker-compose.yml {stack_name}", shell=True, check=True, executable='/bin/bash')
+    subprocess.run(f"set -a && source .env && set +a && docker stack deploy {' '.join('-c ' + f for f in compose_files)} {stack_name}", shell=True, check=True, executable='/bin/bash')
 
     # Poll until MinIO is up and running
     if 'env_vars' not in locals():

@@ -6,9 +6,14 @@ with 'docker service update' (a published port, a mount, an environment variable
 replicas, the stop grace period...) is lost. Run this before deploying, with the same compose files:
 
     python3 scripts/stack-diff.py -t my_stack
-    python3 scripts/stack-diff.py -t my_stack -c docker-compose.yml -c extensions/mcp.yml -c ~/node-overrides.yml
+    python3 scripts/stack-diff.py -t my_stack -c docker-compose.yml -c extensions/mcp.yml
 
-It reads the .env file itself (like 'set -a; source .env; set +a'). Nothing is changed.
+The node's own file, docker-compose.node.yml (not in git), is always added last when it exists, as
+scripts/stack-deploy.py does (--no-node-file to leave it out). It reads the .env file itself
+(like 'set -a; source .env; set +a'). Nothing is changed.
+
+For what exists only in the running service (REMOVE lines) it prints the YAML to add to
+docker-compose.node.yml if it was done on purpose and must stay.
 
 Service sets:
   * in the compose files but not running (never deployed, or removed after a failure): the deploy
@@ -29,6 +34,7 @@ import subprocess
 import sys
 
 DEFAULT_GRACE_NS = 10 * 10**9
+NODE_FILE = "docker-compose.node.yml"
 STACK_LABEL_PREFIX = "com.docker.stack."
 
 
@@ -46,6 +52,14 @@ def compose_config(compose_files, env_file, stack):
     if out.returncode != 0:
         sys.exit("Error: 'docker compose config' failed (message above); 'docker stack deploy' would fail too.")
     return json.loads(out.stdout)
+
+
+def compose_files(files, node_file=True):
+    """The -c files, plus the node's own file (last, so it wins) when it exists."""
+    files = list(files or ["docker-compose.yml"])
+    if node_file and os.path.isfile(NODE_FILE) and NODE_FILE not in files:
+        files.append(NODE_FILE)
+    return files
 
 
 def sh_quote(s):
@@ -223,9 +237,11 @@ def fmt_mount(m):
     return f"{source}:{target}{':ro' if ro else ''} ({kind})"
 
 
-def compare(now, want):
-    """Lines describing what the deploy would change. 'REMOVE' marks what exists only now (hand-made?)."""
+def compare(now, want, stack):
+    """(lines, keep): lines describe what the deploy would change; 'REMOVE' marks what exists only in
+    the running service (hand-made?). keep holds those settings as compose keys, to suggest them."""
     lines = []
+    keep = {}
 
     def sets(key, fmt=str):
         for item in sorted(now[key] - want[key], key=str):
@@ -239,9 +255,26 @@ def compare(now, want):
     sets("constraints")
     sets("cap_add")
 
+    for target, published, proto, mode in sorted(now["ports"] - want["ports"], key=str):
+        keep.setdefault("ports", []).append({"target": target, "published": published, "protocol": proto, "mode": mode})
+    for kind, source, target, ro in sorted(now["mounts"] - want["mounts"], key=str):
+        if kind == "volume":
+            source = source.removeprefix(stack + "_")   # declared under the top-level 'volumes:' too
+        m = {"type": kind, "source": source, "target": target}
+        if ro:
+            m["read_only"] = True
+        keep.setdefault("volumes", []).append(m)
+    for c in sorted(now["constraints"] - want["constraints"]):
+        keep.setdefault("deploy", {}).setdefault("placement", {}).setdefault("constraints", []).append(c)
+    for c in sorted(now["cap_add"] - want["cap_add"]):
+        keep.setdefault("cap_add", []).append(c)
+    for n in sorted(now["networks"] - want["networks"]):
+        keep.setdefault("# networks (declare them under the top-level 'networks:' too)", []).append(n)
+
     # environment: values may be secrets, show only the names
     for k in sorted(set(now["env"]) - set(want["env"])):
         lines.append(f"REMOVE env: {k}")
+        keep.setdefault("environment", {})[k] = "<value: see 'docker service inspect'>"
     for k in sorted(set(want["env"]) - set(now["env"])):
         lines.append(f"add    env: {k}")
     for k in sorted(set(now["env"]) & set(want["env"])):
@@ -251,6 +284,10 @@ def compare(now, want):
     for key in ("labels", "container_labels"):
         for k in sorted(set(now[key]) - set(want[key])):
             lines.append(f"REMOVE {key[:-1]}: {k}")
+            if key == "labels":
+                keep.setdefault("deploy", {}).setdefault("labels", {})[k] = now[key][k]
+            else:
+                keep.setdefault("labels", {})[k] = now[key][k]
         for k in sorted(set(want[key]) - set(now[key])):
             lines.append(f"add    {key[:-1]}: {k}")
         for k in sorted(set(now[key]) & set(want[key])):
@@ -269,7 +306,59 @@ def compare(now, want):
     for key, fmt in scalars.items():
         if now[key] != want[key]:
             lines.append(f"change {key}: {fmt(now[key])} -> {fmt(want[key])}")
-    return lines
+
+    # scalar settings that are often changed by hand (scale, resources, grace period)
+    deploy = {}
+    if now["replicas"] != want["replicas"] and now["replicas"] is not None:
+        deploy["replicas"] = now["replicas"]
+    if now["max_replicas_per_node"] != want["max_replicas_per_node"] and now["max_replicas_per_node"]:
+        deploy.setdefault("placement", {})["max_replicas_per_node"] = now["max_replicas_per_node"]
+    for key, section, field, conv in (("cpu_limit", "limits", "cpus", lambda v: f"{v / 1e9:g}"),
+                                      ("memory_limit", "limits", "memory", lambda v: f"{v // 2**20}M"),
+                                      ("cpu_reservation", "reservations", "cpus", lambda v: f"{v / 1e9:g}"),
+                                      ("memory_reservation", "reservations", "memory", lambda v: f"{v // 2**20}M")):
+        if now[key] != want[key] and now[key] is not None:
+            deploy.setdefault("resources", {}).setdefault(section, {})[field] = conv(now[key])
+    if deploy:
+        for k, v in deploy.items():
+            if isinstance(v, dict):
+                keep.setdefault("deploy", {}).setdefault(k, {}).update(v)
+            else:
+                keep.setdefault("deploy", {})[k] = v
+    if now["stop_grace"] != want["stop_grace"] and now["stop_grace"] != DEFAULT_GRACE_NS:
+        keep["stop_grace_period"] = fmt_ns(now["stop_grace"])
+    return lines, keep
+
+
+def to_yaml(value, indent):
+    """A small YAML writer for the suggestion (strings quoted as JSON, which is valid YAML)."""
+    pad = " " * indent
+    out = []
+    if isinstance(value, dict):
+        for k, v in value.items():
+            if isinstance(v, (dict, list)):
+                out.append(f"{pad}{k}:")
+                out.extend(to_yaml(v, indent + 2))
+            else:
+                out.append(f"{pad}{k}: {scalar(v)}")
+    else:
+        for item in value:
+            if isinstance(item, dict):
+                first = True
+                for k, v in item.items():
+                    out.append(f"{pad}{'- ' if first else '  '}{k}: {scalar(v)}")
+                    first = False
+            else:
+                out.append(f"{pad}- {scalar(item)}")
+    return out
+
+
+def scalar(v):
+    if isinstance(v, bool):
+        return "true" if v else "false"
+    if isinstance(v, int):
+        return str(v)
+    return json.dumps(str(v))
 
 
 def is_down(replicas):
@@ -278,20 +367,25 @@ def is_down(replicas):
     return bool(m) and int(m.group(1)) < int(m.group(2))
 
 
-def main():
-    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+def add_arguments(parser):
     parser.add_argument("-t", "--stack", default=os.environ.get("STACK_NAME") or "my_stack",
                         help="stack name (default: $STACK_NAME or my_stack)")
     parser.add_argument("-c", "--compose-file", action="append", dest="files",
-                        help="compose file, as many as 'docker stack deploy' gets (default: docker-compose.yml)")
+                        help="compose file, as many as 'docker stack deploy' gets (default: docker-compose.yml); "
+                             f"{NODE_FILE} is added last when it exists")
+    parser.add_argument("--no-node-file", action="store_true", help=f"do not add {NODE_FILE}")
     parser.add_argument("--env-file", default=".env", help="file with the variables (default: .env)")
-    args = parser.parse_args()
-    files = args.files or ["docker-compose.yml"]
-    for f in files + [args.env_file]:
+
+
+def check_files(files, env_file):
+    for f in files + [env_file]:
         if not os.path.isfile(f):
             sys.exit(f"Error: {f} not found (run from the repository root)")
 
-    cfg = compose_config(files, args.env_file, args.stack)
+
+def diff(stack, files, env_file, suggest=True):
+    """Print the comparison; return the number of running services that the deploy would change."""
+    cfg = compose_config(files, env_file, stack)
     services = cfg.get("services") or {}
 
     net_names = {}
@@ -299,25 +393,28 @@ def main():
         nid, name = line.split(" ", 1)
         net_names[nid] = name
 
-    stack_services = run(["docker", "service", "ls", "--filter", f"label=com.docker.stack.namespace={args.stack}",
+    stack_services = run(["docker", "service", "ls", "--filter", f"label=com.docker.stack.namespace={stack}",
                           "--format", "{{.Name}}"]).split()
     tasks = {}
-    for line in run(["docker", "service", "ls", "--filter", f"label=com.docker.stack.namespace={args.stack}",
+    for line in run(["docker", "service", "ls", "--filter", f"label=com.docker.stack.namespace={stack}",
                      "--format", "{{.Name}} {{.Replicas}}"]).splitlines():
         name, replicas = line.split(" ", 1)
         tasks[name] = replicas
 
-    print(f"Stack {args.stack}, compose files: {', '.join(files)}\n")
+    print(f"Stack {stack}, compose files: {', '.join(files)}\n")
     changed = 0
     down = []
+    to_keep = {}
     for name in sorted(services):
-        full = f"{args.stack}_{name}"
+        full = f"{stack}_{name}"
         want = wanted(name, services[name], cfg)
         if full not in stack_services:
             print(f"[new]     {name}: not running now; the deploy will create it ({want['image']})")
             continue
         spec = json.loads(run(["docker", "service", "inspect", full, "--format", "{{json .Spec}}"]))
-        lines = compare(running(spec, net_names), want)
+        lines, keep = compare(running(spec, net_names), want, stack)
+        if keep:
+            to_keep[name] = keep
         state = tasks.get(full, "?")
         if lines:
             changed += 1
@@ -329,7 +426,7 @@ def main():
         if is_down(state):
             down.append(full)
 
-    extra = sorted(s for s in stack_services if s.removeprefix(args.stack + "_") not in services)
+    extra = sorted(s for s in stack_services if s.removeprefix(stack + "_") not in services)
     for full in extra:
         print(f"[warning] {full}: running but in none of the compose files; the deploy leaves it alone "
               f"(only --prune removes it). Missing an extension file in -c?")
@@ -341,9 +438,24 @@ def main():
     print()
     if changed:
         print(f"{changed} running service(s) would change. Lines with REMOVE exist only in the running service: "
-              "probably done by hand. Put them in a compose/override file before deploying, or they are lost.")
-        sys.exit(1)
-    print("The deploy would not change any running service.")
+              "probably done by hand, and the deploy would lose them.")
+    else:
+        print("The deploy would not change any running service.")
+    if to_keep and suggest:
+        print(f"\nTo keep what exists only in the running services, add this to {NODE_FILE} "
+              "(merge it with what is already there) and run this script again:\n")
+        print("services:")
+        print("\n".join(to_yaml(to_keep, 2)))
+    return changed
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    add_arguments(parser)
+    args = parser.parse_args()
+    files = compose_files(args.files, not args.no_node_file)
+    check_files(files, args.env_file)
+    sys.exit(1 if diff(args.stack, files, args.env_file) else 0)
 
 
 if __name__ == "__main__":
