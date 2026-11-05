@@ -59,6 +59,22 @@ set -a; source .env; set +a
 docker stack deploy -c docker-compose.yml -c extensions/extension1.yml my_stack 
 ```
 
+### Redeploying a running stack
+
+`docker stack deploy` rewrites every service from the compose files: anything changed by hand with
+`docker service update` (a published port, a mount, an environment variable, the replicas, the stop grace
+period...) is **lost**. Before redeploying, check what would change, with the **same** `-c` files as the deploy:
+
+```sh
+python3 scripts/stack-diff.py -t my_stack -c docker-compose.yml [-c extensions/extension1.yml ...]
+```
+
+It changes nothing. `REMOVE` lines are settings that exist only in the running service (probably made by
+hand): add them to a compose file passed with `-c` before deploying. Services that are not running yet are
+listed as `[new]` (the deploy creates them), and services with fewer tasks than wanted as `[down]`: a deploy
+does not restart a service whose spec does not change, use `docker service update --force <service>`.
+Exit code 0 means the deploy would not change any running service.
+
 Check services:
 
 ```sh
