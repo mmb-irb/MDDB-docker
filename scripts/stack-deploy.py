@@ -9,7 +9,10 @@
 2. If something would change, asks before deploying (--yes to skip the question; without a terminal
    and without --yes it stops). REMOVE lines are settings that exist only in the running service:
    put them in docker-compose.node.yml first (the comparison prints the YAML), or they are lost.
-3. Runs 'docker stack deploy' with those files and the .env variables, and compares again: after the
+3. If the deploy changes the mongodb image, checks that the new one can run here (scripts/mongo_check.py):
+   a version jump that the data's featureCompatibilityVersion does not allow, or an image that does not
+   start on this host, stops the deploy before MongoDB is touched (--skip-mongo-check to skip it).
+4. Runs 'docker stack deploy' with those files and the .env variables, and compares again: after the
    deploy no running service should differ from the compose files.
 """
 
@@ -23,12 +26,16 @@ here = os.path.dirname(os.path.abspath(__file__))
 _spec = importlib.util.spec_from_file_location("stack_diff", os.path.join(here, "stack-diff.py"))
 stack_diff = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(stack_diff)
+sys.path.insert(0, here)
+import mongo_check  # noqa: E402
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     stack_diff.add_arguments(parser)
     parser.add_argument("-y", "--yes", action="store_true", help="deploy even if running services would change")
+    parser.add_argument("--skip-mongo-check", action="store_true",
+                        help="do not check that a new mongodb image can run here (scripts/mongo_check.py)")
     parser.add_argument("--prune", action="store_true", help="also remove running services that are in no compose file")
     args = parser.parse_args()
     files = stack_diff.compose_files(args.files, not args.no_node_file)
@@ -42,6 +49,12 @@ def main():
         answer = input(f"\n{changed} running service(s) would change (see above). Deploy anyway? [y/N] ")
         if answer.strip().lower() not in ("y", "yes", "s", "si", "sí"):
             sys.exit("Not deployed.")
+
+    if not args.skip_mongo_check:
+        want, now = mongo_check.mongo_images(args.stack, files, args.env_file)
+        if want is not None:
+            print()
+            mongo_check.check(args.stack, want, now)
 
     print("\n== docker stack deploy\n")
     deploy = " ".join(f"-c {stack_diff.sh_quote(f)}" for f in files)

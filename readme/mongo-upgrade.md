@@ -30,11 +30,21 @@ Everything below was tested on a throwaway database (6.0.28 → 7.0.45 → 8.0.3
   down cleanly; a killed `mongod` recovers on the next start (safe, but it can take a long time). The
   procedure therefore raises the service's stop grace period first.
 
-## ⚠️ Until the node is upgraded: do not redeploy with the new compose file
+## ⚠️ Until the node is upgraded: keep its MongoDB version in docker-compose.node.yml
 
-A `git pull` followed by `docker stack deploy` replaces the image with `mongo:8.0` and MongoDB will not start.
-If you must redeploy the stack before upgrading, keep MongoDB 6 with an override file **outside** the
-repository, e.g. `~/mongo-pin.yml`:
+A `git pull` followed by a deploy would replace the image with `mongo:8.0`, and MongoDB 8 does not start on
+6.0 data. Two safety nets stop that from leaving the database down:
+
+* `scripts/stack-deploy.py` (and `scripts/docker-deploy.py`) check a new `mongodb` image before deploying
+  ([scripts/mongo_check.py](../scripts/mongo_check.py)): they read the running version and FCV and refuse a
+  jump the data does not allow, and they start the new image for a moment in a throwaway container (no
+  network, empty data) to check that it runs on this host at all. `--skip-mongo-check` skips it.
+* The compose files give `mongodb` `update_config: failure_action: rollback`: if the new `mongod` dies while
+  it starts, Swarm goes back to the previous image by itself (seconds of downtime, data untouched). This also
+  covers a plain `docker stack deploy` and `docker service update --image`.
+
+To redeploy the stack before upgrading, keep the current version in the node's own file,
+`docker-compose.node.yml` (not in git, added last by the scripts; see [docker-swarm.md](docker-swarm.md)):
 
 ```yaml
 services:
@@ -43,8 +53,7 @@ services:
 ```
 
 ```sh
-set -a; source .env; set +a
-docker stack deploy -c docker-compose.yml [-c extensions/<ext>.yml ...] -c ~/mongo-pin.yml <stack>
+python3 scripts/stack-deploy.py -t <stack>
 ```
 
 ## Overview
@@ -190,7 +199,7 @@ mongo_eval 'db.adminCommand({getParameter: 1, featureCompatibilityVersion: 1}).f
 
 ## 8. Back to the normal deployment
 
-Now `git pull` and deploy as usual; delete `~/mongo-pin.yml` if you created it. The compose file uses
+Now `git pull` and deploy as usual; remove the `mongodb` image from `docker-compose.node.yml` (or `~/mongo-pin.yml`) if you pinned it there. The compose file uses
 `mongo:8.0`, the same version. Not the plain `mongo:8` tag: it points to short-lived releases (8.3 in
 November 2026), and a redeploy with it would replace 8.0 by a newer binary without any plan.
 
@@ -204,6 +213,7 @@ Keep the backup until you are sure you will not need it.
 | Symptom | Meaning | What to do |
 |---|---|---|
 | `UPGRADE PROBLEM: Found an invalid featureCompatibilityVersion document … version: "6.0"` | `mongo:8` was started on 6.0 data (e.g. a redeploy with the new compose file) | Nothing is damaged. `docker service update --image mongo:6.0 …` (or `mongo:7.0` to continue from step 3) |
+| `MongoDB cannot start: Linux kernel versions 6.19 and newer has a known incompatibility with this version of MongoDB` | MongoDB 8.0 up to 8.0.36 and 8.3 refuse kernels 6.19-7.0.13 ([SERVER-121912](https://jira.mongodb.org/browse/SERVER-121912)). On Ubuntu 26.04 they also refuse `7.0.0-NN-generic` although it is the fixed upstream 7.0.14 (`cat /proc/version_signature`; [SERVER-136848](https://jira.mongodb.org/browse/SERVER-136848)); the exemption comes in 8.0.37 ([SERVER-131779](https://jira.mongodb.org/browse/SERVER-131779)). There is no option to skip the check. 7.0 runs on every kernel | Stay on `mongo:7.0` (FCV 7.0 works with it) until a fixed 8.0 is released, or boot an older kernel (6.8). Never use 8.0.0-8.0.20 to get round it: they crash after about a minute on these kernels |
 | Same message with `version: "7.0"` and a 6.0 image | The FCV is already 7.0 | Use `mongo:7.0` or `mongo:8.0` |
 | `Once you have upgraded to 7.0, you will not be able to downgrade FCV…` | The FCV command needs the confirmation | Add `confirm: true` (after checking the backup) |
 | `Detected unclean shutdown` in the log, slow start-up | `mongod` was killed before finishing its shutdown | Let the recovery finish; raise the grace period (step 2) before the next restart |

@@ -4,6 +4,9 @@ import subprocess
 import time
 import sys
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import mongo_check  # noqa: E402
+
 
 def check_file_exists(fname, warning=False):
     # Check if .env file exists and has all variables filled
@@ -287,6 +290,11 @@ def deploy_stack(rm):
     else:
         print("Error: Neither 'docker-compose' nor 'docker compose' commands are available.")
         sys.exit(1)
+
+    # stop before deploying a mongodb image that cannot run here (see scripts/mongo_check.py)
+    want_mongo, running_mongo = mongo_check.mongo_images(stack_name, compose_files, '.env')
+    if want_mongo is not None:
+        mongo_check.check(stack_name, want_mongo, running_mongo)
 
     subprocess.run(f"set -a && source .env && set +a && docker stack deploy {' '.join('-c ' + f for f in compose_files)} {stack_name}", shell=True, check=True, executable='/bin/bash')
 

@@ -34,6 +34,7 @@ import subprocess
 import sys
 
 DEFAULT_GRACE_NS = 10 * 10**9
+DEFAULT_MONITOR_NS = 5 * 10**9   # Swarm's default update/rollback monitor period
 NODE_FILE = "docker-compose.node.yml"
 STACK_LABEL_PREFIX = "com.docker.stack."
 
@@ -172,6 +173,9 @@ def wanted(name, svc, cfg):
         "memory_reservation": memory_bytes(rsv.get("memory")),
         "restart_condition": (deploy.get("restart_policy") or {}).get("condition", "any"),
         "update_order": (deploy.get("update_config") or {}).get("order", "stop-first"),
+        "update_failure_action": (deploy.get("update_config") or {}).get("failure_action", "pause"),
+        "update_monitor": go_duration_ns((deploy.get("update_config") or {}).get("monitor")) or DEFAULT_MONITOR_NS,
+        "rollback_monitor": go_duration_ns((deploy.get("rollback_config") or {}).get("monitor")) or DEFAULT_MONITOR_NS,
         "stop_grace": go_duration_ns(svc.get("stop_grace_period")) or DEFAULT_GRACE_NS,
         "user": svc.get("user") or None,
         "hostname": svc.get("hostname") or None,
@@ -215,6 +219,9 @@ def running(spec, net_names):
         "memory_reservation": rsv.get("MemoryBytes") or None,
         "restart_condition": (task.get("RestartPolicy") or {}).get("Condition", "any"),
         "update_order": (spec.get("UpdateConfig") or {}).get("Order", "stop-first"),
+        "update_failure_action": (spec.get("UpdateConfig") or {}).get("FailureAction", "pause"),
+        "update_monitor": (spec.get("UpdateConfig") or {}).get("Monitor") or DEFAULT_MONITOR_NS,
+        "rollback_monitor": (spec.get("RollbackConfig") or {}).get("Monitor") or DEFAULT_MONITOR_NS,
         "stop_grace": cs.get("StopGracePeriod") or DEFAULT_GRACE_NS,
         "user": cs.get("User") or None,
         "hostname": cs.get("Hostname") or None,
@@ -300,7 +307,8 @@ def compare(now, want, stack):
         "cpu_reservation": lambda v: "none" if v is None else f"{v / 1e9:g} CPUs",
         "memory_limit": lambda v: "none" if v is None else f"{v / 2**30:g} GiB",
         "memory_reservation": lambda v: "none" if v is None else f"{v / 2**30:g} GiB",
-        "restart_condition": str, "update_order": str, "stop_grace": fmt_ns,
+        "restart_condition": str, "update_order": str, "update_failure_action": str,
+        "update_monitor": fmt_ns, "rollback_monitor": fmt_ns, "stop_grace": fmt_ns,
         "user": str, "hostname": str, "entrypoint": str, "command": str, "healthcheck": str,
     }
     for key, fmt in scalars.items():

@@ -193,6 +193,14 @@ services:
           memory: ${DB_MEMORY_RESERVATION}   # Specify the reserved memory
       restart_policy:
         condition: on-failure   # Restart only on failure
+      # If the new mongod dies while it starts (a version jump the data does not allow, an image that does
+      # not run on this kernel...), Swarm goes back to the previous image by itself instead of leaving the
+      # database down. scripts/stack-deploy.py also checks the image before deploying (scripts/mongo_check.py).
+      update_config:
+        failure_action: rollback
+        monitor: 2m
+      rollback_config:
+        monitor: 2m
 
   mongo-backup:
     image: mongo:8.0   # same image as mongodb: its mongodump

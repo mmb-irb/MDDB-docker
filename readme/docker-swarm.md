@@ -88,6 +88,13 @@ prints them as YAML to add to `docker-compose.node.yml`. Services that are not r
 restart a service whose spec does not change, use `docker service update --force <service>`.
 `stack-diff.py` exits with 0 when the deploy would not change any running service.
 
+If the deploy changes the `mongodb` image, `stack-deploy.py` first checks that it can run here
+([scripts/mongo_check.py](../scripts/mongo_check.py)): it refuses a version jump that the data's
+featureCompatibilityVersion does not allow (e.g. 6.0 data with `mongo:8.0`) and an image that does not start
+on this host (tested in a throwaway container without network or data). And if a new `mongod` still dies while
+it starts, Swarm rolls `mongodb` back to the previous image by itself (`update_config: failure_action: rollback`).
+See [mongo-upgrade.md](mongo-upgrade.md).
+
 A quick change with `docker service update` is fine, but if it must stay, add it to
 `docker-compose.node.yml` too (or the next deploy undoes it).
 

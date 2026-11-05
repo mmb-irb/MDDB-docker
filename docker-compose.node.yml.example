@@ -19,6 +19,10 @@ services:
   #       published: 27017
   #       mode: host
 
+  # Example: keep this node's MongoDB version until it is upgraded (readme/mongo-upgrade.md)
+  # mongodb:
+  #   image: mongo:7.0
+
   # Example: more REST replicas than the .env value, and an extra read-only mount
   # rest:
   #   deploy:
