@@ -20,6 +20,9 @@
 #
 # Every backup is written under a ".partial" name and only renamed to its final name once all
 # its steps succeed, so a file or directory with a final name is always a complete backup.
+# With tar and tar.gz, the dump directory gets its final name (<timestamp>/) as soon as the dump
+# finishes, so it is a usable backup while it is packed. Once the archive is complete, the
+# directory is removed. If packing is interrupted, the directory stays as that backup (not packed).
 # Anything left by an interrupted run (container killed, stack redeployed, error) keeps the
 # ".partial" suffix and is removed on next start.
 #
@@ -185,17 +188,23 @@ while true; do
             BACKUP="$BACKUP_DIR/$TIMESTAMP"
             ;;
         tar|tar.gz)
-            DUMP_DIR="$BACKUP_DIR/$TIMESTAMP.dump.partial"
+            DUMP_DIR="$BACKUP_DIR/$TIMESTAMP"
             BACKUP="$BACKUP_DIR/$TIMESTAMP.$COMPRESS"
             TAR_ARGS=(-cf)
             [ "$COMPRESS" = tar.gz ] && TAR_ARGS=(-czf)
             lock_writes
-            run_interruptible mongodump --host "$DB_HOST" -u "$MONGO_INITDB_ROOT_USERNAME" -p "$MONGO_INITDB_ROOT_PASSWORD" --out "$DUMP_DIR"
+            run_interruptible mongodump --host "$DB_HOST" -u "$MONGO_INITDB_ROOT_USERNAME" -p "$MONGO_INITDB_ROOT_PASSWORD" --out "$DUMP_DIR.dump.partial"
             unlock_writes
-            echo "Dump finished at $(date), packing into $COMPRESS"
+            # The finished dump is already a complete backup: give it its final name before packing
+            # (which can take days), so an interrupted packing does not lose it
+            mv -- "$DUMP_DIR.dump.partial" "$DUMP_DIR"
+            echo "Dump finished at $(date): $DUMP_DIR. Packing into $COMPRESS"
             run_interruptible tar "${TAR_ARGS[@]}" "$BACKUP.partial" -C "$DUMP_DIR" .
             mv -- "$BACKUP.partial" "$BACKUP"
-            rm -rf -- "$DUMP_DIR"
+            # Rename the dump before removing it, so an interrupted removal leaves a ".partial"
+            # (removed on next start) instead of an incomplete directory with a final name
+            mv -- "$DUMP_DIR" "$DUMP_DIR.dump.partial"
+            rm -rf -- "$DUMP_DIR.dump.partial"
             ;;
     esac
     echo "Backup completed at $(date): $BACKUP"
