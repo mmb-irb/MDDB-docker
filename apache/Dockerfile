@@ -46,6 +46,24 @@ RUN sed -i "s/MCP_INNER_PORT/${MCP_INNER_PORT:-8000}/g" /usr/local/apache2/conf/
 # development services
 RUN sed -i "s/SERVICES_MONITOR_API_INNER_PORT/${SERVICES_MONITOR_API_INNER_PORT:-3001}/g" /usr/local/apache2/conf/conf.d/custom.conf
 
+# Let's Encrypt with mod_md (tls-alpn-01, only port 443 needed) instead of certbot, see readme/storage.md#certificates
+ARG CERT_METHOD=certbot
+ARG CERT_DOMAINS
+ARG CERT_EMAIL
+ARG CERT_ACME_URL=https://acme-v02.api.letsencrypt.org/directory
+COPY apache-mod-md.conf /tmp/apache-mod-md.conf
+RUN if [ "${CERT_METHOD}" = "mod_md" ]; then \
+        if [ -z "${CERT_DOMAINS}" ] || [ -z "${CERT_EMAIL}" ]; then \
+            echo "CERT_METHOD=mod_md needs CERT_DOMAINS and CERT_EMAIL" >&2; exit 1; \
+        fi; \
+        sed -e "s#CERT_ACME_URL#${CERT_ACME_URL}#" -e "s#CERT_EMAIL#${CERT_EMAIL}#" \
+            -e "s#CERT_DOMAINS#$(echo "${CERT_DOMAINS}" | tr ',' ' ')#" \
+            /tmp/apache-mod-md.conf >> /usr/local/apache2/conf/conf.d/custom.conf; \
+    elif [ "${CERT_METHOD}" != "certbot" ]; then \
+        echo "Unknown CERT_METHOD=${CERT_METHOD} (certbot or mod_md)" >&2; exit 1; \
+    fi; \
+    rm /tmp/apache-mod-md.conf
+
 # Append IncludeOptional directive to the default httpd.conf
 RUN echo "IncludeOptional /usr/local/apache2/conf/conf.d/custom.conf" >> /usr/local/apache2/conf/httpd.conf
 

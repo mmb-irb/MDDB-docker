@@ -20,6 +20,10 @@ services:
         SERVER_URL: ${MINIO_URL}
         SSL_CERTIFICATE: ${SSL_CERTIFICATE}
         SSL_CERT_KEY: ${SSL_CERT_KEY}
+        CERT_METHOD: ${CERT_METHOD:-certbot}
+        CERT_DOMAINS: ${CERT_DOMAINS:-}
+        CERT_EMAIL: ${CERT_EMAIL:-}
+        CERT_ACME_URL: ${CERT_ACME_URL:-https://acme-v02.api.letsencrypt.org/directory}
     volumes:
       - certs_volume:/usr/local/apache2/conf/ssl   # path to SSL certificates
       # ENABLE ONLY IN DEVELOPMENT NODE

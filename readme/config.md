@@ -35,6 +35,9 @@ An `.env` file must be created in the **root** of the project. The file [**.env.
 | SSL_CERTIFICATE         | string  | SSL public certificate file name                                       |
 | SSL_CERTIFICATE_KEY         | string  | SSL private certificate file name memory                                        |
 | CERT_DOMAINS         | string  | comma-separated names for the Let's Encrypt certificate (default: MINIO_URL), see [certificates](storage.md#certificates) |
+| CERT_METHOD         | string  | `certbot` (default, HTTP-01, port 80) or `mod_md` (TLS-ALPN-01 in apache, only port 443) |
+| CERT_EMAIL         | string  | contact email for the Let's Encrypt account, required with `CERT_METHOD=mod_md` |
+| CERT_ACME_URL         | string  | ACME directory for `mod_md` (default: Let's Encrypt production) |
 | &nbsp;
 | LOADER_VOLUME_PATH         | string  | path where the loader will look for files                                        |
 | LOADER_REPLICAS      | number  | number of replicas to deploy                                    |

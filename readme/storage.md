@@ -91,6 +91,10 @@ crontab -e
 
 certbot keeps its data in **certs/letsencrypt/**. When it renews the certificate, the script copies it to `le_fullchain.pem` / `le_privkey.pem`, does a graceful reload of apache (no downtime) and checks that apache serves the new one. Any failure ends with an error. It only works with Docker Swarm for now (not podman).
 
+#### Only port 443 open: `CERT_METHOD=mod_md`
+
+If port 80 is closed, set `CERT_METHOD=mod_md`, `CERT_DOMAINS` (required) and `CERT_EMAIL` (required by mod_md) in `.env` and rebuild apache. Apache then loads [mod_md](https://httpd.apache.org/docs/2.4/mod/mod_md.html) ([apache-mod-md.conf](../apache/apache-mod-md.conf)), which gets and renews the certificate with the **TLS-ALPN-01** challenge on port 443 and keeps it in **certs/md/**. Apache keeps serving `le_fullchain.pem` / `le_privkey.pem`: the same script (and cron line) installs a renewed certificate, reloads apache and checks it. Until mod_md has its first certificate the script ends with an error (see the apache logs). It never installs a certificate from the Let's Encrypt staging CA.
+
 To switch an existing node without downtime: copy the current certificate and key to `le_fullchain.pem` / `le_privkey.pem`, change `.env`, rebuild and update apache, and then run the script.
 
 ## Logs
