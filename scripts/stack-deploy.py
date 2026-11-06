@@ -12,7 +12,8 @@
 3. If the deploy changes the mongodb image, checks that the new one can run here (scripts/mongo_check.py):
    a version jump that the data's featureCompatibilityVersion does not allow, or an image that does not
    start on this host, stops the deploy before MongoDB is touched (--skip-mongo-check to skip it).
-4. Runs 'docker stack deploy' with those files and the .env variables, and compares again: after the
+4. Stops if DB_BACKUP_VOLUME_PATH and DB_VOLUME_PATH overlap (scripts/paths_check.py).
+5. Runs 'docker stack deploy' with those files and the .env variables, and compares again: after the
    deploy no running service should differ from the compose files.
 """
 
@@ -28,6 +29,7 @@ stack_diff = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(stack_diff)
 sys.path.insert(0, here)
 import mongo_check  # noqa: E402
+import paths_check  # noqa: E402
 
 
 def main():
@@ -40,6 +42,7 @@ def main():
     args = parser.parse_args()
     files = stack_diff.compose_files(args.files, not args.no_node_file)
     stack_diff.check_files(files, args.env_file)
+    paths_check.check(args.env_file)
 
     print("== What the deploy would change\n")
     changed = stack_diff.diff(args.stack, files, args.env_file)

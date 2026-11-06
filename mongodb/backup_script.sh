@@ -38,6 +38,10 @@
 # restart policy starts it again after that delay: a failed dump is done again from scratch,
 # a failed packing is retried on the finished dump.
 #
+# Safety: the script refuses to run (before writing anything) when BACKUP_DIR, or a folder right inside it,
+# is a MongoDB data folder (it has WiredTiger, mongod.lock... files), e.g. when DB_BACKUP_VOLUME_PATH is
+# the same as DB_VOLUME_PATH in .env. scripts/paths_check.py also stops the deploy scripts in that case.
+#
 # Logs: the output of every run of this script is also written to
 # $BACKUP_DIR/logs/<start time>.log. If the run fails, its log is renamed to
 # <start time>.error.log; error logs are never removed automatically. Of the other logs, only the
@@ -116,6 +120,22 @@ case "$LOCK" in
     yes|no) ;;
     *) echo "LOCK must be yes or no. Got '$LOCK'" >&2; exit 1 ;;
 esac
+
+# Never write into a MongoDB data folder (e.g. DB_BACKUP_VOLUME_PATH = DB_VOLUME_PATH in .env): the dumps,
+# logs and retention cleanup would share the folder with the live database. Checked before writing anything,
+# in BACKUP_DIR and in the folders right inside it (a backup folder that contains the database folder).
+# Waits RETRY_DELAY before exiting, like any other error, so swarm does not restart it in a tight loop.
+for marker in WiredTiger WiredTiger.wt mongod.lock _mdb_catalog.wt; do
+    for found in "$BACKUP_DIR/$marker" "$BACKUP_DIR"/*/"$marker"; do
+        if [ -e "$found" ]; then
+            echo "ERROR: $found exists: the backup folder $BACKUP_DIR is (or contains) a MongoDB data folder." >&2
+            echo "Set DB_BACKUP_VOLUME_PATH in .env to a folder separate from DB_VOLUME_PATH. Nothing was written." >&2
+            echo "Exiting in $RETRY_DELAY seconds" >&2
+            sleep "$RETRY_DELAY"
+            exit 1
+        fi
+    done
+done
 
 TS_GLOB='[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]_[0-9][0-9]-[0-9][0-9]-[0-9][0-9]'
 

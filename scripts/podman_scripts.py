@@ -1,5 +1,7 @@
 import os
 
+import paths_check
+
 
 def get_podman_script(type, service, svc=None, version=None):
     cmd = ''
@@ -49,6 +51,8 @@ def get_podman_script(type, service, svc=None, version=None):
         if type == 'build':
             cmd = "echo MongoDB Backup uses mongo_image: build the mongodb service"
         elif type == 'run':
+            # stop if the backups would be written into the database folder
+            paths_check.check('.env')
             cmd = "podman run -d --restart on-failure --name mongo-backup -e MONGO_INITDB_ROOT_USERNAME=${MONGO_INITDB_ROOT_USERNAME} -e MONGO_INITDB_ROOT_PASSWORD=${MONGO_INITDB_ROOT_PASSWORD} -e MONGO_PORT=${DB_OUTER_PORT} -e MONGO_INITDB_DATABASE=${DB_AUTHSOURCE} -e DB_HOST=${DB_SERVER} -e BACKUP_DIR=/backup -e RETENTION_COUNT=${DB_BACKUP_RETENTION_COUNT} -e BACKUP_INTERVAL=${DB_BACKUP_INTERVAL} -e COMPRESS=${DB_BACKUP_COMPRESS} -e LOCK=${DB_BACKUP_LOCK} -v ${DB_BACKUP_VOLUME_PATH}:/backup:Z -v $(pwd)/mongodb/backup_script.sh:/backup_script.sh:ro --memory ${DB_BACKUP_MEMORY_LIMIT} --network data_network --security-opt label=disable mongo_image bash /backup_script.sh"
     elif service == 'utils':
         if type == 'build':

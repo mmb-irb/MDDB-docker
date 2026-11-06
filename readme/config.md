@@ -83,7 +83,7 @@ An `.env` file must be created in the **root** of the project. The file [**.env.
 | DB_NAME      | string  | name of the DB collection                          |
 | DB_AUTHSOURCE      | string  | the DB collection the user will attempt to authenticate to                           |
 | &nbsp;
-| DB_BACKUP_VOLUME_PATH         | string  | path where the DB backups will be stored                                        |
+| DB_BACKUP_VOLUME_PATH         | string  | path where the DB backups will be stored. **Must be a separate folder from DB_VOLUME_PATH** (not the same, not inside it, not containing it): the deploy scripts and the backup service refuse to run otherwise |
 | DB_BACKUP_REPLICAS      | number  | number of replicas to deploy                                    |
 | DB_BACKUP_RETENTION_COUNT         | number  | maximum number of DB backup copies to preserve                                          |
 | DB_BACKUP_INTERVAL         | number  | interval in seconds between DB backups                                         |

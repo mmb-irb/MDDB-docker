@@ -189,6 +189,7 @@ Take into account that this script performs a mongodump **every ${DB_BACKUP_INTE
 It works as the [Docker Swarm backup service](docker-swarm.md#mongodb-backup-service): the format is set by `DB_BACKUP_COMPRESS`, only the `DB_BACKUP_RETENTION_COUNT` latest complete backups are kept, and a backup is only renamed to its final name once complete. Before enabling it:
 
 * **`DB_BACKUP_COMPRESS` and `DB_BACKUP_LOCK` must be set** in `.env` (`no` and `yes` are the recommended values for MDDB data); otherwise the script exits with an error.
+* **Separate folder**: `DB_BACKUP_VOLUME_PATH` must not be `DB_VOLUME_PATH`, nor inside it or containing it. `scripts/podman_scripts.py` (deploy and rebuild) stops before running mongo-backup, and the backup script refuses to start when its folder holds MongoDB data files.
 * **Disk space**: each backup takes about as much as the database, so plan for `DB_BACKUP_RETENTION_COUNT` + 1 times the database size in `DB_BACKUP_VOLUME_PATH` (the extra one is the backup being written). For large databases use a long interval (e.g. weekly, `604800`) and a small retention count.
 * **Time**: a plain dump runs at roughly 100 MB/s (~2 h for 700 GB) and adds read load on `mongod` while it runs.
 * It uses `mongo_image` (see [Deploy MongoDB](#deploy-mongodb)) only for its `mongodump`, which works with MongoDB 6, 7 and 8 servers.

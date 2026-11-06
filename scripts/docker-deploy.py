@@ -6,6 +6,7 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import mongo_check  # noqa: E402
+import paths_check  # noqa: E402
 
 
 def check_file_exists(fname, warning=False):
@@ -169,7 +170,7 @@ def deploy_stack(rm):
         print(f"Created MongoDB volume: {db_path}.")
         env_vars["DB_VOLUME_PATH"] = db_path
 
-        db_backup_path = os.path.join(main_path, 'db')
+        db_backup_path = os.path.join(main_path, 'db_backup')
         create_directory(db_backup_path, sudo)
         print(f"Created MongoDB backup volume: {db_backup_path}.")
         env_vars["DB_BACKUP_VOLUME_PATH"] = db_backup_path
@@ -290,6 +291,9 @@ def deploy_stack(rm):
     else:
         print("Error: Neither 'docker-compose' nor 'docker compose' commands are available.")
         sys.exit(1)
+
+    # stop if the backups would be written into the database folder (see scripts/paths_check.py)
+    paths_check.check('.env')
 
     # stop before deploying a mongodb image that cannot run here (see scripts/mongo_check.py)
     want_mongo, running_mongo = mongo_check.mongo_images(stack_name, compose_files, '.env')
