@@ -34,6 +34,7 @@ An `.env` file must be created in the **root** of the project. The file [**.env.
 | APACHE_MEMORY_RESERVATION         | string  | apache reserved memory                                        |
 | SSL_CERTIFICATE         | string  | SSL public certificate file name                                       |
 | SSL_CERTIFICATE_KEY         | string  | SSL private certificate file name memory                                        |
+| CERT_DOMAINS         | string  | comma-separated names for the Let's Encrypt certificate (default: MINIO_URL), see [certificates](storage.md#certificates) |
 | &nbsp;
 | LOADER_VOLUME_PATH         | string  | path where the loader will look for files                                        |
 | LOADER_REPLICAS      | number  | number of replicas to deploy                                    |

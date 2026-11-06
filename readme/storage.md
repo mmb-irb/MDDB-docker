@@ -73,6 +73,26 @@ In the **volume** where the data is stored, create the following **/certs folder
 
 In this folder must be stored the **SSL/TSL** certificates that the **apache docker** will use for configuring **https** protocol.
 
+### Let's Encrypt (automatic renewal)
+
+Instead of copying the certificates by hand, [scripts/renew-certs.py](../scripts/renew-certs.py) can get a free [Let's Encrypt](https://letsencrypt.org) certificate and renew it before it expires. It needs:
+
+* The port **80** of every name reachable from the internet (directly or through a proxy that redirects to https). Apache serves the challenge from **certs/acme/** under `/.well-known/acme-challenge/`.
+* **CERT_DOMAINS** in `.env` with **all** the names of the node, comma-separated (default: `MINIO_URL`). A name missing from the certificate gives certificate errors to the users (or a proxy error, if there is a proxy in front checking the certificate).
+* `SSL_CERTIFICATE=le_fullchain.pem` and `SSL_CERT_KEY=le_privkey.pem` in `.env`, and apache built with them.
+
+Then run it once by hand and add it to the cron of a user in the docker group:
+
+```sh
+cd /path/to/MDDB-docker && scripts/renew-certs.py
+crontab -e
+# 17 3,15 * * * cd /path/to/MDDB-docker && scripts/renew-certs.py >> ~/renew-certs.log 2>&1 || echo "[$(date -Is)] FAILED" >> ~/renew-certs.log
+```
+
+certbot keeps its data in **certs/letsencrypt/**. When it renews the certificate, the script copies it to `le_fullchain.pem` / `le_privkey.pem`, does a graceful reload of apache (no downtime) and checks that apache serves the new one. Any failure ends with an error. It only works with Docker Swarm for now (not podman).
+
+To switch an existing node without downtime: copy the current certificate and key to `le_fullchain.pem` / `le_privkey.pem`, change `.env`, rebuild and update apache, and then run the script.
+
 ## Logs
 
 In the **volume** where the data is stored, create the following **/logs folder**:
