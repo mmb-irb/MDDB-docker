@@ -6,124 +6,21 @@ https://hub.docker.com/_/httpd
 
 ## Dockerfile
 
-Be aware of having the **public** and **private** ssl files in the **same folder** where the Dockerfile is:
+The [Dockerfile](Dockerfile) starts from the official `httpd:2.4` image and copies the Apache configuration selected with `APACHE_CONFIG` in the `.env`:
 
-```Dockerfile
-# Base docker with apache 2.4
-FROM docker.io/library/httpd:2.4
+| File | Use |
+| --- | --- |
+| [apache-config.conf](apache-config.conf) | default: Apache terminates TLS with the certificates of `APACHE_CERTS_VOLUME_PATH` |
+| [apache-config-florida.conf](apache-config-florida.conf) | node behind an external proxy that terminates TLS |
+| [apache-config-dual.conf](apache-config-dual.conf) | node served under two domain names (the second one, `NEW_SERVER_URL`, is not filled by the build: edit it by hand) |
+| [apache-mod-md.conf](apache-mod-md.conf) | added when `CERT_METHOD=mod_md` (Let's Encrypt without port 80, see [certificates](../readme/storage.md#certificates)) |
 
-# Copy the custom Apache configuration file
-COPY apache-config.conf /usr/local/apache2/conf/conf.d/custom.conf
+The configuration has placeholders (`APACHE_HTTPS_OUTER_PORT`, `REST_INNER_PORT`, `SERVER_URL`, `SSL_CERTIFICATE`...) that the build replaces with the values of the `.env`. So **after changing any of these values, rebuild Apache**. The certificates are not copied into the image: they are mounted from `APACHE_CERTS_VOLUME_PATH`.
 
-# Define the build arguments
-ARG APACHE_HTTP_INNER_PORT
-ARG APACHE_HTTPS_INNER_PORT
-ARG APACHE_MINIO_INNER_PORT
-ARG APACHE_HTTP_OUTER_PORT
-ARG APACHE_HTTPS_OUTER_PORT
-ARG APACHE_MINIO_OUTER_PORT
-ARG CLIENT_INNER_PORT
-ARG REST_INNER_PORT
-ARG VRE_LITE_INNER_PORT
-ARG MINIO_UI_INNER_PORT
-ARG MINIO_API_INNER_PORT
-ARG SERVER_URL
-ARG SSL_CERTIFICATE
-ARG SSL_CERT_KEY
-# development services
-ARG SERVICES_MONITOR_API_INNER_PORT
+The default configuration:
 
-# Perform search and replace using sed
-RUN sed -i "s/APACHE_HTTP_OUTER_PORT/${APACHE_HTTP_OUTER_PORT}/g" /usr/local/apache2/conf/conf.d/custom.conf
-RUN sed -i "s/APACHE_HTTPS_OUTER_PORT/${APACHE_HTTPS_OUTER_PORT}/g" /usr/local/apache2/conf/conf.d/custom.conf
-RUN sed -i "s/APACHE_MINIO_OUTER_PORT/${APACHE_MINIO_OUTER_PORT}/g" /usr/local/apache2/conf/conf.d/custom.conf
-RUN sed -i "s/CLIENT_INNER_PORT/${CLIENT_INNER_PORT}/g" /usr/local/apache2/conf/conf.d/custom.conf
-RUN sed -i "s/REST_INNER_PORT/${REST_INNER_PORT}/g" /usr/local/apache2/conf/conf.d/custom.conf
-RUN sed -i "s/VRE_LITE_INNER_PORT/${VRE_LITE_INNER_PORT}/g" /usr/local/apache2/conf/conf.d/custom.conf
-RUN sed -i "s/MINIO_UI_INNER_PORT/${MINIO_UI_INNER_PORT}/g" /usr/local/apache2/conf/conf.d/custom.conf
-RUN sed -i "s/MINIO_API_INNER_PORT/${MINIO_API_INNER_PORT}/g" /usr/local/apache2/conf/conf.d/custom.conf
-RUN sed -i "s/SERVER_URL/${SERVER_URL}/g" /usr/local/apache2/conf/conf.d/custom.conf
-RUN sed -i "s/SSL_CERTIFICATE/${SSL_CERTIFICATE}/g" /usr/local/apache2/conf/conf.d/custom.conf
-RUN sed -i "s/SSL_CERT_KEY/${SSL_CERT_KEY}/g" /usr/local/apache2/conf/conf.d/custom.conf
-# development services
-RUN sed -i "s/SERVICES_MONITOR_API_INNER_PORT/${SERVICES_MONITOR_API_INNER_PORT:-3001}/g" /usr/local/apache2/conf/conf.d/custom.conf
+* redirects `http` to `https` (and serves `/.well-known/acme-challenge/` for Let's Encrypt),
+* serves the website client at `/`, the REST API at `/api/`, VRE lite at `/vre_lite/` and the MinIO console at `/minio/`,
+* serves the MinIO API on its own port, `APACHE_MINIO_OUTER_PORT`.
 
-# Append IncludeOptional directive to the default httpd.conf
-RUN echo "IncludeOptional /usr/local/apache2/conf/conf.d/custom.conf" >> /usr/local/apache2/conf/httpd.conf
-
-EXPOSE ${APACHE_HTTP_INNER_PORT} ${APACHE_HTTPS_INNER_PORT} ${APACHE_MINIO_INNER_PORT}
-```
-
-## Apache conf file
-
-```apache
-LoadModule rewrite_module /usr/local/apache2/modules/mod_rewrite.so
-LoadModule proxy_module /usr/local/apache2/modules/mod_proxy.so
-LoadModule proxy_http_module /usr/local/apache2/modules/mod_proxy_http.so
-LoadModule proxy_wstunnel_module /usr/local/apache2/modules/mod_proxy_wstunnel.so
-LoadModule ssl_module /usr/local/apache2/modules/mod_ssl.so
-
-<VirtualHost *:APACHE_HTTP_OUTER_PORT>
-  # Redirect all HTTP traffic to HTTPS
-  RewriteEngine on
-  RewriteCond %{SERVER_NAME} =SERVER_URL
-  RewriteRule ^ https://%{SERVER_NAME}%{REQUEST_URI} [END,NE,R=permanent]
-</VirtualHost>
-
-<VirtualHost *:APACHE_HTTPS_OUTER_PORT>
-  ServerName SERVER_URL
-
-  # MDPosit front end
-	<Location / >
-    ProxyPass http://client:CLIENT_INNER_PORT/
-    ProxyPassReverse http://client:CLIENT_INNER_PORT/
-	</Location>
-
-  # MDPosit REST API
-	<Location /api/ >
-    ProxyPass http://rest:REST_INNER_PORT/
-    ProxyPassReverse http://rest:REST_INNER_PORT/
-  </Location>
-
-   # VRE lite (anonymous file upload)
-	<Location /vre_lite/ >
-    ProxyPass http://vre_lite:VRE_LITE_INNER_PORT/vre_lite/
-    ProxyPassReverse http://vre_lite:VRE_LITE_INNER_PORT/vre_lite/
-  </Location>
-
-  # MinIO WebUI (object storage UI access, recommended to disable it in production)
-  <Location /minio/ >
-    ProxyPass http://minio:MINIO_UI_INNER_PORT/
-    ProxyPassReverse http://minio:MINIO_UI_INNER_PORT/
-    #Require ip TODO: Add IP range
-  </Location>
-
-  # Enable mod_rewrite
-  RewriteEngine On
-  # WebSocket proxy settings
-  RewriteCond %{HTTP:UPGRADE} WebSocket [NC]
-  RewriteCond %{HTTP:CONNECTION} Upgrade [NC]
-  RewriteRule /minio/(.*) ws://minio:MINIO_UI_INNER_PORT/$1 [P,L]
-
-  SSLEngine on
-  SSLCertificateFile /usr/local/apache2/conf/ssl/SSL_CERTIFICATE
-  SSLCertificateKeyFile /usr/local/apache2/conf/ssl/SSL_CERT_KEY
-</VirtualHost>
-
-<VirtualHost *:APACHE_MINIO_OUTER_PORT>
-    ServerName SERVER_URL
-    
-    SSLEngine on
-    SSLCertificateFile /usr/local/apache2/conf/ssl/SSL_CERTIFICATE
-    SSLCertificateKeyFile /usr/local/apache2/conf/ssl/SSL_CERT_KEY
-    SSLProtocol all -SSLv2 -SSLv3 -TLSv1 -TLSv1.1
-
-    ProxyPreserveHost On
-    ProxyPass / http://minio:MINIO_API_INNER_PORT/
-    ProxyPassReverse / http://minio:MINIO_API_INNER_PORT/
-</VirtualHost>
-
-# Ensure Apache listens on port APACHE_HTTPS_OUTER_PORT and APACHE_MINIO_OUTER_PORT
-Listen APACHE_HTTPS_OUTER_PORT
-Listen APACHE_MINIO_OUTER_PORT
-```
+Apache listens inside its container on the **outer** port numbers, so `APACHE_HTTPS_INNER_PORT` must be equal to `APACHE_HTTPS_OUTER_PORT` and `APACHE_MINIO_INNER_PORT` equal to `APACHE_MINIO_OUTER_PORT`.

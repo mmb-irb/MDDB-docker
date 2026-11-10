@@ -18,7 +18,7 @@ docker swarm init
 docker swarm init --advertise-addr <IP_ADDRESS>
 ```
 
-In order to execute the **long-term** tasks in **Docker Swarm** and the **one-off tasks**, such as the **loader** or the **workflow**, in **Docker Compose**, some of the **networks** are declared as **external** in the **docker-compose.yml** file, so they must be created before the `docker compose build` and the `docker stak deploy`:
+In order to execute the **long-term** tasks in **Docker Swarm** and the **one-off tasks**, such as the **loader** or the **workflow**, in **Docker Compose**, some of the **networks** are declared as **external** in the **docker-compose.yml** file, so they must be created before the `docker compose build` and the `docker stack deploy` (`metrics_network` is only needed by the metrics extensions):
 
 ```sh
 docker network create --driver overlay --attachable web_network
@@ -45,19 +45,22 @@ docker compose -f docker-compose.yml -f extensions/extension1.yml build
 
 ⚠️ If `# network: host  # Only during build` labels were enabled in the [**docker-compose.yml**](../docker-compose.yml) file, please **disable** them again **before deploying** for the sake of preserving **network isolation**. ⚠️ 
 
-Export environment variables defined in [**global .env file**](config.md#env-file) and deploy docker stack:
+Deploy the stack with the same compose files used for the build (`my_stack` is the `STACK_NAME` of the `.env`). The script checks the `.env` paths and the MongoDB image, shows what will be created and asks before deploying:
+
+```sh
+python3 scripts/stack-deploy.py -t my_stack [-c docker-compose.yml -c extensions/extension1.yml ...]
+```
+
+Or by hand, exporting the variables of the [**.env file**](config.md#env-file) first (add `-c docker-compose.node.yml` at the end if that file exists):
 
 ```sh
 set -a; source .env; set +a
-docker stack deploy -c docker-compose.yml my_stack
+docker stack deploy -c docker-compose.yml [-c extensions/extension1.yml] my_stack
 ```
 
-**Note:** for deploying **extension** services as well, please execute the following instructions instead:
+`docker stack deploy` ignores the `build`, `devices` and `security_opt` keys: the warnings about them are expected.
 
-```sh
-set -a; source .env; set +a
-docker stack deploy -c docker-compose.yml -c extensions/extension1.yml my_stack 
-```
+**First deploy:** the REST API connects to MongoDB only once, when it starts. If it started before MongoDB was ready, it answers `500` (log: `ENOTFOUND my_stack_mongodb`). When `my_stack_mongodb` shows `1/1`, restart it with `docker service update --force my_stack_rest`.
 
 ### Redeploying a running stack
 
@@ -103,14 +106,16 @@ Check services:
 ```sh
 $ docker stack services my_stack
 ID             NAME                MODE         REPLICAS               IMAGE                   PORTS
-<ID>           my_stack_apache     replicated   1/1                    apache_image:latest     *:80->80/tcp, *:443->443/tcp, *:7000->7000/tcp
-<ID>           my_stack_client     replicated   2/2                    client_image:latest     *:8080->80/tcp
-<ID>           my_stack_loader     replicated   0/0                    loader_image:latest     
-<ID>           my_stack_minio      replicated   1/1 (max 1 per node)   minio/minio:latest      *:9000-9001->9000-9001/tcp
-<ID>           my_stack_mongodb    replicated   1/1                    mongo:6                 *:27017->27017/tcp
-<ID>           my_stack_rest       replicated   4/4                    rest_image:latest       *:8081->3000/tcp
-<ID>           my_stack_vre_lite   replicated   1/1                    vre_lite_image:latest   *:8082->3001/tcp
-<ID>           my_stack_workflow   replicated   0/0                    workflow_image:latest  
+<ID>           my_stack_apache         replicated   1/1                    apache_image:latest            *:80->80/tcp, *:443->443/tcp, *:9000->9000/tcp
+<ID>           my_stack_client         replicated   2/2                    client_image:latest            *:8080->80/tcp
+<ID>           my_stack_loader         replicated   0/0                    loader_image:latest
+<ID>           my_stack_minio          replicated   1/1 (max 1 per node)   docker.io/pgsty/silo:latest    *:9001-9002->9001-9002/tcp
+<ID>           my_stack_mongo-backup   replicated   1/1                    mongo:8.0
+<ID>           my_stack_mongodb        replicated   1/1                    mongo:8.0
+<ID>           my_stack_rest           replicated   4/4                    rest_image:latest              *:8081->3000/tcp
+<ID>           my_stack_utils          replicated   0/0                    utils_image:latest
+<ID>           my_stack_vre_lite       replicated   1/1                    vre_lite_image:latest          *:8082->3001/tcp
+<ID>           my_stack_workflow       replicated   0/0                    workflow_image:latest
 ```
 
 Check nodes:
@@ -119,7 +124,9 @@ Check nodes:
 docker node ls
 ```
 
-⚠️ In case the environment variables **MONGO_CONTAINER_USER** and **MONGO_CONTAINER_GROUP** in the [**global .env**](config.md#env-file) were set to a different user than the standars `mongo / 999` or `root / 0`, the [**mongo-init.js**](../mongodb/mongo-init.js) won't be executed because it doesn't have the necessary permissions and it must be executed manually once the deploy is finished: ⚠️
+### Run mongo-init.js by hand
+
+[**mongo-init.js**](../mongodb/mongo-init.js) creates the database users the first time MongoDB starts on an empty `DB_VOLUME_PATH`. It must be run by hand once the deploy is finished if it did not run (the database folder was not empty, or **MONGO_CONTAINER_USER** / **MONGO_CONTAINER_GROUP** in the [**.env**](config.md#env-file) are not the standard `mongodb / 999` or `root / 0`). From the root of the repository:
 
 Get the **container id**:
 
@@ -130,17 +137,18 @@ docker ps --filter "label=com.docker.swarm.service.name=my_stack_mongodb"
 Execute **mongo-init.js**:
 
 ```sh
+set -a; source .env; set +a
 docker exec -it \
-  -e MONGO_INITDB_DATABASE=${DB_NAME} \
-  -e LOADER_DB_LOGIN=${LOADER_DB_LOGIN} \
-  -e LOADER_DB_PASSWORD=${LOADER_DB_PASSWORD} \
-  -e REST_DB_LOGIN=${REST_DB_LOGIN} \
-  -e REST_DB_PASSWORD=${REST_DB_PASSWORD} \
-  -e VRE_LITE_MONGO_DATABASE=${VRE_LITE_MONGO_DATABASE} \
-  -e VRE_LITE_DB_LOGIN=${VRE_LITE_DB_LOGIN} \
-  -e VRE_LITE_DB_PASSWORD=${VRE_LITE_DB_PASSWORD} \
+  -e MONGO_INITDB_DATABASE="$DB_NAME" \
+  -e LOADER_DB_LOGIN="$LOADER_DB_LOGIN" \
+  -e LOADER_DB_PASSWORD="$LOADER_DB_PASSWORD" \
+  -e REST_DB_LOGIN="$REST_DB_LOGIN" \
+  -e REST_DB_PASSWORD="$REST_DB_PASSWORD" \
+  -e MONGO_VRE_DATABASE="$VRE_LITE_MONGO_DATABASE" \
+  -e VRE_DB_LOGIN="$VRE_LITE_DB_LOGIN" \
+  -e VRE_DB_PASSWORD="$VRE_LITE_DB_PASSWORD" \
   <ID> \
-  mongosh -u ${MONGO_INITDB_ROOT_USERNAME} -p ${MONGO_INITDB_ROOT_PASSWORD} /docker-entrypoint-initdb.d/mongo-init.js
+  mongosh -u "$MONGO_INITDB_ROOT_USERNAME" -p "$MONGO_INITDB_ROOT_PASSWORD" --authenticationDatabase admin /docker-entrypoint-initdb.d/mongo-init.js
 ```
 
 **Update REST service** (as it was already running it needs to be restarted):
@@ -163,7 +171,7 @@ Once the installation is finished, it's time to **execute** and **check** the di
 
 ### Use workflow
 
-While the **mongodb**, **client** and **rest** containers will remain up, the **workflow** must be called every time is needed. As it is a **one-off task**, **Docker Compose** is used for running it.
+While the **mongodb**, **client** and **rest** containers will remain up, the **workflow** must be called every time it is needed. As it is a **one-off task**, **Docker Compose** is used for running it.
 
 Workflow **help**:
 
@@ -219,7 +227,7 @@ docker run --rm -e BUCKET=<BUCKET> --network minio_network -v <WORKFLOW_VOLUME_P
  
 ### Use loader
 
-While the **mongodb**, **client** and **rest** containers will remain up, the **loader** must be called every time is needed. As it is a **one-off task**, **Docker Compose** is used for running it.
+While the **mongodb**, **client** and **rest** containers will remain up, the **loader** must be called every time it is needed. As it is a **one-off task**, **Docker Compose** is used for running it.
 
 **List** database documents:
 
@@ -298,7 +306,7 @@ Every backup is written under a `.partial` name and only renamed once all its st
 For performing a **single mongodump**, please execute:
 
 ```sh
-docker run --rm --name mongo-dump -e MONGO_INITDB_ROOT_USERNAME=${MONGO_INITDB_ROOT_USERNAME} -e MONGO_INITDB_ROOT_PASSWORD=${MONGO_INITDB_ROOT_PASSWORD} -e MONGO_PORT=${DB_OUTER_PORT} -e MONGO_INITDB_DATABASE=${DB_AUTHSOURCE} -e DB_HOST=${DB_SERVER} -e BACKUP_DIR=/backup -v ${DB_BACKUP_VOLUME_PATH}:/backup -v $(pwd)/mongodb/mongodump_script.sh:/mongodump_script.sh:ro --cpus "${DB_BACKUP_CPU_LIMIT}" --memory "${DB_BACKUP_MEMORY_LIMIT}" --network data_network --security-opt label=disable mongo:latest bash -c "sh /mongodump_script.sh"
+docker run --rm --name mongo-dump -e MONGO_INITDB_ROOT_USERNAME=${MONGO_INITDB_ROOT_USERNAME} -e MONGO_INITDB_ROOT_PASSWORD=${MONGO_INITDB_ROOT_PASSWORD} -e MONGO_PORT=${DB_OUTER_PORT} -e MONGO_INITDB_DATABASE=${DB_AUTHSOURCE} -e DB_HOST=${DB_SERVER} -e BACKUP_DIR=/backup -v ${DB_BACKUP_VOLUME_PATH}:/backup -v $(pwd)/mongodb/mongodump_script.sh:/mongodump_script.sh:ro --cpus "${DB_BACKUP_CPU_LIMIT}" --memory "${DB_BACKUP_MEMORY_LIMIT}" --network data_network --security-opt label=disable mongo:8.0 bash -c "sh /mongodump_script.sh"
 ```
 
 > NOTE: Depending of the size of the database, this operation can take hours, days and even weeks.
@@ -354,14 +362,14 @@ If services are already online, go to:
 In terminal, do:
 
 ```
-curl -f http://localhost:9000/minio/health/live
+curl -f http://localhost:9002/minio/health/live
 ```
 
-Or modify the port 9000 by the one defined as **MINIO_API_OUTER_PORT** in the [**.env**](../.env.docker.git) file. 
+Or modify the port 9002 by the one defined as **MINIO_API_OUTER_PORT** in the [**.env**](../.env.docker.git) file.
 
-If services are already online, do:
+From outside, through Apache, use the **APACHE_MINIO_OUTER_PORT** (e.g. 9000):
 
-    curl -f http(s)://your_server_ip:9000/minio/health/live
+    curl -f https://your_domain:9000/minio/health/live
 
 ### Check VRE lite
 
@@ -381,7 +389,7 @@ If services are already online, go to:
 
 ### Use utils
 
-While the **mongodb**, **client** and **rest** containers will remain up, the **utils** must be called every time is needed. As it is a **one-off task**, **Docker Compose** is used for running it.
+While the **mongodb**, **client** and **rest** containers will remain up, the **utils** must be called every time it is needed. As it is a **one-off task**, **Docker Compose** is used for running it.
 
 **Show help** for utils:
 
@@ -410,7 +418,7 @@ docker run --rm utils_image list
 **Run** scripts:
 
 ```sh
-docker compose run --rm run <script.py> [args]
+docker compose run --rm utils run <script.py> [args]
 ```
 
 For example, for updating the version of the client to 1.2.0 in the VRE lite DB:
@@ -464,10 +472,10 @@ CONTAINER ID   IMAGE                   COMMAND                  CREATED        S
 <ID>           rest_image:latest       "pm2-runtime start i…"   17 hours ago   Up 17 hours             3000/tcp                    my_stack_rest.1.<ID>
 <ID>           rest_image:latest       "pm2-runtime start i…"   17 hours ago   Up 17 hours             3000/tcp                    my_stack_rest.3.<ID>
 <ID>           rest_image:latest       "pm2-runtime start i…"   17 hours ago   Up 17 hours             3000/tcp                    my_stack_rest.4.<ID>
-<ID>           mongo:6                 "docker-entrypoint.s…"   17 hours ago   Up 17 hours             27017/tcp                   my_stack_mongodb.1.<ID>
+<ID>           mongo:8.0               "docker-entrypoint.s…"   17 hours ago   Up 17 hours             27017/tcp                   my_stack_mongodb.1.<ID>
 <ID>           client_image:latest     "/docker-entrypoint.…"   17 hours ago   Up 17 hours             80/tcp                      my_stack_client.2.<ID>
 <ID>           client_image:latest     "/docker-entrypoint.…"   17 hours ago   Up 17 hours             80/tcp                      my_stack_client.1.<ID>
-<ID>           minio/minio:latest      "/usr/bin/docker-ent…"   17 hours ago   Up 17 hours (healthy)   9000/tcp                    my_stack_minio.1.<ID>
+<ID>           pgsty/silo:latest       "/entrypoint.sh"        17 hours ago   Up 17 hours (healthy)   9000/tcp                    my_stack_minio.1.<ID>
 <ID>           apache_image:latest     "httpd-foreground"       17 hours ago   Up 17 hours             80/tcp, 443/tcp, 7000/tcp   my_stack_apache.1.<ID>
 <ID>           vre_lite_image:latest   "/app/entrypoint.sh"     17 hours ago   Up 17 hours             3001/tcp                    my_stack_vre_lite.1.<ID>
 ```

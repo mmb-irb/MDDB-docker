@@ -358,14 +358,14 @@ If services are already online, go to:
 In terminal, do:
 
 ```
-curl -f http://localhost:9000/minio/health/live
+curl -f http://localhost:9002/minio/health/live
 ```
 
-Or modify the port 9000 by the one defined as **MINIO_API_OUTER_PORT** in the [**.env**](../.env.podman.git) file. 
+Or modify the port 9002 by the one defined as **MINIO_API_OUTER_PORT** in the [**.env**](../.env.podman.git) file. 
 
 If services are already online, do:
 
-    curl -f http(s)://your_server_ip:9000/minio/health/live
+    curl -f https://your_domain:<APACHE_MINIO_OUTER_PORT>/minio/health/live
 
 ### Check VRE lite
 

@@ -1,6 +1,22 @@
 # Set Up Storage
 
-Many storages are needed before building and deploying the docker containers. 
+Several folders are needed before building and deploying the services. The simplest layout is one main storage path with these folders, which are the ones the `.env` variables point to:
+
+```
+/path/to/volume/
+├── certs/          APACHE_CERTS_VOLUME_PATH   TLS certificate and key
+├── data/           WORKFLOW_VOLUME_PATH and LOADER_VOLUME_PATH
+├── db/             DB_VOLUME_PATH             MongoDB data
+├── db_backup/      DB_BACKUP_VOLUME_PATH      MongoDB backups (better on another disk)
+├── logs/           VRE_LITE_VOLUME_PATH       VRE lite logs
+└── minio/disk1/    MINIO_VOLUME_PATH1         MinIO data (uploads)
+```
+
+```sh
+mkdir -p /path/to/volume/{certs,data,db,db_backup,logs,minio/disk1}
+```
+
+The MongoDB database and MinIO grow with the data loaded in the node: plan for **terabytes** in production.
 
 * [Docker](#docker)
 * [MinIO](#minio)
@@ -32,6 +48,8 @@ And inside this folder, as many **volumes** as **disks** defined in the [**docke
 > /path/to/volume/minio/disk1
 
 As MinIO allows a **multi-drive** configuration, it will **distribute** the data amongst these **volumes**.
+
+⚠️ MinIO needs a **local disk**, a virtual disk or an **NFS export mounted directly** in the VM. Some shared folders (seen with a virtiofs share) accept small files but make every upload bigger than 8 MB fail (`InvalidPart`). Test the storage before using it, e.g. by uploading a file of 100 MB once the node is running.
 
 ## MongoDB
 
@@ -71,7 +89,13 @@ In the **volume** where the data is stored, create the following **/certs folder
 
 > /path/to/volume/certs
 
-In this folder must be stored the **SSL/TSL** certificates that the **apache docker** will use for configuring **https** protocol.
+```sh
+cp fullchain.pem privkey.pem /path/to/volume/certs/
+chmod 600 /path/to/volume/certs/privkey.pem
+openssl x509 -in /path/to/volume/certs/fullchain.pem -noout -subject -enddate -ext subjectAltName   # check names and expiry
+```
+
+Their file names go in `SSL_CERTIFICATE` and `SSL_CERT_KEY` of the `.env`. In this folder must be stored the **SSL/TLS** certificate (full chain) and private key that the **apache docker** will use for configuring **https** protocol.
 
 ### Let's Encrypt (automatic renewal)
 

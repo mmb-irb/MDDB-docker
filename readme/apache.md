@@ -1,5 +1,7 @@
 # Installation and configuration of Apache
 
+> **Note:** the stack already includes an Apache service, configured from the `.env`, and this is what a normal node uses. Follow this guide only if you want to run Apache **directly in the VM** instead, in front of the published ports of the services.
+
 ## Apache installation
 
 These are the steps to install Apache on **Ubuntu 22.04** or superior. 
@@ -137,8 +139,8 @@ Once the file is opened with an editor (vim in this case), please remove all the
     </Location>
 
     <Location /minioapi/ >
-        ProxyPass http://127.0.0.1:9000/
-        ProxyPassReverse http://127.0.0.1:9000/
+        ProxyPass http://127.0.0.1:9002/
+        ProxyPassReverse http://127.0.0.1:9002/
     </Location>
 
     # WebSocket proxy settings
@@ -176,8 +178,8 @@ Once the file is opened with an editor (vim in this case), please remove all the
     </Location>
 
     <Location /minioapi/ >
-        ProxyPass http://127.0.0.1:9000/
-        ProxyPassReverse http://127.0.0.1:9000/
+        ProxyPass http://127.0.0.1:9002/
+        ProxyPassReverse http://127.0.0.1:9002/
     </Location>
 
     # WebSocket proxy settings
@@ -200,9 +202,9 @@ Note the following ports:
 
 * **8080** is the output port for the [**client docker**](../client)
 * **8081** is the output port for the [**REST API docker**](../rest)
-* **8082** is the output port for the [**VRE docker**](../vre)
+* **8082** is the output port for the [**VRE lite docker**](../vre_lite)
 * **9001** is the output port for the **MinIO WebUI**, not recommended for using in production
-* **9000** is the output port for the **MinIO API**
+* **9002** is the output port for the **MinIO API** (`MINIO_API_OUTER_PORT`)
 
 These ports can be changed, but in this case, please change them as well in the [**.env**](../.env.docker.git) file.
 

@@ -68,7 +68,7 @@ All commands are run from the **repo root** and overlay the extension on the mai
 | `BLACKBOX_REPLICAS` | `0` | Optional blackbox exporter (HTTP probing): `0` = not deployed, `1` = deployed | `0` or `1` |
 | `PROM_URL` | `http://monitoring-central:9090/api/v1/write` | `remote` mode only: central Prometheus remote_write endpoint the node pushes to (see the Apache receiver below) | `https://central.mddbr.eu/prometheus/api/v1/write` |
 | `PROM_USER` | _(none)_ | basic_auth username for remote_write: sent by nodes, validated by Apache on the central host | `mddb_nodes` |
-| `PROM_PASS` | _(none)_ | basic_auth password: sent by nodes (injected into prometheus-remote.yml); Apache generates its htpasswd file from this at startup | `s3cret` |
+| `PROM_PASS` | _(none)_ | basic_auth password: sent by nodes (injected into prometheus-remote.yml); also used to generate `apache/prometheus.htpasswd` by hand (step 2) | `s3cret` |
 | `REST_OTEL_ENDPOINT` | `http://otel-collector:4318/v1/logs` | REST API logs destination (OTLP/HTTP endpoint) | `http://central-ip:4318/v1/logs` |
 | `GF_AUTH_GOOGLE_*` | disabled | Grafana Google OAuth (central host only) | see template |
 | `GF_SMTP_*` | disabled | Grafana SMTP for alert emails (central host only) | see template |
@@ -87,6 +87,7 @@ Runs both the Grafana stack (visualization) and the exporter stack in `local` Pr
     ```bash
     htpasswd -nb "${PROM_USER}" "${PROM_PASS}" > apache/prometheus.htpasswd
     ```
+    The mount of this file in Apache and the `/prometheus` block of the Apache configuration are commented out by default: enable the mount (`./apache/prometheus.htpasswd:/usr/local/apache2/conf/prometheus.htpasswd:ro`) in `docker-compose.node.yml` and uncomment the block in the Apache configuration, then rebuild Apache.
     Apache enforces basic_auth on `/prometheus/api/v1/write` using this file. Prometheus itself runs without auth — Grafana and local `curl` reach port 9090 freely.
 3. **Start the stacks:**
     ```bash

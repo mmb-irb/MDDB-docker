@@ -145,12 +145,12 @@ python3 scripts/rebuild-legacy.py -h
 Example for rollback to the **version 0.0.1** of the **client** service from the **my_stack** stack: 
 
 ```sh
-python3 scripts/rebuild-legacy.py -s client vre_lite -v 0.0.1 -t my_stack
+python3 scripts/rebuild-legacy.py -s client -v 0.0.1 -t my_stack
 ```
 
 ## vre_lite and rest without root
 
-Since mddb-vre **0.0.7**, the **vre_lite** and **rest** images run as an unprivileged user (uid **65532**, the usual "nonroot" uid of container images; 10001 is a real user on the IRB machines), and vre_lite no longer mounts the Docker socket: it checks the other services over HTTP.
+Since mddb-vre **0.0.7**, the **vre_lite** and **rest** images run as an unprivileged user (uid **65532**, the usual "nonroot" uid of container images), and vre_lite no longer mounts the Docker socket: it checks the other services over HTTP.
 
 When updating an **existing Docker Swarm node** to these images, do this once:
 

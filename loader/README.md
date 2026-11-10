@@ -1,6 +1,6 @@
 # Loader
 
-The **data loader** is a  **node JS script** made for load, list and remove data from a mongodb database.
+The **data loader** is a **Node.js** tool to load, list and remove data from the MongoDB database (its image also has GROMACS, from a conda environment).
 
 For this project, the following repo has been used:
 

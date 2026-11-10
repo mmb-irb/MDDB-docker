@@ -11,6 +11,7 @@ Ie when developing and doing changes in git repo.
 1. Stop all containers and remove all images: 
 
     ```sh
+    docker stack rm my_stack
     docker compose down --rmi all
     ```
 
@@ -18,6 +19,7 @@ Ie when developing and doing changes in git repo.
 
     ```sh
     docker compose build --no-cache
+    ```
 
 3. Rebuild a single service avoiding cache but preserving the rest of services (only service_name has changed):
 
@@ -25,9 +27,9 @@ Ie when developing and doing changes in git repo.
     docker compose build --no-cache <service_name>
     ```
 
-4. Up services:
+4. Deploy the stack again (the services run in Docker Swarm, not with `docker compose up`):
     ```sh
-    docker compose up -d
+    python3 scripts/stack-deploy.py -t my_stack
     ```
 
 ## Clean docker
@@ -162,7 +164,7 @@ Additionally, users are able to access the database as a **root/admin** user, as
 
     mongosh --username <ROOT_USER> --password <ROOT_PASSWORD>
 
-Take into account that acessing mongoDB as **root/admin** user is **not recommended** as with this user there are **no restrictions** once inside the database. We strongly recommend to use the **users** defined in the [**mongo-init.js**](../mongodb/mongo-init.js) file for accessing the database.
+Take into account that accessing mongoDB as **root/admin** user is **not recommended** as with this user there are **no restrictions** once inside the database. We strongly recommend to use the **users** defined in the [**mongo-init.js**](../mongodb/mongo-init.js) file for accessing the database.
 
 ## Add new user to Mongo
 
@@ -185,7 +187,7 @@ docker exec -it <mongo_container_ID> mongosh \
 
 If there is a previous version of the database it can be copied into the **my_stack_mongodb** service. This is the instruction for performing a `mongorestore` from a **mongo dump**:
 
-    docker run --rm --network data_network -v <PATH_TO_MONGODUMP>:/dump mongo mongorestore --host my_stack_mongodb --port 27017 --username <ROOT_USER> --password <ROOT_PASSWORD> --authenticationDatabase admin --db <DB_TO_RESTORE> /dump/<DB_TO_RESTORE>
+    docker run --rm --network data_network -v <PATH_TO_MONGODUMP>:/dump mongo:8.0 mongorestore --host my_stack_mongodb --port 27017 --username <ROOT_USER> --password <ROOT_PASSWORD> --authenticationDatabase admin --db <DB_TO_RESTORE> /dump/<DB_TO_RESTORE>
 
 * **PATH_TO_MONGODUMP:** Path to the mongo dump.
 * **ROOT_USER:** Root user for the DB.
@@ -200,7 +202,7 @@ The MongoDB port is **closed by default** for security purposes. If needed, it c
 docker service update --publish-add mode=host,published=27017,target=27017 my_stack_mongodb
 ```
 
-Check that the **27017 port** is efectively open:
+Check that the **27017 port** is effectively open:
 
 ```sh
 $ ss -tuln | grep 27017

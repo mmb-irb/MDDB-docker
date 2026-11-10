@@ -1,38 +1,34 @@
- # Set Up Virtual Machine
+# Set Up Virtual Machine
 
- It's highly recommended to have installed **Ubuntu 18.04 or superior** in this Virtual Machine, though the services should work in other **Linux** distributions. It is mandatory as well to have a **non-root** user with **sudo** privileges.
+## Requirements
+
+* **Linux** with a **non-root** user with **sudo** privileges. **Ubuntu 22.04 / 24.04** is recommended; the services should work on any distribution supported by Docker.
+* A **CPU with AVX** (MongoDB 5 and newer crash with `Illegal instruction` without it). Check it with `grep -wo avx /proc/cpuinfo | head -1`. On a virtual machine, if nothing is printed, ask the VM admin to set the CPU type to `host` (or `x86-64-v3`) and power-cycle the VM.
+* **Disk**: tens of GB where Docker keeps its images (`/var/lib/docker` and `/var/lib/containerd`, see [Change Docker Root Dir](#change-docker-root-dir-optional)), plus the space for the data (see [storage](storage.md)).
+* **Outbound internet access** to GitHub, Docker Hub, PyPI, npm and NodeSource: the images are built from the source code of each service.
+* The **clock synchronised** (NTP): MinIO rejects requests from clients whose clock differs from the server's.
 
 ## Installation of Docker and Docker Compose
 
+[scripts/docker-install.py](../scripts/docker-install.py) runs these steps for you (Ubuntu, Debian, Rocky / AlmaLinux / RHEL, CentOS and Fedora), adds your user to the `docker` group and, with `--root-dir /path/to/volume`, does the [Change Docker Root Dir](#change-docker-root-dir-optional) step too.
+
+These are the steps to install Docker on **Ubuntu**. Always refer to [Docker's official installation guide](https://docs.docker.com/engine/install/) for other distributions or if the steps below fail. Docker Compose is installed as a Docker plugin (`docker compose`, with a space).
+
 ### Docker installation
 
-These are the steps to install Docker on **Ubuntu 24.04**. Note that the official documentation might be slightly different, specially if trying to install docker into another Ubuntu version, so always refer to [Docker's official installation guide](https://docs.docker.com/engine/install/) for the most up-to-date instructions.
-
-#### Update the APT package index
-
     sudo apt-get update
-
-#### Install required packages
-
-Install packages that allow **apt** to use repositories over HTTPS:
-
-    sudo apt-get install apt-transport-https ca-certificates curl software-properties-common -y
-
-#### Add Docker’s official GPG key
-
-    curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
-
-#### Set up the stable repository
-
-    echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
-
-#### Update the APT package index again
-
+    sudo apt-get install -y ca-certificates curl
+    sudo install -m 0755 -d /etc/apt/keyrings
+    sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+    sudo chmod a+r /etc/apt/keyrings/docker.asc
+    echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
     sudo apt-get update
+    sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
 
-#### Install Docker Engine
+Check the installation:
 
-    sudo apt-get install docker-ce docker-ce-cli containerd.io -y
+    docker --version
+    docker compose version
 
 ### Post-installation steps
 
@@ -64,32 +60,6 @@ You can verify that your user is part of the docker group by running:
 
     sudo systemctl restart docker
 
-### Docker Compose installation
-
-In Linux, Docker Compose is not included into the Docker installation, so please follow the next steps for installing it in your VM:
-
-#### Update the package index
-
-    sudo apt-get update
-
-#### Download Docker Compose
-
-You need to download the **specific version** of Docker Compose. You can find the latest version on the [Docker Compose releases page](https://github.com/docker/compose/releases). At the time of writing, the latest version is **v2.21.0**. Adjust the version number in the command below if there is a newer version.
-
-    sudo curl -L "https://github.com/docker/compose/releases/download/v2.21.0/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-
-#### Apply executable permissions to the binary
-
-    sudo chmod +x /usr/local/bin/docker-compose
-
-#### Create a symbolic link to /usr/bin for convenience 
-
-    sudo ln -s /usr/local/bin/docker-compose /usr/bin/docker-compose
-
-#### Verify the installation
-
-    docker-compose --version
-
 ### Change Docker Root Dir (optional)
 
 Sometimes the **VM** has not enough space to store all the docker images, so it could be a **good practice** to move the **Docker Root Dir**:
@@ -117,7 +87,7 @@ Create **symbolic links** so that Docker continues to look in `/var/lib/docker` 
     sudo ln -s /path/to/volume/docker /var/lib/docker
     sudo ln -s /path/to/volume/containerd /var/lib/containerd
 
-### Start docker
+#### Start docker
 
 Now that Docker is configured to use the external disk, **start** the Docker service again:
 
@@ -130,6 +100,15 @@ Now that Docker is configured to use the external disk, **start** the Docker ser
 
 You should see the new location, e.g., `/path/to/volume/docker`.
 
-## Installation and configuration of Apache
+## Firewall and ports
 
-Though Apache will be installed in the Docker Swarm, [**click here**](apache.md) in case you want to install Apache separately in the VM.
+Open to the users only the ports served by the Apache container: **443** (website, REST API, VRE lite), **80** (redirect to https and Let's Encrypt), and the MinIO API port (`APACHE_MINIO_OUTER_PORT`, e.g. **9000**). Check them from outside the VM with:
+
+    nc -zv <vm_ip> 443
+    nc -zv <vm_ip> 9000
+
+The other published ports (8080, 8081, 8082, 9001, 9002) are for debugging from the VM itself. Docker inserts its own firewall rules ahead of `ufw` / `firewalld`, so these do not block them: filter them in the `DOCKER-USER` iptables chain or in the network firewall.
+
+## Apache outside Docker (optional)
+
+Apache is already one of the services of the stack. Only if you want to use an Apache installed directly in the VM instead, see [these instructions](apache.md).
