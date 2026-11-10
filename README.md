@@ -31,11 +31,11 @@ https://github.com/mmb-irb/MDDB-REST-API/
 
 ### Website client
 
-The **website client** is a **React App**.
+The **website client** is a **React App**, built from its source code when the client image is built. Each node can have its own configuration in `client/host-config.js` (see the [client README](client/README.md)).
 
 For this project, the following repo has been used:
 
-https://github.com/mmb-irb/mdposit-client-build/
+https://github.com/mmb-irb/MDposit-client/
 
 ### Data loader
 

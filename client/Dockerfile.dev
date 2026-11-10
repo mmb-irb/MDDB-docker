@@ -23,7 +23,18 @@ COPY MDposit-client ./MDposit-client
 # Define working directory
 WORKDIR /app/MDposit-client
 
-# Create .env file
+# If there is a node host configuration file (client/host-config.js) then the client uses it instead of its default one
+# The client takes it from host-config.js at its repository root
+# The wildcard makes host-config.js optional (COPY only fails when none of its sources exist)
+COPY Dockerfile.dev host-config.j[s] /app/context/
+RUN if [ -f /app/context/host-config.js ]; then cp /app/context/host-config.js host-config.js; fi
+
+# Node specific images (client/images/), which host-config.js imports from 'src/images/untracked/...'
+# Dockerfile.dev is copied only so that COPY does not fail when there is no images folder
+COPY Dockerfile.dev image[s] /app/node-images/
+RUN rm /app/node-images/Dockerfile.dev && mkdir -p src/images/untracked && cp -r /app/node-images/. src/images/untracked/
+
+# Create .env file
 RUN touch .env
 
 # Install packages

@@ -5,6 +5,8 @@
 /apache/certs
 client/mdposit_client
 client/build
+client/host-config.js
+client/images
 /cronjobs
 /logs
 __pycache__

@@ -15,7 +15,8 @@ run every command below through `ssh <alias> '...'`, and copy the helper scripts
 
 ## Ground rules
 
-- **Never modify this repository for one node.** Node-specific values go in `.env` (git-ignored). If a
+- **Never modify this repository for one node.** Node-specific values go in `.env` and the client
+  configuration in `client/host-config.js` (both git-ignored). If a
   node needs a compose change, put it in an override file outside the repo and add it with `-f` / `-c`.
   A bug that affects every node is fixed upstream, by its maintainers.
 - **Secrets**: `.env` holds passwords. Never print it, commit it, or paste its values into the chat.
@@ -96,6 +97,12 @@ are easy to get wrong:
   `VRE_LITE_DB_SERVER`: always `<stack>_mongodb`.
 - `*_VOLUME_PATH*`: the folders from step 4. `MINIO_VOLUME_PATH1` must have passed the multipart test.
 - Every password: generated, different from the others, never a template default.
+
+Client configuration: create `client/host-config.js` from one of the client examples
+(`example-single-host-config.js` or `example-multiple-host-config.js` in MDposit-client) with the name, logo
+label, colors, contacts and footers of this node, and put its own images in `client/images/`; see
+`client/README.md`. Without it the client uses its generic default configuration (MDposit look, API in the
+same domain). It needs MDposit-client v0.0.22 or newer.
 
 Then validate without starting anything:
 

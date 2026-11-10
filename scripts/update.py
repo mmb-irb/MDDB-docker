@@ -14,7 +14,7 @@ class VersionChecker:
     def __init__(self, tag: Optional[str] = None):
         # Configuration: service_name -> (github_org, github_repo, docker_image)
         self.services = {
-            "client": ("mmb-irb", "MDposit-client-build", "client_image"),
+            "client": ("mmb-irb", "MDposit-client", "client_image"),
             "rest": ("mmb-irb", "MDDB-REST-API", "rest_image"),
             "vre_lite": ("mmb-irb", "MDDB-VRE", "vre_lite_image"),
             "loader": ("mmb-irb", "MDDB-loader", "loader_image"),
