@@ -155,7 +155,7 @@ podman build -t utils_image ./utils
 **Before** building **VRE lite**, deploy **MinIO** in order to get the **IP address** of this service:
 
 ```sh
-podman run -d --name minio -e MINIO_ROOT_USER=${MINIO_ROOT_USER} -e MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD} -e MINIO_BROWSER_REDIRECT_URL=${MINIO_BROWSER_REDIRECT_URL} -e MINIO_API_INNER_PORT=${MINIO_API_INNER_PORT} -e MINIO_UI_INNER_PORT=${MINIO_UI_INNER_PORT} -e MINIO_USER=${MINIO_USER} -e MINIO_PASSWORD=${MINIO_PASSWORD} -p ${MINIO_API_OUTER_PORT}:${MINIO_API_INNER_PORT} -p ${MINIO_UI_INNER_PORT}:${MINIO_UI_INNER_PORT} -v ${MINIO_VOLUME_PATH1}:/mnt/disk1:Z -v $(pwd)/minio/init-minio.sh:/entrypoint.sh --network minio_network --network web_network --hostname minio --entrypoint /entrypoint.sh --healthcheck-command "curl -f http://localhost:${MINIO_API_INNER_PORT}/minio/health/live" --healthcheck-interval 10s --healthcheck-timeout 2s --healthcheck-retries 5 docker.io/pgsty/minio:latest
+podman run -d --name minio -e MINIO_ROOT_USER=${MINIO_ROOT_USER} -e MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD} -e MINIO_BROWSER_REDIRECT_URL=${MINIO_BROWSER_REDIRECT_URL} -e MINIO_API_INNER_PORT=${MINIO_API_INNER_PORT} -e MINIO_UI_INNER_PORT=${MINIO_UI_INNER_PORT} -e MINIO_USER=${MINIO_USER} -e MINIO_PASSWORD=${MINIO_PASSWORD} -p ${MINIO_API_OUTER_PORT}:${MINIO_API_INNER_PORT} -p ${MINIO_UI_INNER_PORT}:${MINIO_UI_INNER_PORT} -v ${MINIO_VOLUME_PATH1}:/mnt/disk1:Z -v $(pwd)/minio/init-minio.sh:/entrypoint.sh --network minio_network --network web_network --hostname minio --entrypoint /entrypoint.sh --healthcheck-command "curl -f http://localhost:${MINIO_API_INNER_PORT}/minio/health/live" --healthcheck-interval 10s --healthcheck-timeout 2s --healthcheck-retries 5 docker.io/pgsty/silo:latest
 ```
 
 ### VRE lite
@@ -400,7 +400,7 @@ $ podman ps -a
 CONTAINER ID  IMAGE                            COMMAND               CREATED         STATUS                PORTS                                                           NAMES
 <ID>          localhost/mongo_image:latest                           2 hours ago     Up 2 hours            0.0.0.0:27017->27017/tcp                                        mongodb
 <ID>          localhost/client_image:latest    nginx -g daemon o...  2 hours ago     Up 2 hours            0.0.0.0:8080->80/tcp                                            client
-<ID>          docker.io/pgsty/minio:latest                           2 hours ago     Up 2 hours (healthy)  0.0.0.0:9001-9002->9001-9002/tcp                                minio
+<ID>          docker.io/pgsty/silo:latest                            2 hours ago     Up 2 hours (healthy)  0.0.0.0:9001-9002->9001-9002/tcp                                minio
 <ID>          localhost/apache_image:latest    httpd-foreground      2 hours ago     Up 2 hours            0.0.0.0:21402->21402/tcp, 0.0.0.0:21411-21412->21411-21412/tcp  apache
 <ID>          localhost/rest_image:latest      pm2-runtime start...  58 minutes ago  Up 58 minutes         0.0.0.0:8081->3000/tcp                                          rest
 <ID>          localhost/vre_lite_image:latest                        3 seconds ago   Up 4 seconds          0.0.0.0:8082->3001/tcp                                          vre_lite

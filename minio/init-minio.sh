@@ -2,8 +2,11 @@
 
 echo "Initializing MinIO client..."
 
+# Server binary: 'silo' in pgsty/silo (the maintained MinIO fork, it has no 'minio' alias), 'minio' in older images
+MINIO_BIN=$(command -v silo || command -v minio)
+
 # Start MinIO server in the background
-minio server --address ":${MINIO_API_INNER_PORT}" --console-address ":${MINIO_UI_INNER_PORT}" /mnt/disk1 &
+"$MINIO_BIN" server --address ":${MINIO_API_INNER_PORT}" --console-address ":${MINIO_UI_INNER_PORT}" /mnt/disk1 &
 # minio server --address ":${MINIO_API_INNER_PORT}" --console-address ":${MINIO_UI_INNER_PORT}" /mnt/disk{1...4} &  # For single node, multi-drive configuration
 # minio server --address ":${MINIO_API_INNER_PORT}" --console-address ":${MINIO_UI_INNER_PORT}" http://minio{1...3}/mnt/disk{1...4} &   # For multiple nodes (ie 3 nodes), multi-drive configuration
 
