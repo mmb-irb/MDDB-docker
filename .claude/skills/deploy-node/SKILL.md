@@ -64,8 +64,7 @@ deploying; explain each `WARN` to the user. The most important checks, all learn
 
 ## 3. Install Docker (only if missing)
 
-`python3 scripts/docker-deploy.py -d` (Ubuntu, needs sudo) or the distribution's official Docker packages
-(`readme/setup.md`). The user must be in the `docker` group. Docker keeps images in **both**
+`python3 scripts/docker-install.py [--root-dir <storage>]` (needs sudo; Ubuntu, Debian, RHEL family, Fedora) or the distribution's official Docker packages with the Compose plugin (`readme/setup.md`). The user must be in the `docker` group. Docker keeps images in **both**
 `/var/lib/docker` and `/var/lib/containerd`; the builds need tens of GB there.
 
 ## 4. Storage and certificates
@@ -84,7 +83,7 @@ Note the expiry date for the user.
 
 ## 5. Configure `.env`
 
-Start from `.env.docker.git` (copy to `.env`), or let `sudo python3 scripts/docker-deploy.py -s` ask for
+Start from `.env.docker.git` (copy to `.env`), or let `sudo python3 scripts/docker-deploy.py` ask for
 the main values interactively; either way, review every variable against `readme/config.md`. Rules that
 are easy to get wrong:
 

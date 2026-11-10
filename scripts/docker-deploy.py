@@ -1,28 +1,42 @@
+#!/usr/bin/env python3
+"""Create the storage folders and the .env of a new node, then build and deploy the Docker Swarm stack.
+
+    python3 scripts/docker-deploy.py [-r]
+
+Run it from the root of the repository. Without a .env it asks for the main values (storage path,
+certificates, node name, domain, users...) and creates the .env from .env.docker.git; review the whole
+file afterwards against readme/config.md. With a .env it uses it as it is.
+
+Then it initialises the swarm, creates the networks, builds the images and deploys the stack with
+scripts/stack-deploy.py (which checks the paths and the MongoDB image, and adds docker-compose.node.yml).
+
+-r first REMOVES the stack, leaves the swarm and deletes all the Docker cache (images, build cache,
+unused volumes and networks). Never use it on a node with services you want to keep.
+"""
+
 import argparse
 import os
+import secrets
+import shutil
 import subprocess
-import time
 import sys
+import time
 
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-import mongo_check  # noqa: E402
-import paths_check  # noqa: E402
+TEMPLATE = '.env.docker.git'
+ENV = '.env'
+NETWORKS = ['data_network', 'minio_network', 'web_network']
 
 
-def check_file_exists(fname, warning=False):
-    # Check if .env file exists and has all variables filled
-    if not os.path.exists(fname):
-        if warning:
-            print(f"Error: {fname} file does not exist.")
-        return False
-    return True
+def run(cmd, **kwargs):
+    """Run a command and stop on any error."""
+    print('+ ' + (cmd if isinstance(cmd, str) else ' '.join(cmd)), flush=True)
+    return subprocess.run(cmd, check=True, **kwargs)
 
 
 def read_env_file(file_path):
     env_vars = {}
     with open(file_path) as f:
         for line in f:
-            # Strip whitespace and ignore comments and empty lines
             line = line.strip()
             if line and not line.startswith('#'):
                 key, value = line.split('=', 1)
@@ -30,302 +44,232 @@ def read_env_file(file_path):
     return env_vars
 
 
-def check_path(path):
-    if not os.path.exists(path):
-        print(f"Error: {path} does not exist.")
-        return False
-    return True
-
-
-def set_main_path():
-    while True:
-        main_path = input("Enter the main path for the storage system. This script will create all the necessary folders for the services in this path: ")
-        if not main_path.strip():
-            print("The main path cannot be empty. Please enter an existing path.")
-            continue
-        if not os.path.exists(main_path):
-            print(f"Error: The path {main_path} does not exist. Please enter a valid path or create it.")
-            continue
-        return main_path
-
-
-def save_env_vars_to_file(env_vars, file_path):
+def write_env_file(template, values, file_path):
+    """Write the template with the given values, keeping its comments and order."""
+    lines, done = [], set()
+    with open(template) as f:
+        for line in f:
+            key = line.split('=', 1)[0].strip()
+            if '=' in line and not line.lstrip().startswith('#') and key in values:
+                line = f"{key}={values[key]}\n"
+                done.add(key)
+            lines.append(line)
+    missing = set(values) - done
+    if missing:
+        raise KeyError(f"{', '.join(sorted(missing))} not found in {template}")
     with open(file_path, 'w') as f:
-        for key, value in env_vars.items():
-            f.write(f"{key}={value}\n")
-    # Give 666 permissions to the .env file
-    if 'SUDO_USER' in os.environ:
-        subprocess.run(['sudo', 'chmod', '664', file_path])
+        f.writelines(lines)
+    os.chmod(file_path, 0o600)   # it holds passwords
+    owner = os.environ.get('SUDO_USER')
+    if owner:
+        shutil.chown(file_path, owner, owner)
 
 
-def poll_minio(minio_port):
-    # Poll until MinIO is up and running
+def ask(label, default=None):
+    """Ask for a value; without a default it cannot be empty."""
+    prompt = f"{label} (default: {default}): " if default is not None else f"{label}: "
     while True:
-        result = subprocess.run(['curl', '-s', f'http://127.0.0.1:{minio_port}/minio/health/live'], capture_output=True)
-        if result.returncode == 0:
-            print("MinIO is up and running.")
+        value = input(prompt).strip()
+        if value:
+            return value
+        if default is not None:
+            return default
+        print("It can't be empty.")
+
+
+def ask_password(label):
+    """Ask for a password; by default, a random one."""
+    value = input(f"{label} (press Enter to generate a random one): ").strip()
+    return value or secrets.token_urlsafe(18)
+
+
+def ask_existing_path(label):
+    while True:
+        path = ask(label)
+        if os.path.isdir(path):
+            return os.path.abspath(path)
+        print(f"{path} is not an existing folder. Create it first, or enter another one.")
+
+
+def make_dir(path, use_sudo):
+    run((['sudo'] if use_sudo else []) + ['mkdir', '-p', path])
+
+
+def copy_cert(label, certs_path, use_sudo, private=False):
+    """Copy a certificate file into certs_path and return its name, or None to skip it."""
+    while True:
+        src = input(f"{label} (Enter to skip, copy it into {certs_path} later): ").strip()
+        if not src:
+            print(f"Remember to copy it into {certs_path} and set its name in {ENV} before deploying.")
+            return None
+        if os.path.isfile(src):
             break
-        print("Waiting for MinIO to be up...")
-        time.sleep(5)
+        print(f"{src} does not exist.")
+    dst = os.path.join(certs_path, os.path.basename(src))
+    prefix = ['sudo'] if use_sudo else []
+    run(prefix + ['cp', src, dst])
+    if private:
+        run(prefix + ['chmod', '600', dst])
+    return os.path.basename(src)
 
 
-def get_mandatory_var(label):
-    while True:
-        var_name = input(f"Enter {label} name: ")
-        if var_name.strip():  # Check if the input is not empty or just whitespace
-            return var_name
-        print(f"Please enter a valid {label} name, it can't be empty.")
+def create_env(use_sudo):
+    print(f"\n{ENV} does not exist: creating it from {TEMPLATE}.\n")
+    v = {}
+    main_path = ask_existing_path("Main path for the storage system (the folders of the services are created inside)")
+    folders = {
+        'MINIO_VOLUME_PATH1': 'minio/disk1',
+        'DB_VOLUME_PATH': 'db',
+        'DB_BACKUP_VOLUME_PATH': 'db_backup',
+        'LOADER_VOLUME_PATH': 'data',
+        'WORKFLOW_VOLUME_PATH': 'data',
+        'VRE_LITE_VOLUME_PATH': 'logs',
+        'APACHE_CERTS_VOLUME_PATH': 'certs',
+    }
+    for key, folder in folders.items():
+        v[key] = os.path.join(main_path, folder)
+    for path in sorted(set(v.values())):
+        make_dir(path, use_sudo)
+    print("Note: the MongoDB backups are in the same storage as the database; better move "
+          "DB_BACKUP_VOLUME_PATH to another disk (readme/storage.md).\n")
 
+    cert = copy_cert("TLS certificate file (full chain)", v['APACHE_CERTS_VOLUME_PATH'], use_sudo)
+    key = copy_cert("TLS private key file", v['APACHE_CERTS_VOLUME_PATH'], use_sudo, private=True)
+    if cert:
+        v['SSL_CERTIFICATE'] = cert
+    if key:
+        v['SSL_CERT_KEY'] = key
 
-def is_node_in_swarm():
-    try:
-        # Run `docker info` command
-        result = subprocess.run(
-            ["docker", "info", "--format", "{{.Swarm.LocalNodeState}}"],
-            capture_output=True,
-            text=True,
-            check=True
-        )
-        # The output will be "active", "inactive", or "pending"
-        node_state = result.stdout.strip()
-        if node_state == "active":
-            print("The node is already part of a Swarm.")
-            return True
-        elif node_state == "inactive":
-            print("The node is not part of any Swarm.")
-            return False
-        else:
-            print(f"The node is in a pending state: {node_state}.")
-            return False
-    except subprocess.CalledProcessError as e:
-        print("Error running docker command:", e)
-        return False
+    v['NODE'] = ask("Node identifier (e.g. mdposit-xx)")
+    domain = ask("Domain name of the node, without https:// (e.g. mdposit.example.org)")
+    v['MINIO_URL'] = v['REST_URL'] = domain
+    v['MINIO_BROWSER_REDIRECT_URL'] = f"https://{domain}/minio"
+    stack = ask("Docker Swarm stack name", "my_stack")
+    v['STACK_NAME'] = stack
+    v['DB_SERVER'] = v['VRE_LITE_DB_SERVER'] = f"{stack}_mongodb"
+    v['DB_NAME'] = v['DB_AUTHSOURCE'] = ask("Database name", "mddb_db")
 
+    print("\nUsers: the passwords are saved in the .env file.")
+    v['MONGO_INITDB_ROOT_USERNAME'] = ask("MongoDB root user", "root")
+    v['MONGO_INITDB_ROOT_PASSWORD'] = ask_password("MongoDB root password")
+    v['LOADER_DB_LOGIN'] = ask("MongoDB read/write user for the loader", "user_rw")
+    v['LOADER_DB_PASSWORD'] = ask_password("Its password")
+    v['REST_DB_LOGIN'] = ask("MongoDB read-only user for the REST API", "user_r")
+    v['REST_DB_PASSWORD'] = ask_password("Its password")
+    v['VRE_LITE_DB_LOGIN'] = ask("MongoDB user for VRE lite", "user_vre")
+    v['VRE_LITE_DB_PASSWORD'] = ask_password("Its password")
+    v['MINIO_ROOT_USER'] = ask("MinIO root user", "admin")
+    v['MINIO_ROOT_PASSWORD'] = ask_password("MinIO root password")
+    v['MINIO_USER'] = ask("MinIO user for VRE lite and the workflow", "minio_usr")
+    v['MINIO_PASSWORD'] = ask_password("Its password")
 
-def check_network_exists(network_name):
-    try:
-        result = subprocess.run(
-            ["docker", "network", "ls", "--filter", f"name={network_name}", "--format", "{{.Name}}"],
-            capture_output=True, text=True, check=True
-        )
-        return network_name in result.stdout.strip()
-    except subprocess.CalledProcessError:
-        return False
-
-
-def create_directory(minio_path, use_sudo):
-    if use_sudo:
-        subprocess.run(['sudo', 'mkdir', '-p', minio_path], check=True)
+    v['APACHE_MINIO_OUTER_PORT'] = v['APACHE_MINIO_INNER_PORT'] = ask("Public port of the MinIO API", "9000")
+    v['VRE_LITE_TIME_DIFF'] = ask("Days before the VRE lite upload keys expire", "3")
+    if input("Do you want periodic backups of the database? (y/n): ").strip().lower() == 'y':
+        v['DB_BACKUP_REPLICAS'] = '1'
+        v['DB_BACKUP_INTERVAL'] = ask("Seconds between backups", "604800")
     else:
-        subprocess.run(['mkdir', '-p', minio_path], check=True)
+        v['DB_BACKUP_REPLICAS'] = '0'
+
+    write_env_file(TEMPLATE, v, ENV)
+    print(f"\n{ENV} created. Review it against readme/config.md (e.g. CERT_DOMAINS, resources, GH_PAT).")
+    if input("Continue with the build and the deploy now? (y/n): ").strip().lower() != 'y':
+        sys.exit(f"Stopped. Run this script again to build and deploy with {ENV}.")
 
 
-def command_exists(cmd):
-    try:
-        subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True)
-        return True
-    except subprocess.CalledProcessError:
-        return False
-    except FileNotFoundError:
-        return False
+def remove_everything(stack):
+    print(f"Removing the stack {stack}, leaving the swarm and removing all the Docker cache.")
+    if input(f"This deletes the services of {stack} and all unused images and volumes. Type the stack name to confirm: ").strip() != stack:
+        sys.exit("Not confirmed: nothing removed.")
+    stacks = run(['docker', 'stack', 'ls', '--format', '{{.Name}}'], capture_output=True, text=True).stdout.split()
+    if stack in stacks:
+        run(['docker', 'stack', 'rm', stack])
+    run(['docker', 'swarm', 'leave', '--force'])
+    run(['docker', 'system', 'prune', '-f'])
+    run(['docker', 'builder', 'prune', '-a', '-f'])
+    run(['docker', 'system', 'prune', '--volumes', '-f'])
+    run(['docker', 'network', 'prune', '-f'])
+
+
+def swarm_state():
+    return run(['docker', 'info', '--format', '{{.Swarm.LocalNodeState}}'], capture_output=True, text=True).stdout.strip()
+
+
+def network_exists(name):
+    names = run(['docker', 'network', 'ls', '--format', '{{.Name}}'], capture_output=True, text=True).stdout.split()
+    return name in names
+
+
+def wait_for_service(stack, service, timeout=600):
+    """Wait until the service has all its replicas running; stop if it takes too long."""
+    name = f"{stack}_{service}"
+    deadline = time.time() + timeout
+    while True:
+        replicas = run(['docker', 'service', 'ls', '--filter', f'name={name}', '--format', '{{.Name}} {{.Replicas}}'],
+                       capture_output=True, text=True).stdout.split('\n')
+        state = dict(r.split(' ', 1) for r in replicas if r)
+        running = state.get(name, '').split(' ')[0]   # e.g. "1/1" (also "1/1 (max 1 per node)")
+        if running and running.split('/')[0] == running.split('/')[1] != '0':
+            print(f"{name} is running ({running}).")
+            return
+        if time.time() > deadline:
+            sys.exit(f"{name} is not running after {timeout} s: see 'docker service ps {name} --no-trunc' "
+                     f"and 'docker service logs {name}'.")
+        print(f"Waiting for {name} ({running or 'not created'})...")
+        time.sleep(10)
 
 
 def deploy_stack(rm):
-    # Check if script was executed with sudo
-    sudo = True
-    if 'SUDO_USER' not in os.environ:
-        ask_sudo = input("The script was executed without sudo, in some cases you may need sudo permissions for create new folders in the storage system, do you want to continue? (y/n): ")
-        if not ask_sudo.lower() == "y":
-            print("Please run the script with sudo: sudo python3 scripts/docker-deploy.py -s")
-            return
-        else:
-            print("Continuing without sudo permissions.")
-            sudo = False
+    if not os.path.isfile('docker-compose.yml'):
+        sys.exit("Run this script from the root of the repository (docker-compose.yml not found).")
+    for tool in (['docker', 'version'], ['docker', 'compose', 'version']):
+        if subprocess.run(tool, capture_output=True).returncode != 0:
+            sys.exit(f"'{' '.join(tool)}' does not work: install Docker and the Compose plugin "
+                     "(scripts/docker-install.py, readme/setup.md) and check that your user is in the docker group.")
 
-    if not check_file_exists('docker-compose.yml', warning=True):
-        return
+    use_sudo = False
+    if not os.path.isfile(ENV):
+        if os.geteuid() != 0:
+            use_sudo = input("Use sudo to create the storage folders? (y/n): ").strip().lower() == 'y'
+        create_env(use_sudo)
 
-    if not check_file_exists('.env'):
-        print("The file .env does not exist, creating it.")
-        env_vars = read_env_file('.env.docker.git')
-        main_path = set_main_path()
-        if not main_path:
-            return
+    env = read_env_file(ENV)
+    stack = env.get('STACK_NAME') or ask("Docker Swarm stack name", "my_stack")
 
-        minio_path = os.path.join(main_path, 'minio')
-        create_directory(minio_path, sudo)
-        create_directory(os.path.join(minio_path, 'disk1'), sudo)
-        # create_directory(os.path.join(minio_path, 'disk2'), sudo)
-        # create_directory(os.path.join(minio_path, 'disk3'), sudo)
-        # create_directory(os.path.join(minio_path, 'disk4'), sudo)
-        # print(f"Created MinIO volumes: {minio_path}/disk1, {minio_path}/disk2, {minio_path}/disk3, {minio_path}/disk4.")
-        print(f"Created MinIO volume: {minio_path}/disk1.")
-        env_vars["MINIO_VOLUME_PATH1"] = os.path.join(minio_path, 'disk1')
-        # env_vars["MINIO_VOLUME_PATH2"] = os.path.join(minio_path, 'disk2')
-        # env_vars["MINIO_VOLUME_PATH3"] = os.path.join(minio_path, 'disk3')
-        # env_vars["MINIO_VOLUME_PATH4"] = os.path.join(minio_path, 'disk4')
-
-        db_path = os.path.join(main_path, 'db')
-        create_directory(db_path, sudo)
-        print(f"Created MongoDB volume: {db_path}.")
-        env_vars["DB_VOLUME_PATH"] = db_path
-
-        db_backup_path = os.path.join(main_path, 'db_backup')
-        create_directory(db_backup_path, sudo)
-        print(f"Created MongoDB backup volume: {db_backup_path}.")
-        env_vars["DB_BACKUP_VOLUME_PATH"] = db_backup_path
-
-        data_path = os.path.join(main_path, 'data')
-        create_directory(data_path, sudo)
-        print(f"Created data volume: {data_path}.")
-        env_vars["LOADER_VOLUME_PATH"] = data_path
-        env_vars["WORKFLOW_VOLUME_PATH"] = data_path
-
-        logs_path = os.path.join(main_path, 'logs')
-        create_directory(logs_path, sudo)
-        print(f"Created logs volume: {logs_path}.")
-        env_vars["VRE_LITE_VOLUME_PATH"] = logs_path
-
-        certs_path = os.path.join(main_path, 'certs')
-        create_directory(certs_path, sudo)
-        print(f"Created certificates volume: {certs_path}.")
-        env_vars["APACHE_CERTS_VOLUME_PATH"] = certs_path
-
-        # Copy the certificates
-        cert_pem = input(f"Enter where the SSL certificate file is located, it will be copied into {certs_path}: ")
-        if not os.path.exists(cert_pem):
-            print(f"Warning! The public certificate {cert_pem} does not exist.")
-            cont = input("Do you want to continue? (y/n): ")
-            if not cont.lower() == "y":
-                return
-        else:
-            subprocess.run(['cp', cert_pem, certs_path])
-            env_vars["SSL_CERTIFICATE"] = os.path.basename(cert_pem)
-            print(f"{cert_pem} copied into {certs_path}.")
-        cert_key = input(f"Enter where the private SSL certificate key file is located, it will be copied into {certs_path}: ")
-        if not os.path.exists(cert_key):
-            print(f"Warning! The private key {cert_key} does not exist.")
-            cont = input("Do you want to continue? (y/n): ")
-            if not cont.lower() == "y":
-                return
-        else:
-            subprocess.run(['cp', cert_key, certs_path])
-            env_vars["SSL_CERT_KEY"] = os.path.basename(cert_key)
-            print(f"{cert_key} copied into {certs_path}.")
-
-        env_vars["NODE"] = get_mandatory_var("node")
-        stack_name = input("Enter stack name (default: my_stack): ") or "my_stack"
-        env_vars["DB_SERVER"] = f"{stack_name}_mongodb"
-        db_name = input("Enter the database name (default: mddb_db): ") or "mddb_db"
-        env_vars["DB_NAME"] = db_name
-        env_vars["DB_AUTHSOURCE"] = db_name
-        env_vars["MONGO_INITDB_ROOT_USERNAME"] = input("Enter the root database user (default: root): ") or "root"
-        env_vars["MONGO_INITDB_ROOT_PASSWORD"] = input("Enter the root database password (default: root): ") or "root"
-
-        db_bck = input("Do you want a backup for the database? (y/n): ")
-        if db_bck.lower() == "y":
-            env_vars["DB_BACKUP_REPLICAS"] = 1
-            env_vars["DB_BACKUP_INTERVAL"] = input("Enter the interval between backups in seconds (default, one week: 604800): ") or "604800"
-        else:
-            env_vars["DB_BACKUP_REPLICAS"] = 0
-            env_vars["DB_BACKUP_INTERVAL"] = 0
-
-        env_vars["LOADER_DB_LOGIN"] = input("Enter the R/W database user for the loader service (default: user_rw): ") or "user_rw"
-        env_vars["LOADER_DB_PASSWORD"] = input("Enter the R/W database password for the loader service (default: pwd_rw): ") or "pwd_rw"
-        env_vars["REST_DB_LOGIN"] = input("Enter the R database user for the REST API service (default: user_r): ") or "user_r"
-        env_vars["REST_DB_PASSWORD"] = input("Enter the R database password for the REST API service (default: pwd_r): ") or "pwd_r"
-        env_vars["MINIO_ROOT_USER"] = input("Enter the MinIO root user (default: admin): ") or "admin"
-        env_vars["MINIO_ROOT_PASSWORD"] = input("Enter the MinIO root password (default: secretpassword): ") or "secretpassword"
-        env_vars["MINIO_USER"] = input("Enter the MinIO user (default: minio_usr): ") or "minio_usr"
-        env_vars["MINIO_PASSWORD"] = input("Enter the MinIO password (default: minio_pwd): ") or "minio_pwd"
-        env_vars["APACHE_MINIO_OUTER_PORT"] = input("Enter the API MinIO port (default: 9000): ") or "9000"
-        env_vars["VRE_LITE_TIME_DIFF"] = input("Enter the expiration date in days for the Access Keys (default: 3): ") or "3"
-        env_vars["APACHE_MINIO_INNER_PORT"] = env_vars["APACHE_MINIO_OUTER_PORT"]
-        env_vars["MINIO_URL"] = f"{env_vars['NODE']}.mddbr.eu"
-        env_vars["MINIO_BROWSER_REDIRECT_URL"] = f"https://{env_vars['NODE']}.mddbr.eu/minio"
-
-        print("Creating .env file.")
-        save_env_vars_to_file(env_vars, '.env')
-
-    # Remove all cache before deploying the stack
     if rm:
-        print("Removing all cache.")
-        stack_name = get_mandatory_var("stack")
-        # Check if the stack name exists
-        result = subprocess.run(["docker", "stack", "ls"], capture_output=True, text=True, check=True)
-        if stack_name not in result.stdout:
-            print(f"Stack '{stack_name}' does not exist in this node.")
-            return
-        print(f"Removing {stack_name} stack and leaving swarm.")
-        subprocess.run(['docker', 'stack', 'rm', stack_name])
-        subprocess.run(['docker', 'swarm', 'leave', '--force'])
-        print("Removing all cache.")
-        subprocess.run(['docker', 'system', 'prune', '-f'])
-        subprocess.run(['docker', 'builder', 'prune', '-a', '-f'])
-        subprocess.run(['docker', 'system', 'prune', '--volumes', '-f'])
-        subprocess.run(['docker', 'network', 'prune', '-f'])
+        remove_everything(stack)
 
-    # ask for stack name if not provided
-    if 'stack_name' not in locals():
-        stack_name = input("Enter stack name (default: my_stack): ") or "my_stack"
+    if swarm_state() != 'active':
+        try:
+            run(['docker', 'swarm', 'init'])
+        except subprocess.CalledProcessError as e:
+            raise SystemExit("docker swarm init failed. If the VM has several IP addresses, run "
+                             "'docker swarm init --advertise-addr <private IP>' and this script again.") from e
+    for network in NETWORKS:
+        if not network_exists(network):
+            run(['docker', 'network', 'create', '--driver', 'overlay', '--attachable', network])
 
-    # Docker swarm, network create, build and deploy
-    if not is_node_in_swarm():
-        subprocess.run(['docker', 'swarm', 'init'])
-    if not check_network_exists('data_network'):
-        print("Creating data network.")
-        subprocess.run("docker network create --driver overlay --attachable data_network", shell=True, check=True)
-    if not check_network_exists('minio_network'):
-        print("Creating MinIO network.")
-        subprocess.run("docker network create --driver overlay --attachable minio_network", shell=True, check=True)
-    if not check_network_exists('web_network'):
-        print("Creating web network.")
-        subprocess.run("docker network create --driver overlay --attachable web_network", shell=True, check=True)
-
-    # the node's own settings (docker-compose.node.yml, not in git) go last, as in scripts/stack-deploy.py
     compose_files = ['docker-compose.yml'] + (['docker-compose.node.yml'] if os.path.isfile('docker-compose.node.yml') else [])
-    if command_exists(['docker-compose', 'version']):
-        subprocess.run(['docker-compose'] + [a for f in compose_files for a in ('-f', f)] + ['build'])
-    elif command_exists(['docker', 'compose', 'version']):
-        subprocess.run(['docker', 'compose'] + [a for f in compose_files for a in ('-f', f)] + ['build'])
-    else:
-        print("Error: Neither 'docker-compose' nor 'docker compose' commands are available.")
-        sys.exit(1)
+    run(['docker', 'compose'] + [a for f in compose_files for a in ('-f', f)] + ['build'])
 
-    # stop if the backups would be written into the database folder (see scripts/paths_check.py)
-    paths_check.check('.env')
+    # stack-deploy.py checks the paths and the mongodb image, adds docker-compose.node.yml and deploys
+    here = os.path.dirname(os.path.abspath(__file__))
+    run([sys.executable, os.path.join(here, 'stack-deploy.py'), '-t', stack, '-c', 'docker-compose.yml'])
 
-    # stop before deploying a mongodb image that cannot run here (see scripts/mongo_check.py)
-    want_mongo, running_mongo = mongo_check.mongo_images(stack_name, compose_files, '.env')
-    if want_mongo is not None:
-        mongo_check.check(stack_name, want_mongo, running_mongo)
+    # VRE lite shows the versions of the services, stored in its database
+    wait_for_service(stack, 'mongodb')
+    run([sys.executable, os.path.join(here, 'update-services-versions.py')])
 
-    subprocess.run(f"set -a && source .env && set +a && docker stack deploy {' '.join('-c ' + f for f in compose_files)} {stack_name}", shell=True, check=True, executable='/bin/bash')
-
-    # Poll until MinIO is up and running
-    if 'env_vars' not in locals():
-        env_vars = read_env_file('.env')
-    poll_minio(env_vars.get('MINIO_API_OUTER_PORT'))
-
-    # Update services versions
-    try:
-        subprocess.run(['python3', 'update-services-versions.py'], check=True)
-        print("Services versions updated successfully.")
-    except subprocess.CalledProcessError as e:
-        print(f"Error updating services versions: {e}")
-    except FileNotFoundError:
-        print("Error: update-services-versions.py not found.")
-
-    print(f"Stack {stack_name} deployed.")
-    subprocess.run(['docker', 'stack', 'services', stack_name])
+    print(f"\nStack {stack} deployed.")
+    run(['docker', 'stack', 'services', stack])
+    print("\nNext: check the node as explained in README.md (step 8, 'Check the node').")
 
 
 def main():
-    parser = argparse.ArgumentParser(description='Storage creation, system setup and Docker Swarm deploying for an MDDB node.')
-    parser.add_argument('-r', '--remove-cache', action='store_true', help='Leave the swarm and remove all cache before deploying the stack (only when -s selected as well)')
-
+    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser.add_argument('-r', '--remove-cache', action='store_true',
+                        help='remove the stack, leave the swarm and remove all the Docker cache before deploying')
     args = parser.parse_args()
-
     deploy_stack(args.remove_cache)
 
 
