@@ -38,6 +38,9 @@ RUN unzip build.zip
 # Copy the built React app to nginx
 RUN cp -r /app/build/* /usr/share/nginx/html
 
+# Publish the version so that vre_lite's status page can ask the running client for it
+RUN cp /app/version.txt /usr/share/nginx/html/version.txt
+
 # Expose port ${CLIENT_INNER_PORT}
 EXPOSE ${CLIENT_INNER_PORT}
 
