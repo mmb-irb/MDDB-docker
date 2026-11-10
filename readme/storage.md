@@ -95,7 +95,7 @@ chmod 600 /path/to/volume/certs/privkey.pem
 openssl x509 -in /path/to/volume/certs/fullchain.pem -noout -subject -enddate -ext subjectAltName   # check names and expiry
 ```
 
-Their file names go in `SSL_CERTIFICATE` and `SSL_CERT_KEY` of the `.env`. In this folder must be stored the **SSL/TLS** certificate (full chain) and private key that the **apache docker** will use for configuring **https** protocol.
+Their file names go in `SSL_CERTIFICATE` and `SSL_CERT_KEY` of the `.env`. Apache needs a certificate to start: for an internal node without one, create a self-signed certificate (`scripts/docker-deploy.py` does it for you; by hand, see step 4 of the [README](../README.md#option-c-step-by-step)). In this folder must be stored the **SSL/TLS** certificate (full chain) and private key that the **apache docker** will use for configuring **https** protocol.
 
 ### Let's Encrypt (automatic renewal)
 

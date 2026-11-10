@@ -93,119 +93,108 @@ https://hub.docker.com/r/pgsty/silo (a maintained fork of MinIO)
 <img src="readme/docker.png" alt="mdposit" />
 </div>
 
-This is the complete path from an empty VM to a running node. Each step links to the detailed documentation. The commands use `my_stack` as the stack name: use the `STACK_NAME` of your `.env`.
-
-### 0. Before starting
-
-Have ready:
-
-* A **VM** that meets the [requirements](readme/setup.md#requirements): Linux, a CPU with **AVX**, enough disk, outbound internet access and the clock synchronised (NTP).
-* The **domain name** of the node (e.g. `mdposit.example.org`) pointing to the VM in the **DNS**.
-* The **ports** 443, 80 and the MinIO API port (e.g. 9000) **open** from the internet to the VM ([firewall and ports](readme/setup.md#firewall-and-ports)).
-* A **TLS certificate** (full chain) and its private key for that domain, or the plan to get a free one from Let's Encrypt ([certificates](readme/storage.md#certificates)).
-* The **storage** for the database and the uploads ([storage](readme/storage.md)).
-
-### 1. Install Docker
-
-Install Docker Engine and the Docker Compose plugin, and add your user to the `docker` group: [Set Up Virtual Machine](readme/setup.md#installation-of-docker-and-docker-compose). Then check:
-
-```sh
-docker compose version
-docker run --rm hello-world
-```
-
-### 2. Clone the repository
+There are three ways to install a node, from the easiest to the most detailed. All of them start by cloning this repository in the VM:
 
 ```sh
 git clone https://github.com/mmb-irb/MDDB-docker.git
 cd MDDB-docker
 ```
 
-All the commands below are run from this folder.
+### Option A: with Claude Code
 
-### 3. Create the storage folders and copy the certificate
+If you use [Claude Code](https://claude.com/claude-code), open it in the cloned folder and ask it to *deploy a new node*. The repository has a skill, [deploy-node](.claude/skills/deploy-node/SKILL.md), that guides it through the whole installation: it checks the VM first ([preflight.sh](.claude/skills/deploy-node/preflight.sh)), asks you the values of the node, deploys, and checks the result ([verify.sh](.claude/skills/deploy-node/verify.sh)). It asks before any step that needs sudo or that changes the machine.
 
-```sh
-mkdir -p /path/to/volume/{certs,data,db,db_backup,logs,minio/disk1}
-cp fullchain.pem privkey.pem /path/to/volume/certs/
-chmod 600 /path/to/volume/certs/privkey.pem
-```
+### Option B: with the scripts
 
-Details, and what each folder is for: [Set Up Storage](readme/storage.md).
-
-### 4. Configure the `.env` file
+Two scripts do the work and ask for the values they need:
 
 ```sh
-cp .env.docker.git .env
-chmod 600 .env
+python3 scripts/docker-install.py      # installs Docker (skip it if Docker is already installed)
+# log out and back in, so your user can use docker without sudo
+python3 scripts/docker-deploy.py       # creates the storage folders and the .env, builds and deploys
 ```
 
-Fill in every empty variable: node name, stack name, domain, paths of step 3, certificate file names, and a **different, generated password** for every user. Read the rules in [Set Up Configuration Files](readme/config.md#env-file) before, and validate the result:
+* [docker-install.py](scripts/docker-install.py) installs Docker Engine and the Compose plugin on Ubuntu, Debian, Rocky / AlmaLinux / RHEL, CentOS and Fedora, following Docker's official instructions, and adds your user to the `docker` group (it needs sudo). With `--root-dir /path/to/volume` it also moves the Docker images to that disk, since they need tens of GB. On any other system it points to [Docker's installation guide](https://docs.docker.com/engine/install/).
+* [docker-deploy.py](scripts/docker-deploy.py) asks for the storage path, the node name, the host name (or IP) users will use to reach the node, and the users of the database and MinIO, with random passwords unless you type them. If you have no TLS certificate, it creates a self-signed one, enough for an internal node. Then it creates the `.env`, starts Docker Swarm, builds the images and deploys. The build takes a while.
+
+Then [check the node](#check-the-node). The `.env` it creates has the main values only: see [the configuration](readme/config.md#env-file) for the rest (resources, extensions...). If a `.env` already exists, the script uses it as it is.
+
+⚠️ `docker-deploy.py -r` first **removes the stack, leaves the swarm and deletes all the Docker cache**: never use it on a node with services you want to keep.
+
+### Option C: step by step
+
+The same steps as the scripts, by hand. The commands use `my_stack` as the stack name: use the `STACK_NAME` of your `.env`.
+
+1. **Check the VM** meets the [requirements](readme/setup.md#requirements): Linux, a CPU with AVX (`grep -wo avx /proc/cpuinfo | head -1` must print `avx`), enough disk, and internet access to download the images and the code of the services.
+
+2. **Install Docker** with `python3 scripts/docker-install.py`, or by hand: [Set Up Virtual Machine](readme/setup.md#installation-of-docker-and-docker-compose).
+
+3. **Create the storage folders** ([details](readme/storage.md)):
+
+    ```sh
+    mkdir -p /path/to/volume/{certs,data,db,db_backup,logs,minio/disk1}
+    ```
+
+4. **Put a TLS certificate in `certs/`**: the certificate and private key Apache uses to serve the node over `https`. If you have none, create a self-signed one for the name users will use to reach the node (browsers will show a warning):
+
+    ```sh
+    openssl req -x509 -newkey rsa:2048 -nodes -days 3650 -subj "/CN=<host name>" \
+      -addext "subjectAltName=DNS:<host name>" \
+      -keyout /path/to/volume/certs/selfsigned_privkey.pem -out /path/to/volume/certs/selfsigned_fullchain.pem
+    ```
+
+    (with an IP address instead of a host name, use `subjectAltName=IP:<ip>`).
+
+5. **Configure the `.env` file**: copy the template and fill in every empty variable (paths of step 3, node name, host name, certificate file names, and a different generated password for every user). Read the rules in [Set Up Configuration Files](readme/config.md#env-file) first, and validate the result:
+
+    ```sh
+    cp .env.docker.git .env && chmod 600 .env
+    docker compose -f docker-compose.yml config -q
+    ```
+
+6. **Configure the website client** (optional): to give the website its own name, logos, colors and contacts, create `client/host-config.js`. Without it the client uses a generic MDposit look. See the [client README](client/README.md#host-configuration-file).
+
+7. **Start Docker Swarm and create the networks:**
+
+    ```sh
+    docker swarm init --advertise-addr <private IP of the VM>
+    for n in web_network data_network minio_network metrics_network; do
+      docker network create --driver overlay --attachable "$n"
+    done
+    ```
+
+8. **Build the images and deploy the stack** (with extensions, add `-f` / `-c extensions/<extension>.yml` to both commands; [details](readme/docker-swarm.md)):
+
+    ```sh
+    docker compose -f docker-compose.yml build
+    python3 scripts/stack-deploy.py -t my_stack
+    python3 scripts/update-services-versions.py   # stores the versions shown in VRE lite
+    ```
+
+### Check the node
 
 ```sh
-docker compose -f docker-compose.yml config -q
+docker stack services my_stack          # every service at its number of replicas (loader, workflow and utils at 0/0)
+docker compose run --rm loader list     # the loader reaches the database
 ```
 
-### 5. Configure the website client (optional)
+Then open `https://<host name>/`, `https://<host name>/api/rest/` and `https://<host name>/vre_lite/` in a browser. If the REST API answers `500` right after the first deploy, restart it once MongoDB is up: `docker service update --force my_stack_rest`. More checks: [Execute services](readme/docker-swarm.md#execute-services).
 
-To give the website its own name, logos, colors and contacts, create `client/host-config.js` (and put its images in `client/images/`). Without it the client uses a generic MDposit look. See the [client README](client/README.md#host-configuration-file).
-
-### 6. Start Docker Swarm and create the networks
-
-```sh
-docker swarm init --advertise-addr <private IP of the VM>
-for n in web_network data_network minio_network metrics_network; do
-  docker network create --driver overlay --attachable "$n"
-done
-```
-
-### 7. Build the images and deploy the stack
-
-The build clones and compiles every service, it takes a while:
-
-```sh
-docker compose -f docker-compose.yml build
-python3 scripts/stack-deploy.py -t my_stack
-```
-
-With extensions, add the same `-f` / `-c extensions/<extension>.yml` files to both commands. Details: [Deploy Docker Swarm](readme/docker-swarm.md).
-
-### 8. Check the node
-
-```sh
-docker stack services my_stack     # every service at its number of replicas (loader, workflow and utils at 0/0)
-docker compose run --rm loader list   # the loader reaches the database
-python3 scripts/update-services-versions.py   # store the versions shown in VRE lite
-```
-
-Then open `https://<your domain>/`, `https://<your domain>/api/rest/` and `https://<your domain>/vre_lite/` in a browser. If the REST API answers `500` right after the first deploy, restart it once MongoDB is up: `docker service update --force my_stack_rest`. More checks: [Execute services](readme/docker-swarm.md#execute-services).
-
-### 9. After the installation
+### After the installation
 
 * **Load data:** run the [workflow](readme/docker-swarm.md#use-workflow) and the [loader](readme/docker-swarm.md#use-loader).
 * **Backups:** check the [MongoDB backup service](readme/docker-swarm.md#mongodb-backup-service) and keep the backups on another disk.
-* **Certificate renewal:** with Let's Encrypt, add [renew-certs.py](readme/storage.md#lets-encrypt-automatic-renewal) to the cron.
 * **Settings of this node only** (extra ports, mounts...): put them in `docker-compose.node.yml`, never in `docker-compose.yml` ([why](readme/docker-swarm.md#redeploying-a-running-stack)).
 * **Updates:** [Update services](readme/update.md).
 * **Problems:** [Tips](readme/tips.md) and [troubleshooting of new nodes](.claude/skills/deploy-node/troubleshooting.md).
 
-### Assisted deploy script
+### Make the node public
 
-Two scripts can do most of these steps for you:
+Only if the node must be reachable from the internet:
 
-* [scripts/docker-install.py](scripts/docker-install.py) does **step 1**: it installs Docker Engine and the Compose plugin on Ubuntu, Debian, Rocky / AlmaLinux / RHEL, CentOS and Fedora, following Docker's official instructions, and adds your user to the `docker` group (needs sudo). With `--root-dir /path/to/volume` it also moves the Docker images to that disk. On any other system, or if something fails, it stops and points to [Docker's installation guide](https://docs.docker.com/engine/install/).
-* [scripts/docker-deploy.py](scripts/docker-deploy.py) does **steps 3 to 8**: it creates the storage folders, copies the certificate, asks for the main values and creates the `.env` (with random passwords unless you type them), and then creates the swarm and the networks, builds, deploys and stores the service versions. Review the `.env` it creates against [the configuration](readme/config.md#env-file). If a `.env` already exists, it uses it as it is.
-
-```sh
-python3 scripts/docker-install.py      # then log out and back in, for the docker group
-python3 scripts/docker-deploy.py
-```
-
-With `-r`, `docker-deploy.py` first **removes the stack, leaves the swarm and deletes all the Docker cache** (it asks to type the stack name to confirm): never use it on a node with services you want to keep.
-
-### Using Claude Code
-
-The repository has a [Claude Code](https://claude.com/claude-code) skill, [deploy-node](.claude/skills/deploy-node/SKILL.md), that follows these steps on a VM with pre-flight checks ([preflight.sh](.claude/skills/deploy-node/preflight.sh): AVX, MinIO multipart uploads, outbound access, ports...) and a verification script ([verify.sh](.claude/skills/deploy-node/verify.sh)). Both scripts can also be run by hand.
+1. Point a **domain name** to the VM in the DNS. If it is not the host name you gave in the `.env` (`MINIO_URL`, `REST_URL`, `MINIO_BROWSER_REDIRECT_URL`), change them and rebuild the services that use them: `python3 scripts/rebuild.py -s apache rest vre_lite -t my_stack`.
+2. Open the ports **443**, **80** and the MinIO API port (`APACHE_MINIO_OUTER_PORT`, e.g. 9000) to the internet ([firewall and ports](readme/setup.md#firewall-and-ports)).
+3. Replace the self-signed certificate with a real one: copy yours into `certs/`, or get a free one from Let's Encrypt with automatic renewal ([certificates](readme/storage.md#certificates)). Set its file names in `SSL_CERTIFICATE` / `SSL_CERT_KEY` and rebuild Apache: `python3 scripts/rebuild.py -s apache -t my_stack`.
 
 ### Documentation
 

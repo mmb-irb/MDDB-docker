@@ -32,11 +32,11 @@ run every command below through `ssh <alias> '...'`, and copy the helper scripts
 | Question | Why |
 |---|---|
 | Where does it run: this machine, or an SSH alias? | Every command depends on it |
-| Public domain name(s) of the node (e.g. `mdposit-xx.mddbr.eu`) | `MINIO_URL`, `REST_URL`, certificate, DNS |
+| Host name (or IP) users will use to reach the node; internal only, or public? | `MINIO_URL`, `REST_URL`, certificate, DNS, firewall |
 | Storage path(s) for data and for MinIO | `*_VOLUME_PATH` variables, capacity check |
 | Is MongoDB in the stack (default) or an external server? | `DB_SERVER`, users, backups |
 | Extensions: `mcp`, `metrics`, `grafana`? | Extra `-f` / `-c` files |
-| Where are the TLS certificate (full chain) and key? | `certs/` folder |
+| TLS certificate (full chain) and key, if any (else a self-signed one is created) | `certs/` folder |
 | Which MinIO API port is opened publicly (default 9000)? | `APACHE_MINIO_OUTER_PORT` |
 | Who runs sudo commands? | Step 2 hand-offs |
 
@@ -73,7 +73,8 @@ Create, under the storage path, the folders the `.env` will point to (`readme/st
 `certs/ data/ db/ db_backup/ logs/ minio/disk1/`. Usually needs sudo to create the parent and
 `chown` it to the deploying user, after which the user can create the rest.
 
-Copy the certificate chain and key into `certs/` (`chmod 600` the key) and check it covers the domain:
+Copy the certificate chain and key into `certs/` (`chmod 600` the key); without one (internal node), create a
+self-signed one as in README.md (option C, step 4). Check it covers the host name:
 
 ```bash
 openssl x509 -in certs/<chain>.pem -noout -subject -enddate -ext subjectAltName

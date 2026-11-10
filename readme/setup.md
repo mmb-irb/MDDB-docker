@@ -6,7 +6,8 @@
 * A **CPU with AVX** (MongoDB 5 and newer crash with `Illegal instruction` without it). Check it with `grep -wo avx /proc/cpuinfo | head -1`. On a virtual machine, if nothing is printed, ask the VM admin to set the CPU type to `host` (or `x86-64-v3`) and power-cycle the VM.
 * **Disk**: tens of GB where Docker keeps its images (`/var/lib/docker` and `/var/lib/containerd`, see [Change Docker Root Dir](#change-docker-root-dir-optional)), plus the space for the data (see [storage](storage.md)).
 * **Outbound internet access** to GitHub, Docker Hub, PyPI, npm and NodeSource: the images are built from the source code of each service.
-* The **clock synchronised** (NTP): MinIO rejects requests from clients whose clock differs from the server's.
+
+> If uploads to MinIO fail with `RequestTimeTooSkewed`, the clock of the VM is wrong: MinIO rejects requests from clients whose clock differs from the server's by more than a few minutes. Most distributions keep the clock in time by default (NTP); check it with `timedatectl`.
 
 ## Installation of Docker and Docker Compose
 

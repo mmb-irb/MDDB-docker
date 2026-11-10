@@ -15,9 +15,11 @@ unused volumes and networks). Never use it on a node with services you want to k
 """
 
 import argparse
+import ipaddress
 import os
 import secrets
 import shutil
+import socket
 import subprocess
 import sys
 import time
@@ -96,12 +98,9 @@ def make_dir(path, use_sudo):
 
 
 def copy_cert(label, certs_path, use_sudo, private=False):
-    """Copy a certificate file into certs_path and return its name, or None to skip it."""
+    """Copy a certificate file into certs_path and return its name."""
     while True:
-        src = input(f"{label} (Enter to skip, copy it into {certs_path} later): ").strip()
-        if not src:
-            print(f"Remember to copy it into {certs_path} and set its name in {ENV} before deploying.")
-            return None
+        src = ask(label)
         if os.path.isfile(src):
             break
         print(f"{src} does not exist.")
@@ -111,6 +110,24 @@ def copy_cert(label, certs_path, use_sudo, private=False):
     if private:
         run(prefix + ['chmod', '600', dst])
     return os.path.basename(src)
+
+
+def self_signed_cert(name, certs_path, use_sudo):
+    """Create a self-signed certificate for name (a host name or an IP address); return its file names."""
+    cert, key = 'selfsigned_fullchain.pem', 'selfsigned_privkey.pem'
+    try:
+        ipaddress.ip_address(name)
+        san = f"IP:{name}"
+    except ValueError:
+        san = f"DNS:{name}"
+    prefix = ['sudo'] if use_sudo else []
+    run(prefix + ['openssl', 'req', '-x509', '-newkey', 'rsa:2048', '-nodes', '-days', '3650',
+                  '-subj', f'/CN={name}', '-addext', f'subjectAltName={san}',
+                  '-keyout', os.path.join(certs_path, key), '-out', os.path.join(certs_path, cert)])
+    run(prefix + ['chmod', '600', os.path.join(certs_path, key)])
+    print("Created a self-signed certificate: browsers will show a warning until you replace it "
+          "(README.md, 'Make the node public').")
+    return cert, key
 
 
 def create_env(use_sudo):
@@ -133,17 +150,19 @@ def create_env(use_sudo):
     print("Note: the MongoDB backups are in the same storage as the database; better move "
           "DB_BACKUP_VOLUME_PATH to another disk (readme/storage.md).\n")
 
-    cert = copy_cert("TLS certificate file (full chain)", v['APACHE_CERTS_VOLUME_PATH'], use_sudo)
-    key = copy_cert("TLS private key file", v['APACHE_CERTS_VOLUME_PATH'], use_sudo, private=True)
-    if cert:
-        v['SSL_CERTIFICATE'] = cert
-    if key:
-        v['SSL_CERT_KEY'] = key
-
     v['NODE'] = ask("Node identifier (e.g. mdposit-xx)")
-    domain = ask("Domain name of the node, without https:// (e.g. mdposit.example.org)")
-    v['MINIO_URL'] = v['REST_URL'] = domain
-    v['MINIO_BROWSER_REDIRECT_URL'] = f"https://{domain}/minio"
+    default_name = socket.getfqdn()
+    name = ask("Host name (or IP address) that users will use to reach the node, without https://", default_name)
+    v['MINIO_URL'] = v['REST_URL'] = name
+    v['MINIO_BROWSER_REDIRECT_URL'] = f"https://{name}/minio"
+
+    certs_path = v['APACHE_CERTS_VOLUME_PATH']
+    if input(f"Do you have a TLS certificate for {name}? (y/n; n creates a self-signed one): ").strip().lower() == 'y':
+        v['SSL_CERTIFICATE'] = copy_cert("TLS certificate file (full chain)", certs_path, use_sudo)
+        v['SSL_CERT_KEY'] = copy_cert("TLS private key file", certs_path, use_sudo, private=True)
+    else:
+        v['SSL_CERTIFICATE'], v['SSL_CERT_KEY'] = self_signed_cert(name, certs_path, use_sudo)
+
     stack = ask("Docker Swarm stack name", "my_stack")
     v['STACK_NAME'] = stack
     v['DB_SERVER'] = v['VRE_LITE_DB_SERVER'] = f"{stack}_mongodb"
