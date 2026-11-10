@@ -111,9 +111,10 @@ COPY --from=build /app/version.txt /app/version.txt
 # Copy the pm2 configuration file
 COPY ecosystem.config.cjs .
 
-# Install minio client: copy the statically linked mc from the same MinIO image the stack runs,
-# so it gets security fixes on every rebuild (MinIO no longer publishes community binaries)
-COPY --from=docker.io/pgsty/minio:latest /usr/bin/mc /usr/local/bin/mc
+# Install minio client: copy the statically linked mc from the pgsty/mc image, which is released
+# more often than pgsty/minio, so it gets security fixes on every rebuild
+# (MinIO no longer publishes community binaries)
+COPY --from=docker.io/pgsty/mc:latest /usr/bin/mc /usr/local/bin/mc
 
 # Define arguments passed from docker-compose
 ARG VRE_LITE_INNER_PORT
