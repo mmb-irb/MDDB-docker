@@ -9,7 +9,7 @@ belong in this repository (or the service's repository) and help every node; do 
 |---|---|---|
 | `<stack>_mongodb` restarts in a loop; log: `MongoDB 5.0+ requires a CPU with AVX support`, `Illegal instruction (core dumped)` | The VM's virtual CPU model (e.g. "QEMU Virtual CPU") hides AVX | VM admin: CPU type `host` or `x86-64-v3`, then power off / on. Check: `grep -wo avx /proc/cpuinfo`. Afterwards, remove the core dumps in `/var/lib/systemd/coredump` (sudo). |
 | Build steps hang on `git clone` / `curl` to GitHub, though the host has Internet | MTU of the host NIC (e.g. 1450) smaller than Docker's (1500) | `readme/update.md` → Troubleshooting: set `"mtu"` in `/etc/docker/daemon.json` |
-| `docker manifest inspect` / pull of the MinIO image fails (`401`, `no such manifest`) | MinIO stopped publishing free images (late 2025) | **upstream**: use a maintained image; the repo now uses `docker.io/pgsty/minio`. Existing nodes keep their local copy |
+| `docker manifest inspect` / pull of the MinIO image fails (`401`, `no such manifest`) | MinIO stopped publishing free images (late 2025) | **upstream**: use a maintained image; the repo now uses `docker.io/pgsty/silo` (pgsty's maintained MinIO fork; `pgsty/minio` has had no new images since 2026-08-04). Existing nodes keep their local copy |
 
 ## During the build
 
