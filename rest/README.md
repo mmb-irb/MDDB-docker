@@ -34,27 +34,32 @@ The [Dockerfile](Dockerfile) clones the [REST API repository](https://github.com
 The REST API host configuration sets the service name, description and accession example in its swagger docs, and how it behaves depending on the requesting host:
 whether unpublished projects are hidden (`production`), whether it is the global API (`global`) or which collection it serves (`collection`).
 
-To give this node its own configuration, create the file **`rest/config.yml`**.
-It is ignored by git, so every node keeps its own one.
+Every node has its own configuration in the file **`rest/config.yml`**, which is ignored by git.
 The build copies it as `config.yml` at the root of the REST API repository, where the API looks for it.
-Without it the API uses its default configuration for every host: a generic `MDposit` node with the accession example `A0001` which **shows unpublished projects**.
+**It is mandatory**: the build fails without it.
 
-Start from one of the examples in the REST API repository, which describe every field and its default value:
-
-* [example-single-config.yml](https://github.com/mmb-irb/MDDB-REST-API/blob/master/example-single-config.yml): one single configuration, for a node with one URL or which behaves the same in all of them.
-* [example-multiple-config.yml](https://github.com/mmb-irb/MDDB-REST-API/blob/master/example-multiple-config.yml): a different configuration for each URL (domain) which serves the API, e.g. a production and a development domain.
-
-For instance, a production node with one URL only needs:
+Root keys are the host names (domains) which serve the API, and every host has its own configuration inside.
+Requests from any other host get a default configuration labeled as `(Unknown service)`, which **shows unpublished projects**.
+See [example-config.yml](https://github.com/mmb-irb/MDDB-REST-API/blob/master/example-config.yml) in the REST API repository, which describes every field and its default value.
+For instance, a production node with one URL:
 
 ```yaml
-name: My node
-description: The federated node server of my lab
-accession: A0001
-production: true
+my-node.mddbr.eu:
+    name: My node
+    description: The federated node server of my lab
+    accession: A0001
+    production: true
 ```
 
-Missing fields take their default values, and unknown fields stop the API when it starts (see its logs).
-REST API versions up to v0.0.19 ignore `rest/config.yml` and keep their own configuration, which includes every node.
+If the requests may not reach the API with the right host name (e.g. behind a proxy which changes it), force it with `REST_URL` in the `.env` file, which is passed to the API as `HOST`.
+The forced host must be configured in `rest/config.yml`.
+
+Configuration fields at the root (a single configuration for every host), the `hosts` field, unknown fields, an empty file and a forced host which is not configured stop the API when it starts (see its logs).
+
+Old REST API versions use other formats:
+
+* v0.0.20: either a single configuration for every host (configuration fields at the root) or a configuration per host under `hosts`. Without the file it uses the default configuration for every host. A single configuration gets broken links (`//null`) to the OPTIMADE API and the web client in the swagger docs, so use `hosts`.
+* Up to v0.0.19: `rest/config.yml` is ignored and the API keeps its own configuration, which includes every node.
 
 The configuration is part of the build, so **rebuild the REST API after changing it**:
 

@@ -7,7 +7,7 @@ def get_podman_script(type, service, svc=None, version=None):
     cmd = ''
     if service == 'rest':
         if type == 'build':
-            cmd = "podman build -t rest_image --no-cache --build-arg DB_SERVER=${DB_SERVER} --build-arg DB_PORT=${DB_OUTER_PORT} --build-arg DB_NAME=${DB_NAME} --build-arg DB_AUTH_USER=${REST_DB_LOGIN} --build-arg DB_AUTH_PASSWORD=${REST_DB_PASSWORD} --build-arg DB_AUTHSOURCE=${DB_AUTHSOURCE} --build-arg REST_INNER_PORT=${REST_INNER_PORT} ./rest"
+            cmd = "podman build -t rest_image --no-cache --build-arg DB_SERVER=${DB_SERVER} --build-arg DB_PORT=${DB_OUTER_PORT} --build-arg DB_NAME=${DB_NAME} --build-arg DB_AUTH_USER=${REST_DB_LOGIN} --build-arg DB_AUTH_PASSWORD=${REST_DB_PASSWORD} --build-arg DB_AUTHSOURCE=${DB_AUTHSOURCE} --build-arg REST_INNER_PORT=${REST_INNER_PORT} --build-arg HOST=${REST_URL} ./rest"
         elif type == 'run':
             cmd = "podman run -d --name rest -p ${REST_OUTER_PORT}:${REST_INNER_PORT} --memory ${REST_MEMORY_LIMIT} --network data_network --network web_network rest_image"
     elif service == 'client':

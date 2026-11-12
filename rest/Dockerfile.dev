@@ -41,16 +41,14 @@ RUN echo "DB_SERVER=${DB_SERVER}" > /app/MDDB-REST-API/.env && \
     echo "OTEL_ENDPOINT=${REST_OTEL_ENDPOINT}" >> /app/MDDB-REST-API/.env
 
 
-# If there is a node host configuration file (rest/config.yml) then the API uses it
-# Otherwise the API uses its default configuration for every host
-# The wildcard makes config.yml optional (COPY only fails when none of its sources exist)
+# Node host configuration file (rest/config.yml), required by the REST API: root keys are the host names (see the README)
+# The wildcard lets the COPY work without config.yml (COPY only fails when none of its sources exist), so the check below explains the problem
 COPY Dockerfile.dev config.ym[l] /app/context/
-RUN if [ -f /app/context/config.yml ]; then \
-        echo "Using the node host configuration file"; \
-        install -m 644 /app/context/config.yml /app/MDDB-REST-API/config.yml; \
-    else \
-        echo "No config.yml found: using the REST API default host configuration"; \
-    fi
+RUN if [ ! -f /app/context/config.yml ]; then \
+        echo "ERROR: Missing rest/config.yml, which is required by the REST API (see rest/README.md)"; \
+        exit 1; \
+    fi; \
+    install -m 644 /app/context/config.yml /app/MDDB-REST-API/config.yml
 
 # Change working directory to /app/MDDB-REST-API
 WORKDIR /app/MDDB-REST-API

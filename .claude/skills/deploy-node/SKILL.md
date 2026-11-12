@@ -104,10 +104,10 @@ label, colors, contacts and footers of this node, and put its own images in `cli
 `client/README.md`. Without it the client uses its generic default configuration (MDposit look, API in the
 same domain). It needs MDposit-client v0.0.22 or newer.
 
-REST API configuration: create `rest/config.yml` from one of the REST API examples (`example-single-config.yml`
-or `example-multiple-config.yml` in MDDB-REST-API) with the name, description and accession example of this
-node, and `production: true` if unpublished projects must be hidden; see `rest/README.md`. Without it the API
-uses a generic default configuration which shows unpublished projects. It needs a REST API newer than v0.0.19.
+REST API configuration (mandatory): create `rest/config.yml` from `example-config.yml` in MDDB-REST-API.
+Root keys are the host names of the node, each one with its name, description and accession example, and
+`production: true` if unpublished projects must be hidden; see `rest/README.md`. If a proxy may change the host
+the API receives, force it with `REST_URL` in the `.env` (it must be one of the configured hosts).
 
 Then validate without starting anything:
 
