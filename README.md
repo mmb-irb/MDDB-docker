@@ -29,6 +29,8 @@ For this project, the following repo has been used:
 
 https://github.com/mmb-irb/MDDB-REST-API/
 
+Each node has its own API configuration (name and accession example in the docs, production or development...) in `rest/config.yml` (see the [REST API README](rest/README.md#host-configuration-file)).
+
 ### Website client
 
 The **website client** is a **React App**, built from its source code when the client image is built. Each node can have its own configuration in `client/host-config.js` (see the [client README](client/README.md)).
@@ -152,7 +154,8 @@ The same steps as the scripts, by hand. The commands use `my_stack` as the stack
     docker compose -f docker-compose.yml config -q
     ```
 
-6. **Configure the website client** (optional): to give the website its own name, logos, colors and contacts, create `client/host-config.js`. Without it the client uses a generic MDposit look. See the [client README](client/README.md#host-configuration-file).
+6. **Configure the website client and the REST API** (optional): to give the website its own name, logos, colors and contacts, create `client/host-config.js`. Without it the client uses a generic MDposit look. See the [client README](client/README.md#host-configuration-file).
+   To give the REST API its own name and accession example in its docs, and to hide unpublished projects in production, create `rest/config.yml`. Without it the API uses a generic configuration which shows unpublished projects. See the [REST API README](rest/README.md#host-configuration-file).
 
 7. **Start Docker Swarm and create the networks:**
 

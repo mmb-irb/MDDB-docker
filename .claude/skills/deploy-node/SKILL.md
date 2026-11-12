@@ -16,7 +16,7 @@ run every command below through `ssh <alias> '...'`, and copy the helper scripts
 ## Ground rules
 
 - **Never modify this repository for one node.** Node-specific values go in `.env` and the client
-  configuration in `client/host-config.js` (both git-ignored). If a
+  configuration in `client/host-config.js` and the REST API one in `rest/config.yml` (all git-ignored). If a
   node needs a compose change, put it in an override file outside the repo and add it with `-f` / `-c`.
   A bug that affects every node is fixed upstream, by its maintainers.
 - **Secrets**: `.env` holds passwords. Never print it, commit it, or paste its values into the chat.
@@ -103,6 +103,11 @@ Client configuration: create `client/host-config.js` from one of the client exam
 label, colors, contacts and footers of this node, and put its own images in `client/images/`; see
 `client/README.md`. Without it the client uses its generic default configuration (MDposit look, API in the
 same domain). It needs MDposit-client v0.0.22 or newer.
+
+REST API configuration: create `rest/config.yml` from one of the REST API examples (`example-single-config.yml`
+or `example-multiple-config.yml` in MDDB-REST-API) with the name, description and accession example of this
+node, and `production: true` if unpublished projects must be hidden; see `rest/README.md`. Without it the API
+uses a generic default configuration which shows unpublished projects. It needs a REST API newer than v0.0.19.
 
 Then validate without starting anything:
 
