@@ -116,11 +116,13 @@ FROM docker.io/library/nginx:alpine
 # 'apk add' alone does not upgrade packages already present in the base image
 RUN apk upgrade --no-cache
 
-# Install necessary packages
-RUN apk --no-cache add nodejs npm curl
-
-# Install pm2
-RUN npm install pm2 -g
+# Install the necessary packages and pm2, then remove npm, which is only needed to install pm2:
+# the npm package bundles its own dependencies (tar, brace-expansion, sigstore...) that security scanners flag.
+# Everything in one RUN so npm is not left in a lower layer
+RUN apk --no-cache add nodejs npm curl && \
+    npm install pm2 -g && \
+    npm cache clean --force && \
+    apk del --no-cache npm
 
 # Set working directory
 WORKDIR /app
