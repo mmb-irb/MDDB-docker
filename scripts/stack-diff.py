@@ -6,7 +6,7 @@ with 'docker service update' (a published port, a mount, an environment variable
 replicas, the stop grace period...) is lost. Run this before deploying, with the same compose files:
 
     python3 scripts/stack-diff.py -t my_stack
-    python3 scripts/stack-diff.py -t my_stack -c docker-compose.yml -c extensions/mcp.yml
+    python3 scripts/stack-diff.py -t my_stack -c docker-compose.yml -c extensions/metrics.yml
 
 The node's own file, docker-compose.node.yml (not in git), is always added last when it exists, as
 scripts/stack-deploy.py does (--no-node-file to leave it out). It reads the .env file itself

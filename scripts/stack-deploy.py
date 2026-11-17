@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Redeploy the stack without losing settings made by hand.
 
-    python3 scripts/stack-deploy.py -t my_stack [-c docker-compose.yml -c extensions/mcp.yml ...]
+    python3 scripts/stack-deploy.py -t my_stack [-c docker-compose.yml -c extensions/metrics.yml ...]
 
 1. Shows what the deploy would change in the running services (scripts/stack-diff.py), with the same
    compose files the deploy uses: the -c files (default docker-compose.yml) plus the node's own file,
