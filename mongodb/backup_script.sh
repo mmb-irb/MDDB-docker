@@ -137,6 +137,11 @@ for marker in WiredTiger WiredTiger.wt mongod.lock _mdb_catalog.wt; do
     done
 done
 
+# Creating this file starts the next backup without waiting for BACKUP_INTERVAL (checked every
+# minute; the check for writes still applies). It is removed when the backup starts.
+# scripts/mongo-backup.py start creates it.
+START_NOW="$BACKUP_DIR/start-now"
+
 TS_GLOB='[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]_[0-9][0-9]-[0-9][0-9]-[0-9][0-9]'
 
 # Log this run to $BACKUP_DIR/logs/<start time>.log as well as to the container log
@@ -232,9 +237,17 @@ wait_for_next_backup() {
     last_epoch=$(date -u -d "${ts:0:10} ${ts:11:2}:${ts:14:2}:${ts:17:2}" +%s)
     remaining=$(( last_epoch + BACKUP_INTERVAL - $(date -u +%s) ))
     if (( remaining > 0 )); then
-        echo "Last complete backup: $last. Next backup in $remaining seconds"
-        run_interruptible sleep "$remaining"
+        echo "Last complete backup: $last. Next backup in $remaining seconds" \
+            "(create $START_NOW to start it earlier)"
     fi
+    while (( remaining > 0 )); do
+        if [ -e "$START_NOW" ]; then
+            echo "$START_NOW found: starting the backup now"
+            return
+        fi
+        run_interruptible sleep $(( remaining < 60 ? remaining : 60 ))
+        remaining=$(( last_epoch + BACKUP_INTERVAL - $(date -u +%s) ))
+    done
 }
 
 # Number of operations that took a write lock on a user collection since mongod started (the
@@ -347,6 +360,7 @@ unlock_writes() {
 while true; do
     wait_for_next_backup
     wait_until_no_writes
+    rm -f -- "$START_NOW"
 
     TIMESTAMP=$(date -u +%Y-%m-%d_%H-%M-%S)
     echo "Starting backup $TIMESTAMP (compress=$COMPRESS) at $(date)"

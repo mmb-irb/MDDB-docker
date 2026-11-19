@@ -303,6 +303,8 @@ Every backup is written under a `.partial` name and only renamed once all its st
 
 **Logs.** The output of every run of the service is also written to `${DB_BACKUP_VOLUME_PATH}/logs/<start time>.log`, so it survives the container. If the run fails, its log is renamed to `<start time>.error.log`; error logs are never removed automatically. Of the other logs, only the 20 most recent are kept (`LOG_RETENTION_COUNT`).
 
+**By hand.** `scripts/mongo-backup.py` (run from the MDDB-docker folder, with `sudo` where docker needs it) shows the state of the service and the backups (`status`), cancels a running backup, releasing the write lock and removing its incomplete files (`cancel [--restart]`), changes the interval in `.env` and in the service (`interval 60d`), and starts a backup without waiting for the interval (`start`, through a `start-now` file in the backup folder that the service checks every minute). See `python3 scripts/mongo-backup.py --help`.
+
 For performing a **single mongodump**, please execute:
 
 ```sh
