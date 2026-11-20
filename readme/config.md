@@ -23,7 +23,7 @@ The rules that are easiest to get wrong:
 * `APACHE_HTTPS_INNER_PORT` must be equal to `APACHE_HTTPS_OUTER_PORT`, and `APACHE_MINIO_INNER_PORT` equal to `APACHE_MINIO_OUTER_PORT`: Apache listens inside its container on the outer port number.
 * `DB_SERVER` is `<STACK_NAME>_mongodb` when MongoDB runs in the stack (the default), or the address of an external MongoDB server. `VRE_LITE_DB_SERVER` is always `<STACK_NAME>_mongodb`.
 * `DB_AUTHSOURCE` is the database where the loader and REST users are created, i.e. the same as `DB_NAME` (unless you use an external server with other users).
-* `SSL_CERTIFICATE` and `SSL_CERT_KEY` are **file names** inside `APACHE_CERTS_VOLUME_PATH`, not full paths.
+* `CERT_EMAIL` is required (the deploy stops without it), and `CERT_DOMAINS` must list DNS names only, all of them reaching this apache ([certificates](storage.md#certificates)).
 * `DB_BACKUP_VOLUME_PATH` must be a different folder from `DB_VOLUME_PATH` (better on another disk).
 * `MINIO_BROWSER_REDIRECT_URL` is `https://<MINIO_URL>/minio`.
 
@@ -56,12 +56,10 @@ The variables of the file are:
 | APACHE_MEMORY_LIMIT         | string  | apache limit memory                                        |
 | APACHE_CPU_RESERVATION         | string  | apache reserved number of CPUs                                        |
 | APACHE_MEMORY_RESERVATION         | string  | apache reserved memory                                        |
-| SSL_CERTIFICATE         | string  | SSL certificate file name, full chain (inside APACHE_CERTS_VOLUME_PATH)                                       |
-| SSL_CERT_KEY         | string  | SSL private key file name (inside APACHE_CERTS_VOLUME_PATH)                                        |
-| CERT_DOMAINS         | string  | comma-separated names for the Let's Encrypt certificate (default: MINIO_URL), see [certificates](storage.md#certificates) |
-| CERT_METHOD         | string  | `certbot` (default, HTTP-01, port 80) or `mod_md` (TLS-ALPN-01 in apache, only port 443) |
-| CERT_EMAIL         | string  | contact email for the Let's Encrypt account, required with `CERT_METHOD=mod_md` |
-| CERT_ACME_URL         | string  | ACME directory for `mod_md` (default: Let's Encrypt production) |
+| CERT_EMAIL         | string  | **required**: contact email of the Let's Encrypt account; apache gets and renews its certificate by itself, see [certificates](storage.md#certificates) |
+| CERT_DOMAINS         | string  | comma-separated DNS names of the certificate, all reaching this apache (default: MINIO_URL) |
+| CERT_ACME_URL         | string  | ACME directory (default: Let's Encrypt production; staging for tests) |
+| CERT_CHALLENGES         | string  | ACME challenge (default `tls-alpn-01 http-01`: the first one is used; `http-01` only behind a proxy that terminates TLS) |
 | &nbsp;
 | LOADER_VOLUME_PATH         | string  | path where the loader will look for files                                        |
 | LOADER_REPLICAS      | number  | number of replicas to deploy                                    |

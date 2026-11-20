@@ -32,11 +32,11 @@ run every command below through `ssh <alias> '...'`, and copy the helper scripts
 | Question | Why |
 |---|---|
 | Where does it run: this machine, or an SSH alias? | Every command depends on it |
-| Host name (or IP) users will use to reach the node; internal only, or public? | `MINIO_URL`, `REST_URL`, certificate, DNS, firewall |
+| DNS name(s) users will use to reach the node (no IP addresses: Let's Encrypt) | `MINIO_URL`, `REST_URL`, `CERT_DOMAINS`, DNS, firewall |
 | Storage path(s) for data and for MinIO | `*_VOLUME_PATH` variables, capacity check |
 | Is MongoDB in the stack (default) or an external server? | `DB_SERVER`, users, backups |
 | Extensions: `mcp`, `metrics`, `grafana`? | Extra `-f` / `-c` files |
-| TLS certificate (full chain) and key, if any (else a self-signed one is created) | `certs/` folder |
+| Contact email for Let's Encrypt (required); does port 443 reach Apache with TLS untouched? | `CERT_EMAIL`, `CERT_CHALLENGES` |
 | Which MinIO API port is opened publicly (default 9000)? | `APACHE_MINIO_OUTER_PORT` |
 | Who runs sudo commands? | Step 2 hand-offs |
 
@@ -73,14 +73,10 @@ Create, under the storage path, the folders the `.env` will point to (`readme/st
 `certs/ data/ db/ db_backup/ logs/ minio/disk1/`. Usually needs sudo to create the parent and
 `chown` it to the deploying user, after which the user can create the rest.
 
-Copy the certificate chain and key into `certs/` (`chmod 600` the key); without one (internal node), create a
-self-signed one as in README.md (option C, step 4). Check it covers the host name:
-
-```bash
-openssl x509 -in certs/<chain>.pem -noout -subject -enddate -ext subjectAltName
-```
-
-Note the expiry date for the user.
+Nothing to put in `certs/`: Apache gets its Let's Encrypt certificate by itself into `certs/md/`
+(`readme/storage.md#certificates`). It needs `CERT_EMAIL`, every name of `CERT_DOMAINS` pointing to the node,
+and port 443 reaching Apache with TLS untouched (or `CERT_CHALLENGES=http-01` and port 80, behind a proxy that
+terminates TLS). Until then Apache serves a temporary self-signed certificate.
 
 ## 5. Configure `.env`
 
@@ -92,7 +88,7 @@ are easy to get wrong:
 - `MINIO_URL` and `REST_URL`: the **bare host name** (`mdposit-xx.mddbr.eu`, no `https://`).
 - `APACHE_HTTPS_INNER_PORT` = `APACHE_HTTPS_OUTER_PORT` and `APACHE_MINIO_INNER_PORT` =
   `APACHE_MINIO_OUTER_PORT`: Apache listens on the outer number inside its container.
-- `SSL_CERTIFICATE` / `SSL_CERT_KEY` (not `SSL_CERTIFICATE_KEY`): file names inside the certs folder.
+- `CERT_EMAIL`: required, the deploy stops without it. `CERT_DOMAINS`: all the DNS names of the node.
 - `DB_SERVER`: `<stack>_mongodb` for the in-stack Mongo, or the external server's address.
   `VRE_LITE_DB_SERVER`: always `<stack>_mongodb`.
 - `*_VOLUME_PATH*`: the folders from step 4. `MINIO_VOLUME_PATH1` must have passed the multipart test.

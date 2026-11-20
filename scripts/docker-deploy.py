@@ -4,7 +4,7 @@
     python3 scripts/docker-deploy.py [-r]
 
 Run it from the root of the repository. Without a .env it asks for the main values (storage path,
-certificates, node name, domain, users...) and creates the .env from .env.docker.git; review the whole
+node name, domain, Let's Encrypt email, users...) and creates the .env from .env.docker.git; review the whole
 file afterwards against readme/config.md. With a .env it uses it as it is.
 
 Then it initialises the swarm, creates the networks, builds the images and deploys the stack with
@@ -97,39 +97,6 @@ def make_dir(path, use_sudo):
     run((['sudo'] if use_sudo else []) + ['mkdir', '-p', path])
 
 
-def copy_cert(label, certs_path, use_sudo, private=False):
-    """Copy a certificate file into certs_path and return its name."""
-    while True:
-        src = ask(label)
-        if os.path.isfile(src):
-            break
-        print(f"{src} does not exist.")
-    dst = os.path.join(certs_path, os.path.basename(src))
-    prefix = ['sudo'] if use_sudo else []
-    run(prefix + ['cp', src, dst])
-    if private:
-        run(prefix + ['chmod', '600', dst])
-    return os.path.basename(src)
-
-
-def self_signed_cert(name, certs_path, use_sudo):
-    """Create a self-signed certificate for name (a host name or an IP address); return its file names."""
-    cert, key = 'selfsigned_fullchain.pem', 'selfsigned_privkey.pem'
-    try:
-        ipaddress.ip_address(name)
-        san = f"IP:{name}"
-    except ValueError:
-        san = f"DNS:{name}"
-    prefix = ['sudo'] if use_sudo else []
-    run(prefix + ['openssl', 'req', '-x509', '-newkey', 'rsa:2048', '-nodes', '-days', '3650',
-                  '-subj', f'/CN={name}', '-addext', f'subjectAltName={san}',
-                  '-keyout', os.path.join(certs_path, key), '-out', os.path.join(certs_path, cert)])
-    run(prefix + ['chmod', '600', os.path.join(certs_path, key)])
-    print("Created a self-signed certificate: browsers will show a warning until you replace it "
-          "(README.md, 'Make the node public').")
-    return cert, key
-
-
 def create_env(use_sudo):
     print(f"\n{ENV} does not exist: creating it from {TEMPLATE}.\n")
     v = {}
@@ -152,16 +119,19 @@ def create_env(use_sudo):
 
     v['NODE'] = ask("Node identifier (e.g. mdposit-xx)")
     default_name = socket.getfqdn()
-    name = ask("Host name (or IP address) that users will use to reach the node, without https://", default_name)
+    while True:
+        name = ask("DNS name that users will use to reach the node, without https://", default_name)
+        try:
+            ipaddress.ip_address(name)
+        except ValueError:
+            break
+        print("It must be a DNS name: apache gets its TLS certificate from Let's Encrypt, which does not certify IP addresses.")
     v['MINIO_URL'] = v['REST_URL'] = name
     v['MINIO_BROWSER_REDIRECT_URL'] = f"https://{name}/minio"
 
-    certs_path = v['APACHE_CERTS_VOLUME_PATH']
-    if input(f"Do you have a TLS certificate for {name}? (y/n; n creates a self-signed one): ").strip().lower() == 'y':
-        v['SSL_CERTIFICATE'] = copy_cert("TLS certificate file (full chain)", certs_path, use_sudo)
-        v['SSL_CERT_KEY'] = copy_cert("TLS private key file", certs_path, use_sudo, private=True)
-    else:
-        v['SSL_CERTIFICATE'], v['SSL_CERT_KEY'] = self_signed_cert(name, certs_path, use_sudo)
+    print("\nApache gets and renews its TLS certificate from Let's Encrypt by itself (readme/storage.md#certificates).")
+    v['CERT_DOMAINS'] = ask("All the names of the node for the certificate, comma-separated", name)
+    v['CERT_EMAIL'] = ask("Contact email for Let's Encrypt (expiry and problem notices)")
 
     stack = ask("Docker Swarm stack name", "my_stack")
     v['STACK_NAME'] = stack

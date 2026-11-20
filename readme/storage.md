@@ -85,41 +85,58 @@ The loader will use the same **/data folder** of the workflow as input data path
 
 ## Certificates
 
-In the **volume** where the data is stored, create the following **/certs folder**:
+Apache **always** gets its TLS certificate from [Let's Encrypt](https://letsencrypt.org) and renews it by itself, with
+[mod_md](https://httpd.apache.org/docs/2.4/mod/mod_md.html) built into the image ([apache-mod-md.conf](../apache/apache-mod-md.conf)).
+There is nothing to copy, no cron and no script: if apache runs, it has a certificate and keeps it renewed.
 
-> /path/to/volume/certs
+In `.env`:
+
+* **CERT_EMAIL** (required): contact email of the Let's Encrypt account (expiry and problem notices). Without it the
+  deploy stops with an error (`docker compose` / `docker stack deploy`, and the build of apache).
+* **CERT_DOMAINS**: **all** the DNS names of the node, comma-separated (default: `MINIO_URL`). Every one of them must
+  reach this apache: a name that goes elsewhere makes the whole certificate fail. IP addresses are not allowed (the build
+  stops): Let's Encrypt only certifies DNS names.
+* `CERT_ACME_URL` (optional): ACME directory, Let's Encrypt production by default. For tests,
+  `https://acme-staging-v02.api.letsencrypt.org/directory` (untrusted certificates, no rate limits).
+* `CERT_CHALLENGES` (optional): ACME challenge, default `tls-alpn-01 http-01`. mod_md uses the **first** one it can
+  set up and keeps retrying it if it fails: it does not switch to the other one (tested). Change it only in the case below.
+
+What the network needs:
+
+* By default (TLS-ALPN-01): **port 443** of every name reaching this apache with TLS untouched, directly or through a
+  TCP/SNI passthrough proxy. Port 80 can be open or closed.
+* Behind a proxy that terminates TLS itself and then forwards to this apache (its certificate is not the one users see):
+  set `CERT_CHALLENGES=http-01`; then **port 80** of every name must reach this apache (or a proxy that forwards it or
+  redirects it to https). mod_md answers `/.well-known/acme-challenge/` before the redirect to https.
+
+How it works:
+
+* mod_md keeps its account and certificates in **certs/md/** (`APACHE_CERTS_VOLUME_PATH`), owned by root.
+* Until the first certificate arrives (usually less than a minute), apache serves a temporary self-signed one
+  (`Apache Managed Domain Fallback`), so it always starts.
+* mod_md renews the certificate when a third of its life is left. A new certificate waits in `certs/md/staging/` until a
+  graceful restart (no connection is lost), which the container does by itself within a minute
+  ([httpd-md-foreground](../apache/httpd-md-foreground)). If the graceful restart fails, the container stops, so Swarm
+  restarts it and the failure is visible.
+* Problems are in the apache logs: `docker service logs <stack>_apache 2>&1 | grep '\[md:'`.
+
+Check the certificate that is served:
 
 ```sh
-cp fullchain.pem privkey.pem /path/to/volume/certs/
-chmod 600 /path/to/volume/certs/privkey.pem
-openssl x509 -in /path/to/volume/certs/fullchain.pem -noout -subject -enddate -ext subjectAltName   # check names and expiry
+echo | openssl s_client -connect <name>:443 -servername <name> 2>/dev/null | openssl x509 -noout -issuer -enddate -ext subjectAltName
 ```
 
-Their file names go in `SSL_CERTIFICATE` and `SSL_CERT_KEY` of the `.env`. Apache needs a certificate to start: for an internal node without one, create a self-signed certificate (`scripts/docker-deploy.py` does it for you; by hand, see step 4 of the [README](../README.md#option-c-step-by-step)). In this folder must be stored the **SSL/TLS** certificate (full chain) and private key that the **apache docker** will use for configuring **https** protocol.
+Configurations behind an external proxy that terminates TLS (e.g. `APACHE_CONFIG=apache-config-florida.conf`) have no
+TLS in apache, so they do not get a certificate (the proxy needs one) and do not need `CERT_EMAIL`.
 
-### Let's Encrypt (automatic renewal)
+### Moving a node from the old setup (certificate files, `renew-certs.py`)
 
-Instead of copying the certificates by hand, [scripts/renew-certs.py](../scripts/renew-certs.py) can get a free [Let's Encrypt](https://letsencrypt.org) certificate and renew it before it expires. It needs:
-
-* The port **80** of every name reachable from the internet (directly or through a proxy that redirects to https). Apache serves the challenge from **certs/acme/** under `/.well-known/acme-challenge/`.
-* **CERT_DOMAINS** in `.env` with **all** the names of the node, comma-separated (default: `MINIO_URL`). A name missing from the certificate gives certificate errors to the users (or a proxy error, if there is a proxy in front checking the certificate).
-* `SSL_CERTIFICATE=le_fullchain.pem` and `SSL_CERT_KEY=le_privkey.pem` in `.env`, and apache built with them.
-
-Then run it once by hand and add it to the cron of a user in the docker group:
-
-```sh
-cd /path/to/MDDB-docker && scripts/renew-certs.py
-crontab -e
-# 17 3,15 * * * cd /path/to/MDDB-docker && scripts/renew-certs.py >> ~/renew-certs.log 2>&1 || echo "[$(date -Is)] FAILED" >> ~/renew-certs.log
-```
-
-certbot keeps its data in **certs/letsencrypt/**. When it renews the certificate, the script copies it to `le_fullchain.pem` / `le_privkey.pem`, does a graceful reload of apache (no downtime) and checks that apache serves the new one. Any failure ends with an error. It only works with Docker Swarm for now (not podman).
-
-#### Only port 443 open: `CERT_METHOD=mod_md`
-
-If port 80 is closed, set `CERT_METHOD=mod_md`, `CERT_DOMAINS` (required) and `CERT_EMAIL` (required by mod_md) in `.env` and rebuild apache. Apache then loads [mod_md](https://httpd.apache.org/docs/2.4/mod/mod_md.html) ([apache-mod-md.conf](../apache/apache-mod-md.conf)), which gets and renews the certificate with the **TLS-ALPN-01** challenge on port 443 and keeps it in **certs/md/**. Apache keeps serving `le_fullchain.pem` / `le_privkey.pem`: the same script (and cron line) installs a renewed certificate, reloads apache and checks it. Until mod_md has its first certificate the script ends with an error (see the apache logs). It never installs a certificate from the Let's Encrypt staging CA.
-
-To switch an existing node without downtime: copy the current certificate and key to `le_fullchain.pem` / `le_privkey.pem`, change `.env`, rebuild and update apache, and then run the script.
+1. Add `CERT_EMAIL` (and `CERT_DOMAINS` if the node has more than one name) to `.env`. `SSL_CERTIFICATE`,
+   `SSL_CERT_KEY` and `CERT_METHOD` are no longer used: delete them.
+2. Rebuild and update apache (e.g. `python3 scripts/rebuild.py -s apache -t my_stack`). If `certs/md/` has no valid
+   certificate yet, the names serve the temporary one for about a minute.
+3. Remove the `renew-certs.py` line from the crontab (`crontab -e`). The old files in `certs/` (`le_*.pem`,
+   `letsencrypt/`, `acme/`) can be deleted once the new certificate is served.
 
 ## Logs
 

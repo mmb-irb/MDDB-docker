@@ -1,0 +1,17 @@
+#!/bin/sh
+# Start apache, and activate every certificate that mod_md gets or renews.
+# mod_md leaves a new certificate in md/staging/ and only a graceful restart puts it in use (no connection is lost).
+# If the graceful restart fails, stop the container so that the failure is visible (Swarm starts it again).
+set -e
+STAGING=/usr/local/apache2/conf/ssl/md/staging
+
+(
+    while sleep 60; do
+        if ls "$STAGING"/*/pubcert.pem > /dev/null 2>&1; then
+            echo "httpd-md-foreground: new certificate in $STAGING, graceful restart to activate it" >&2
+            httpd -k graceful || { echo "httpd-md-foreground: graceful restart failed, stopping" >&2; kill 1; exit 1; }
+        fi
+    done
+) &
+
+exec httpd-foreground "$@"

@@ -117,7 +117,7 @@ python3 scripts/docker-deploy.py       # creates the storage folders and the .en
 ```
 
 * [docker-install.py](scripts/docker-install.py) installs Docker Engine and the Compose plugin on Ubuntu, Debian, Rocky / AlmaLinux / RHEL, CentOS and Fedora, following Docker's official instructions, and adds your user to the `docker` group (it needs sudo). With `--root-dir /path/to/volume` it also moves the Docker images to that disk, since they need tens of GB. On any other system it points to [Docker's installation guide](https://docs.docker.com/engine/install/).
-* [docker-deploy.py](scripts/docker-deploy.py) asks for the storage path, the node name, the host name (or IP) users will use to reach the node, and the users of the database and MinIO, with random passwords unless you type them. If you have no TLS certificate, it creates a self-signed one, enough for an internal node. Then it creates the `.env`, starts Docker Swarm, builds the images and deploys. The build takes a while.
+* [docker-deploy.py](scripts/docker-deploy.py) asks for the storage path, the node name, the DNS name users will use to reach the node, the email for Let's Encrypt (`CERT_EMAIL`), and the users of the database and MinIO, with random passwords unless you type them. Apache gets and renews its TLS certificate by itself ([certificates](readme/storage.md#certificates)). Then it creates the `.env`, starts Docker Swarm, builds the images and deploys. The build takes a while.
 
 Then [check the node](#check-the-node). The `.env` it creates has the main values only: see [the configuration](readme/config.md#env-file) for the rest (resources, extensions...). If a `.env` already exists, the script uses it as it is.
 
@@ -137,17 +137,9 @@ The same steps as the scripts, by hand. The commands use `my_stack` as the stack
     mkdir -p /path/to/volume/{certs,data,db,db_backup,logs,minio/disk1}
     ```
 
-4. **Put a TLS certificate in `certs/`**: the certificate and private key Apache uses to serve the node over `https`. If you have none, create a self-signed one for the name users will use to reach the node (browsers will show a warning):
+4. **TLS certificate**: nothing to do. Apache gets it from Let's Encrypt and renews it by itself into `certs/md/`; it only needs `CERT_EMAIL` in the `.env` (next step) and port 443 or 80 of every name reaching it ([certificates](readme/storage.md#certificates)).
 
-    ```sh
-    openssl req -x509 -newkey rsa:2048 -nodes -days 3650 -subj "/CN=<host name>" \
-      -addext "subjectAltName=DNS:<host name>" \
-      -keyout /path/to/volume/certs/selfsigned_privkey.pem -out /path/to/volume/certs/selfsigned_fullchain.pem
-    ```
-
-    (with an IP address instead of a host name, use `subjectAltName=IP:<ip>`).
-
-5. **Configure the `.env` file**: copy the template and fill in every empty variable (paths of step 3, node name, host name, certificate file names, and a different generated password for every user). Read the rules in [Set Up Configuration Files](readme/config.md#env-file) first, and validate the result:
+5. **Configure the `.env` file**: copy the template and fill in every empty variable (paths of step 3, node name, host name, `CERT_EMAIL`, and a different generated password for every user). Read the rules in [Set Up Configuration Files](readme/config.md#env-file) first, and validate the result:
 
     ```sh
     cp .env.docker.git .env && chmod 600 .env
@@ -197,7 +189,7 @@ Only if the node must be reachable from the internet:
 
 1. Point a **domain name** to the VM in the DNS. If it is not the host name you gave in the `.env` (`MINIO_URL`, `REST_URL`, `MINIO_BROWSER_REDIRECT_URL`), change them and rebuild the services that use them: `python3 scripts/rebuild.py -s apache rest vre_lite -t my_stack`.
 2. Open the ports **443**, **80** and the MinIO API port (`APACHE_MINIO_OUTER_PORT`, e.g. 9000) to the internet ([firewall and ports](readme/setup.md#firewall-and-ports)).
-3. Replace the self-signed certificate with a real one: copy yours into `certs/`, or get a free one from Let's Encrypt with automatic renewal ([certificates](readme/storage.md#certificates)). Set its file names in `SSL_CERTIFICATE` / `SSL_CERT_KEY` and rebuild Apache: `python3 scripts/rebuild.py -s apache -t my_stack`.
+3. Apache gets the Let's Encrypt certificate by itself as soon as port 443 of every name in `CERT_DOMAINS` reaches it (see [certificates](readme/storage.md#certificates) for nodes behind a proxy that terminates TLS); until then it serves a temporary self-signed one. If you changed `MINIO_URL` or `CERT_DOMAINS`, rebuild Apache ([certificates](readme/storage.md#certificates)).
 
 ### Documentation
 
@@ -263,14 +255,14 @@ When executing the **deploy script**, the user will be prompted to answer some q
 
 * **Main path for the storage system:** At the beginning of the execution of the script, you will be asked for the **main path of the storage system**. Inside this path the following **folder structure** will be generated:
 
-  * [**certs/**](readme/storage.md#certificates) (apache **SSL/TLS** certificates)
+  * [**certs/**](readme/storage.md#certificates) (Let's Encrypt certificates, managed by apache)
   * [**data/**](readme/storage.md#workflow) (**workflow** output data and **loader** input data)
   * [**db/**](readme/storage.md#mongodb) (**MongoDB** data)
   * [**logs/**](readme/storage.md#logs) (**VRE lite** logs)
   * [**minio/**](readme/storage.md#minio) (**MinIO** data)
     * disk1/ (**MinIO** data)
 
-* **SSL/TLS certificates:** If the **SSL/TLS** certificates are available, they can be copied into the **certs/** folder during the execution of the **script**. Be sure to have them located in the **same VM** where the script is being executed.
+* **TLS certificate:** Apache gets it from **Let's Encrypt** and renews it by itself. The script asks for the contact email (`CERT_EMAIL`, required) and the names of the certificate (`CERT_DOMAINS`).
 * **Node:** Node identifier, mandatory. 
 * **Database name:** MongoDB database name. Default value: **mddb_db**.
 * **Root database user:** MongoDB root database user. Default value: **root**.

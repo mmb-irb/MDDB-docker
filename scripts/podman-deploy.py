@@ -120,27 +120,11 @@ def deploy_stack(rm):
         print(f"Created certificates volume: {certs_path}.")
         env_vars["APACHE_CERTS_VOLUME_PATH"] = certs_path
 
-        # Copy the certificates
-        cert_pem = input(f"Enter where the SSL certificate file is located, it will be copied into {certs_path}: ")
-        if not os.path.exists(cert_pem):
-            print(f"Warning! The public certificate {cert_pem} does not exist.")
-            cont = input("Do you want to continue? (y/n): ")
-            if not cont.lower() == "y":
-                return
-        else:
-            subprocess.run(['cp', cert_pem, certs_path])
-            env_vars["SSL_CERTIFICATE"] = os.path.basename(cert_pem)
-            print(f"{cert_pem} copied into {certs_path}.")
-        cert_key = input(f"Enter where the private SSL certificate key file is located, it will be copied into {certs_path}: ")
-        if not os.path.exists(cert_key):
-            print(f"Warning! The private key {cert_key} does not exist.")
-            cont = input("Do you want to continue? (y/n): ")
-            if not cont.lower() == "y":
-                return
-        else:
-            subprocess.run(['cp', cert_key, certs_path])
-            env_vars["SSL_CERT_KEY"] = os.path.basename(cert_key)
-            print(f"{cert_key} copied into {certs_path}.")
+        # TLS certificate: apache gets and renews it from Let's Encrypt by itself (readme/storage.md#certificates)
+        while not env_vars.get("CERT_EMAIL"):
+            env_vars["CERT_EMAIL"] = input("Enter the contact email for Let's Encrypt (expiry and problem notices): ").strip()
+        env_vars["CERT_DOMAINS"] = input("Enter all the names of the node for the certificate, comma-separated "
+                                         "(default: MINIO_URL): ")
 
         env_vars["NODE"] = get_mandatory_var("node")
         env_vars["DB_SERVER"] = "mongodb"
@@ -199,7 +183,7 @@ def deploy_stack(rm):
 
     subprocess.run("podman build -t vre_lite_image --build-arg MINIO_USER=${MINIO_USER} --build-arg MINIO_PASSWORD=${MINIO_PASSWORD} --build-arg MINIO_API_PORT=${MINIO_API_INNER_PORT} --build-arg VRE_LITE_INNER_PORT=${VRE_LITE_INNER_PORT} --build-arg VRE_LITE_BASE_URL_DEVELOPMENT=${VRE_LITE_BASE_URL_DEVELOPMENT} --build-arg VRE_LITE_BASE_URL_STAGING=${VRE_LITE_BASE_URL_STAGING} --build-arg VRE_LITE_BASE_URL_PRODUCTION=${VRE_LITE_BASE_URL_PRODUCTION} --build-arg VRE_LITE_LOG_PATH=${VRE_LITE_LOG_PATH} --build-arg VRE_LITE_MAX_FILE_SIZE=${VRE_LITE_MAX_FILE_SIZE} --build-arg VRE_LITE_TIME_DIFF=${VRE_LITE_TIME_DIFF} --build-arg MINIO_PROTOCOL=${MINIO_PROTOCOL} --build-arg MINIO_URL=${MINIO_URL} --build-arg MINIO_PORT=${APACHE_MINIO_OUTER_PORT} --build-arg NODE_NAME=${NODE} ./vre_lite", shell=True, check=True)
 
-    subprocess.run("podman build -t apache_image --build-arg APACHE_CONFIG=${APACHE_CONFIG:-apache-config.conf} --build-arg APACHE_HTTP_INNER_PORT=${APACHE_HTTP_INNER_PORT} --build-arg APACHE_HTTPS_INNER_PORT=${APACHE_HTTPS_INNER_PORT} --build-arg APACHE_HTTP_OUTER_PORT=${APACHE_HTTP_OUTER_PORT} --build-arg APACHE_HTTPS_OUTER_PORT=${APACHE_HTTPS_OUTER_PORT} --build-arg APACHE_MINIO_OUTER_PORT=${APACHE_MINIO_OUTER_PORT} --build-arg APACHE_MINIO_INNER_PORT=${APACHE_MINIO_INNER_PORT} --build-arg CLIENT_INNER_PORT=${CLIENT_INNER_PORT} --build-arg REST_INNER_PORT=${REST_INNER_PORT} --build-arg VRE_LITE_INNER_PORT=${VRE_LITE_INNER_PORT} --build-arg MINIO_UI_INNER_PORT=${MINIO_UI_INNER_PORT} --build-arg MINIO_API_INNER_PORT=${MINIO_API_INNER_PORT} --build-arg SERVER_URL=${MINIO_URL} --build-arg SSL_CERTIFICATE=${SSL_CERTIFICATE} --build-arg SSL_CERT_KEY=${SSL_CERT_KEY} ./apache", shell=True, check=True)
+    subprocess.run("podman build -t apache_image --build-arg APACHE_CONFIG=${APACHE_CONFIG:-apache-config.conf} --build-arg APACHE_HTTP_INNER_PORT=${APACHE_HTTP_INNER_PORT} --build-arg APACHE_HTTPS_INNER_PORT=${APACHE_HTTPS_INNER_PORT} --build-arg APACHE_HTTP_OUTER_PORT=${APACHE_HTTP_OUTER_PORT} --build-arg APACHE_HTTPS_OUTER_PORT=${APACHE_HTTPS_OUTER_PORT} --build-arg APACHE_MINIO_OUTER_PORT=${APACHE_MINIO_OUTER_PORT} --build-arg APACHE_MINIO_INNER_PORT=${APACHE_MINIO_INNER_PORT} --build-arg CLIENT_INNER_PORT=${CLIENT_INNER_PORT} --build-arg REST_INNER_PORT=${REST_INNER_PORT} --build-arg VRE_LITE_INNER_PORT=${VRE_LITE_INNER_PORT} --build-arg MINIO_UI_INNER_PORT=${MINIO_UI_INNER_PORT} --build-arg MINIO_API_INNER_PORT=${MINIO_API_INNER_PORT} --build-arg SERVER_URL=${MINIO_URL} --build-arg CERT_EMAIL=${CERT_EMAIL} --build-arg CERT_DOMAINS=${CERT_DOMAINS} --build-arg CERT_ACME_URL=${CERT_ACME_URL:-https://acme-v02.api.letsencrypt.org/directory} --build-arg \"CERT_CHALLENGES=${CERT_CHALLENGES:-tls-alpn-01 http-01}\" ./apache", shell=True, check=True)
 
     subprocess.run("podman build -t workflow_image --build-arg MINIO_USER=${MINIO_USER} --build-arg MINIO_PASSWORD=${MINIO_PASSWORD} --build-arg MINIO_API_PORT=${MINIO_API_INNER_PORT} ./workflow", shell=True, check=True)
 
